@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.12";
+my $version = "0.0.16";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -53,8 +53,8 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{NotifyFn}   = "AutoShuttersControl::Notify";
     $hash->{UndefFn}    = "AutoShuttersControl::Undef";
     $hash->{AttrFn}     = "AutoShuttersControl::Attr";
-    $hash->{AttrList}   = "disable:1 ".
-                            "disabledForIntervals ".
+    $hash->{AttrList}   = #"disable:1 ".
+                            #"disabledForIntervals ".
                             "guestPresence:on,off ".
                             "temperatureSensor ".
                             "temperatureReading ".
@@ -113,6 +113,7 @@ BEGIN {
         modules
         Log3
         CommandAttr
+        CommandDeleteAttr
         CommandDeleteReading
         AttrVal
         ReadingsVal
@@ -212,6 +213,8 @@ sub Undef($$) {
     
     my $name = $hash->{NAME};
     
+    UserAttributsForShutters($hash,'del');
+    
     delete($modules{AutoShuttersControl}{defptr}{$hash->{MID}});
     
     Log3 $name, 3, "AutoShuttersControl ($name) - delete device $name";
@@ -277,20 +280,50 @@ sub Notify($$) {
         and $devname eq 'global') {
 
             ShuttersDeviceScan($hash);
-            WriteReadingsShuttersList($hash) unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
+            WriteReadingsShuttersList($hash)
+            unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
     
     } elsif( grep /^userAttrList:.rolled.out$/,@{$events}
             and $devname eq $name) {
 
-                CreateUserAttributsForShutters($hash) unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
+                UserAttributsForShutters($hash,'add')
+                unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
+
+    } elsif( $devname eq "global" ) {
+        if (grep /^(ATTR|DELETEATTR).+AutoShuttersControl_Roommate_Device/,@{$events}) {
+            EventProcessing($hash,join(' ',@{$events}));
+        
+        }
+    
+    
+    
     }
-#     } elsif( ) {
-#     
-#     
-#     
-#     }
 
     return;
+}
+
+sub EventProcessing($$) {
+
+    my ($hash,$events)  = @_;
+    my $name            = $hash->{NAME};
+
+
+    if( $events =~ m#^ATTR.(.*).(AutoShuttersControl_Roommate_Device).(.*)$# ) {
+        return if( $hash->{NOTIFYDEV} =~ m#$3# );
+        
+        AddNotifyDev($hash,$3);
+        
+        if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {
+            readingsSingleUpdate($hash,'.monitoredDevs',ReadingsVal($name,'.monitoredDevs','none') . ',' . $1 . ':' . $2 . ':' . $3,0);
+        } else {
+            readingsSingleUpdate($hash,'.monitoredDevs',$1 . ':' . $2 . ':' . $3,0);
+        }
+    
+    } elsif($events =~ m#^DELETEATTR.+AutoShuttersControl_Roommate_Device.(.*)$# ) {
+        return unless( $hash->{NOTIFYDEV} =~ m#$1# );
+    
+        DeleteNotifyDev($hash,$1);
+    }
 }
 
 sub Set($$@) {
@@ -300,10 +333,9 @@ sub Set($$@) {
     
     my ($cmd, @args)        = @aa;
 
-    if( lc $cmd eq 'rolloutattr' ) {
+    if( lc $cmd eq 'deletenotifydev' ) {
         return "usage: $cmd" if( @args != 0 );
-        
-        CreateUserAttributsForShutters($hash);
+
         
     } elsif( lc $cmd eq 'shutterslist' ) {
         return "usage: $cmd" if( @args != 0 );
@@ -326,7 +358,6 @@ sub ShuttersDeviceScan($) {
     
     
     my @list;
-    my @notifyDev   = split(',',$hash->{NOTIFYDEV});
     
     @list = devspec2array('(Roll.*|Shutter.*):FILTER=TYPE!=AutoShuttersControl');
     @list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
@@ -335,13 +366,27 @@ sub ShuttersDeviceScan($) {
     
     return unless( scalar(@list) > 0 );
 
+    
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);
-        push (@notifyDev,$_);
+        AddNotifyDev($hash,$_);
         Log3 $name, 4, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
-    $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+
+    if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {
+    
+        my $notifyDevString = '';
+        my @notifyDev = split(',',ReadingsVal($name,'.monitoredDevs','none'));
+        
+        foreach my $notifyDev (@notifyDev) {
+            $notifyDevString .= ',' . (split(':',$notifyDev))[2];
+        }
+        
+        $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
+    }
+
+    
     readingsSingleUpdate($hash,'userAttrList','rolled out',1);
 }
 
@@ -366,19 +411,52 @@ sub WriteReadingsShuttersList($) {
     readingsEndUpdate($hash,0);
 }
 
-sub CreateUserAttributsForShutters($) {
+sub UserAttributsForShutters($$) {
 
-    my $hash    = shift;
-    my $name    = $hash->{NAME};
+    my ($hash,$cmd) = @_;
+    my $name        = $hash->{NAME};
 
     
     while( my ($attrib,$attribValue) = each %{userAttrList} ) {
         foreach (@{$hash->{helper}{shuttersList}}) {
 
             addToDevAttrList($_,$attrib);
-            CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+            
+            if( $cmd eq 'add' ) {
+                CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+
+            } elsif( $cmd eq 'del' ) {
+                CommandDeleteAttr(undef,$_ . ' ' . (split(':',$attrib))[0]);
+            }
         }
     }
+}
+
+sub AddNotifyDev($$) {
+
+    my ($hash,$dev)     = @_;
+
+
+    my @notifyDev       = split(',',$hash->{NOTIFYDEV});
+    
+    push (@notifyDev,$dev);
+    $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+}
+
+sub DeleteNotifyDev($$) {
+
+    my ($hash,$dev)     = @_;
+
+    
+    my @notifyDev       = split(',',$hash->{NOTIFYDEV});
+    
+    @notifyDev          = grep {$_ ne $dev} @notifyDev;
+    $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+    
+    @notifyDev       = split(',',ReadingsVal($hash->{NAME},'.monitoredDevs','none'));
+    
+    @notifyDev          = grep {$_ ne $dev} @notifyDev;
+    readingsSingleUpdate($hash,'.monitoredDevs',join(',',@notifyDev),0);
 }
 
 
@@ -412,60 +490,7 @@ sub CreateUserAttributsForShutters($) {
 <ul>
   <u><b>AutoShuttersControl - Steuert automatisch Deine Rolladen nach bestimmten Vorgaben. Zum Beispiel Sonnenaufgang und Sonnenuntergang</b></u>
   <br>
-  Das Modul synct alle Repositotys und stellt dann Informationen &uuml;ber zu aktualisierende Packete bereit.</br>
-  Es ist Voraussetzung das folgende Zeile via "visudo" eingef&uuml;gt wird: "fhem    ALL=NOPASSWD:   /usr/bin/apt-get".
-  <br><br>
-  <a name="ShuttersControldefine"></a>
-  <b>Define</b>
-  <ul><br>
-    <code>define &lt;name&gt; ShuttersControl &lt;HOST&gt;</code>
-    <br><br>
-    Beispiel:
-    <ul><br>
-      <code>define fhemServer ShuttersControl localhost</code><br>
-    </ul>
-    <br>
-    Der Befehl erstellt eine ShuttersControl Instanz mit dem Namen fhemServer und dem Host localhost.<br>
-    Nachdem die Instanz erstellt wurde werden die ben&ouml;tigten Informationen geholt und als Readings angezeigt.
-    Dies kann einen Moment dauern.
-  </ul>
-  <br><br>
-  <a name="ShuttersControlreadings"></a>
-  <b>Readings</b>
-  <ul>
-    <li>state - update Status des Servers, liegen neue Updates an oder nicht</li>
-    <li>os-release_ - alle Informationen aus /etc/os-release</li>
-    <li>repoSync - status des letzten repository sync.</li>
-    <li>toUpgrade - status des letzten upgrade Befehles</li>
-    <li>updatesAvailable - Anzahl der verf&uuml;gbaren Paketupdates</li>
-  </ul>
-  <br><br>
-  <a name="ShuttersControlset"></a>
-  <b>Set</b>
-  <ul>
-    <li>repoSync - holt aktuelle Informationen &uuml;ber den Updatestatus</li>
-    <li>toUpgrade - f&uuml;hrt den upgrade prozess aus.</li>
-    <br>
-  </ul>
-  <br><br>
-  <a name="ShuttersControlget"></a>
-  <b>Get</b>
-  <ul>
-    <li>showUpgradeList - Paketiste aller zur Verf&uuml;gung stehender Updates</li>
-    <li>showUpdatedList - Liste aller als letztes aktualisierter Pakete, von der alten Version zur neuen Version</li>
-    <li>showWarningList - Liste der letzten Warnings</li>
-    <li>showErrorList - Liste der letzten Fehler</li>
-    <br>
-  </ul>
-  <br><br>
-  <a name="ShuttersControl attribut"></a>
-  <b>Attributes</b>
-  <ul>
-    <li>disable - Deaktiviert das Device</li>
-    <li>upgradeListReading - f&uuml;gt die Upgrade Liste als ein zus&auml;iches Reading im JSON Format ein.</li>
-    <li>distupgrade - wechselt den upgrade Prozess nach dist-upgrade</li>
-    <li>disabledForIntervals - Deaktiviert das Device f&uuml;r eine bestimmte Zeit (13:00-18:30 or 13:00-18:30 22:00-23:00)</li>
-  </ul>
+  
 </ul>
 
 =end html_DE
