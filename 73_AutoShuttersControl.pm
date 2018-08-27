@@ -75,6 +75,7 @@ sub AutoShuttersControl_Initialize($) {
                             "autoAstroModeEveningHorizon ".
                             "antifreezeTemp ".
                             "autoShutterControlPartymode:on,off ".
+                            "autoShuttersControl:on,off ".
                             $readingFnAttributes;
 
 
@@ -115,6 +116,7 @@ BEGIN {
         CommandAttr
         CommandDeleteAttr
         CommandDeleteReading
+        CommandSet
         AttrVal
         ReadingsVal
         IsDisabled
@@ -131,8 +133,9 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Mode_Down:present,absent,always,off'   =>  'always',
                         'AutoShuttersControl_Up:time,astro' =>  'astro',
                         'AutoShuttersControl_Down:time,astro'   =>  'astro',
-                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  30,
-                        'AutoShuttersControl_Open_Pos:10,20,30,40,50,60,70,80,90,100'   =>  100,
+                        'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  0,
+                        'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  100,
+                        'AutoShuttersControl_Pos_Cmd'   =>  'pct',
                         'AutoShuttersControl_Direction' =>  178,
                         'AutoShuttersControl_Time_Up_Early' =>  '05:30:00',
                         'AutoShuttersControl_Time_Up_Late'  =>  '09:00:00',
@@ -162,11 +165,10 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Offset_Minutes_Morning'    =>  0,
                         'AutoShuttersControl_Offset_Minutes_Evening'    =>  0,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate' =>  'twostate',
-                        'AutoShuttersControl_Pos_Cmd'   =>  'pct',
-                        'AutoShuttersControl_Closed_Pos'    =>  '',
+                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  30,
+                        'Auto_Geoeffnet_Pos 80' => 80,
                         'AutoShuttersControl_GuestRoom:on,off'  =>  '',
                         'AutoShuttersControl_Pos_after_ComfortOpen:-2,-1,0,10,20,30,40,50,60,70,80,90,100'  =>  '',
-                        'AutoShuttersControl:on,off'    => 'on',
                         'AutoShuttersControl_Antifreeze:off,morning'    =>  'off',
                         'AutoShuttersControl_Partymode:on,off'  =>  '',
                         'AutoShuttersControl_Roommate_Device'   =>  '',
@@ -290,39 +292,48 @@ sub Notify($$) {
                 unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
 
     } elsif( $devname eq "global" ) {
-        if (grep /^(ATTR|DELETEATTR).+AutoShuttersControl_Roommate_Device/,@{$events}) {
-            EventProcessing($hash,join(' ',@{$events}));
-        
+        if (grep /^(ATTR|DELETEATTR).+(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)/,@{$events}) {
+            EventProcessing($hash,undef,join(' ',@{$events}));
         }
-    
-    
-    
+        
+    } else {
+        EventProcessing($hash,$devname,join(' ',@{$events}));
     }
 
     return;
 }
 
-sub EventProcessing($$) {
+sub EventProcessing($$$) {
 
-    my ($hash,$events)  = @_;
+    my ($hash,$devname,$events)  = @_;
     my $name            = $hash->{NAME};
 
 
-    if( $events =~ m#^ATTR.(.*).(AutoShuttersControl_Roommate_Device).(.*)$# ) {
-        return if( $hash->{NOTIFYDEV} =~ m#$3# );
+    if( defined($devname) and ($devname) ) {
+    
+        my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,$devname);
         
-        AddNotifyDev($hash,$3);
+        Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing: " . $notifyDevHash->{$devname};        
         
-        if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {
-            readingsSingleUpdate($hash,'.monitoredDevs',ReadingsVal($name,'.monitoredDevs','none') . ',' . $1 . ':' . $2 . ':' . $3,0);
-        } else {
-            readingsSingleUpdate($hash,'.monitoredDevs',$1 . ':' . $2 . ':' . $3,0);
+        
+        foreach(@{$notifyDevHash->{$devname}}) {
+            
+            #WindowRecEventProcessing($hash,(split(':',$notifyDevHash->{$devname}))[0],$events) if( (split(':',$notifyDevHash->{$devname}))[1] eq 'AutoShuttersControl_WindowRec' );
+            RoommateEventProcessing($hash,(split(':',$_))[0],$events) if( (split(':',$_))[1] eq 'AutoShuttersControl_Roommate_Device' );
+            Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing Hash Array: " . $_;
         }
+        
+        
+
     
-    } elsif($events =~ m#^DELETEATTR.+AutoShuttersControl_Roommate_Device.(.*)$# ) {
-        return unless( $hash->{NOTIFYDEV} =~ m#$1# );
-    
-        DeleteNotifyDev($hash,$1);
+    } else {
+        if( $events =~ m#^ATTR.(.*).(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec).(.*)$# ) {
+            AddNotifyDev($hash,$3,$1 . ':' . $2 . ':' . $3);
+        
+        } elsif($events =~ m#^DELETEATTR.(.*AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)$# ) {
+        
+            DeleteNotifyDev($hash,$1);
+        }
     }
 }
 
@@ -359,7 +370,7 @@ sub ShuttersDeviceScan($) {
     
     my @list;
     
-    @list = devspec2array('(Roll.*|Shutter.*):FILTER=TYPE!=AutoShuttersControl');
+    @list = devspec2array('(Roll.*|Shutter.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
     @list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
     
     delete $hash->{helper}{shuttersList};
@@ -369,18 +380,18 @@ sub ShuttersDeviceScan($) {
     
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);
-        AddNotifyDev($hash,$_);
+        #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
         Log3 $name, 4, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
 
-    if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {
-    
-        my $notifyDevString = '';
-        my @notifyDev = split(',',ReadingsVal($name,'.monitoredDevs','none'));
+    if( ReadingsVal($name,'monitoredDevs','none') ne 'none' ) {
+
+        my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,undef);
+        my $notifyDevString;
         
-        foreach my $notifyDev (@notifyDev) {
-            $notifyDevString .= ',' . (split(':',$notifyDev))[2];
+        while( my  (undef,$notifyDev) = each %{$notifyDevHash}) {
+            $notifyDevString .= ',' . $notifyDev;
         }
         
         $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
@@ -432,32 +443,134 @@ sub UserAttributsForShutters($$) {
     }
 }
 
-sub AddNotifyDev($$) {
+sub AddNotifyDev($@) {
 
-    my ($hash,$dev)     = @_;
-
-
-    my @notifyDev       = split(',',$hash->{NOTIFYDEV});
+    my ($hash,$dev,$readingPart)    = @_;
     
-    push (@notifyDev,$dev);
-    $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+    my $name                        = $hash->{NAME};
+
+    
+    my @notifyDev;
+    
+    unless( $hash->{NOTIFYDEV} =~ m#$dev# ) {
+        @notifyDev  = split(',',$hash->{NOTIFYDEV});
+        
+        push (@notifyDev,$dev);
+        $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+    }
+    
+    unless( ReadingsVal($name,'monitoredDevs','none') =~ m#$readingPart# ) {
+        if( ReadingsVal($name,'monitoredDevs','none') ne 'none' ) {
+                readingsSingleUpdate($hash,'monitoredDevs',ReadingsVal($name,'monitoredDevs','none') . ',' . $readingPart,0);
+            } else {
+                readingsSingleUpdate($hash,'monitoredDevs',$readingPart,0);
+            }
+    }
 }
 
 sub DeleteNotifyDev($$) {
 
     my ($hash,$dev)     = @_;
 
+    my $name    = $hash->{NAME};
+    $dev =~ s/\s/:/g;
+
+
+    my ($r,$v);
+    my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,undef);
     
-    my @notifyDev       = split(',',$hash->{NOTIFYDEV});
+    my @notifyDev           = split(',',$hash->{NOTIFYDEV});
+    my @notifyDevReading    = split(',',ReadingsVal($name,'monitoredDevs','none'));
     
-    @notifyDev          = grep {$_ ne $dev} @notifyDev;
+    @notifyDev          = grep {$_ ne $notifyDevHash->{$dev}} @notifyDev;
     $hash->{NOTIFYDEV}  = join(',',@notifyDev);
-    
-    @notifyDev       = split(',',ReadingsVal($hash->{NAME},'.monitoredDevs','none'));
-    
-    @notifyDev          = grep {$_ ne $dev} @notifyDev;
-    readingsSingleUpdate($hash,'.monitoredDevs',join(',',@notifyDev),0);
+
+    @notifyDevReading   = grep {$_ ne $dev.':'.$notifyDevHash->{$dev}} @notifyDevReading;
+    readingsSingleUpdate($hash,'monitoredDevs',join(',',@notifyDevReading),0);
 }
+
+sub WindowRecEventProcessing($@) {
+
+    my ($hash,$shuttersDev,$events)    = @_;
+    
+    my $name                    = $hash->{NAME};
+    
+    
+    if($events =~ m#^state:.(open|closed|tilted)$# ) {
+        
+    }
+}
+
+sub RoommateEventProcessing($@) {
+
+    my ($hash,$shuttersDev,$events)    = @_;
+    
+    my $name                    = $hash->{NAME};
+    
+
+    my $reading    = AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','state');
+    Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $reading";
+    Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events";
+    
+    if($events =~ m#$reading:.(gotosleep|asleep|awoken|home)# ) {
+        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: in der Schleife und state ist " . $1;
+        ShuttersCommandSet($hash,$shuttersDev,'100') if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') );
+        ShuttersCommandSet($hash,$shuttersDev,'0') if( ($1 eq 'home' or $1 eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') );
+    }
+
+}
+
+sub ShuttersCommandSet($@) {
+
+    my ($hash,$shuttersDev,$posValue)   = @_;
+    
+    my $name                            = $hash->{NAME};
+
+
+    my $posCmd   = AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct');
+    
+    CommandSet(undef,$shuttersDev . ':FILTER=' . $posCmd . '!=' . $posValue . ' ' . $posCmd . ' ' . $posValue);
+    Log3 $name, 3, "AutoShuttersControl ($name) - ShuttersCommandSet: " . $shuttersDev . ' ' . $posCmd . ' ' . $posValue;
+}
+
+
+
+
+
+
+
+#################################
+## my little helper
+#################################
+
+sub extractNotifyDevfromReadingString($$) {
+
+    my ($hash,$dev) = @_;
+
+
+    my %notifyDevString;
+    
+    my @notifyDev = split(',',ReadingsVal($hash->{NAME},'monitoredDevs','none'));
+
+    if( defined($dev) ) {
+        foreach my $notifyDev (@notifyDev) {
+            Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - extractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
+            $notifyDevString{(split(':',$notifyDev))[2]}    = [] unless( ref($notifyDevString{(split(':',$notifyDev))[2]}) eq "ARRAY" );
+            push (@{$notifyDevString{(split(':',$notifyDev))[2]}},(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]) unless( $dev ne (split(':',$notifyDev))[2] );
+            #$notifyDevString{(split(':',$notifyDev))[2]}    = (split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1] unless( $dev ne (split(':',$notifyDev))[2] );
+        }
+
+    } else {
+        foreach my $notifyDev (@notifyDev) {
+            $notifyDevString{(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]}    = (split(':',$notifyDev))[2];
+             #Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - extractNotifyDevfromReadingString: FALSCH"
+        }
+    }
+
+    return \%notifyDevString;
+}
+
+
 
 
 
