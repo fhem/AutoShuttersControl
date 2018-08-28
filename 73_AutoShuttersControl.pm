@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.16";
+my $version = "0.0.26";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -53,7 +53,7 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{NotifyFn}   = "AutoShuttersControl::Notify";
     $hash->{UndefFn}    = "AutoShuttersControl::Undef";
     $hash->{AttrFn}     = "AutoShuttersControl::Attr";
-    $hash->{AttrList}   = #"disable:1 ".
+    $hash->{AttrList}   = "disable:0,1 ".
                             #"disabledForIntervals ".
                             "guestPresence:on,off ".
                             "temperatureSensor ".
@@ -75,7 +75,6 @@ sub AutoShuttersControl_Initialize($) {
                             "autoAstroModeEveningHorizon ".
                             "antifreezeTemp ".
                             "autoShutterControlPartymode:on,off ".
-                            "autoShuttersControl:on,off ".
                             $readingFnAttributes;
 
 
@@ -97,6 +96,7 @@ use POSIX;
 
 use GPUtils qw(:all);
 use Data::Dumper;      #only for Debugging
+use Date::Parse;
 
 my $missingModul = "";
 
@@ -108,6 +108,7 @@ BEGIN {
         devspec2array
         readingsSingleUpdate
         readingsBulkUpdate
+        readingsBulkUpdateIfChanged
         readingsBeginUpdate
         readingsEndUpdate
         defs
@@ -123,6 +124,12 @@ BEGIN {
         deviceEvents
         init_done
         addToDevAttrList
+        gettimeofday
+        sunset_abs
+        sunrise_abs
+        InternalTimer
+        RemoveInternalTimer
+        computeAlignTime
     ))
 };
 
@@ -134,6 +141,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Up:time,astro' =>  'astro',
                         'AutoShuttersControl_Down:time,astro'   =>  'astro',
                         'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  0,
+                        'AutoShuttersControl_Closed_Pos_WinRecTilted:0,10,20,30,40,50,60,70,80,90,100'   =>  80,
                         'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  100,
                         'AutoShuttersControl_Pos_Cmd'   =>  'pct',
                         'AutoShuttersControl_Direction' =>  178,
@@ -141,7 +149,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Time_Up_Late'  =>  '09:00:00',
                         'AutoShuttersControl_Time_Up_WE_Holiday'    =>  '09:30:00',
                         'AutoShuttersControl_Time_Down_Early'   =>  '15:30:00', 
-                        'AutoShuttersControl_Time_Down_Late'    =>   '22:00:00',
+                        'AutoShuttersControl_Time_Down_Late'    =>   '22:30:00',
                         'AutoShuttersControl_Rand_Minutes'  =>  20,
                         'AutoShuttersControl_WindowRec' =>  '',
                         'AutoShuttersControl_Ventilate_Window_Open:on,off'  =>  'on',
@@ -166,7 +174,6 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Offset_Minutes_Evening'    =>  0,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate' =>  'twostate',
                         'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  30,
-                        'Auto_Geoeffnet_Pos 80' => 80,
                         'AutoShuttersControl_GuestRoom:on,off'  =>  '',
                         'AutoShuttersControl_Pos_after_ComfortOpen:-2,-1,0,10,20,30,40,50,60,70,80,90,100'  =>  '',
                         'AutoShuttersControl_Antifreeze:off,morning'    =>  'off',
@@ -292,18 +299,18 @@ sub Notify($$) {
                 unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
 
     } elsif( $devname eq "global" ) {
-        if (grep /^(ATTR|DELETEATTR).+(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)/,@{$events}) {
-            EventProcessing($hash,undef,join(' ',@{$events}));
+        if (grep /^(ATTR|DELETEATTR).+(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)\s/,@{$events}) {
+            GeneralEventProcessing($hash,undef,join(' ',@{$events}));
         }
         
     } else {
-        EventProcessing($hash,$devname,join(' ',@{$events}));
+        GeneralEventProcessing($hash,$devname,join(' ',@{$events}));
     }
 
     return;
 }
 
-sub EventProcessing($$$) {
+sub GeneralEventProcessing($$$) {
 
     my ($hash,$devname,$events)  = @_;
     my $name            = $hash->{NAME};
@@ -312,25 +319,23 @@ sub EventProcessing($$$) {
     if( defined($devname) and ($devname) ) {
     
         my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,$devname);
-        
         Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing: " . $notifyDevHash->{$devname};        
         
-        
         foreach(@{$notifyDevHash->{$devname}}) {
-            
-            #WindowRecEventProcessing($hash,(split(':',$notifyDevHash->{$devname}))[0],$events) if( (split(':',$notifyDevHash->{$devname}))[1] eq 'AutoShuttersControl_WindowRec' );
+        
+        
+            WindowRecEventProcessing($hash,(split(':',$_))[0],$events) if( (split(':',$_))[1] eq 'AutoShuttersControl_WindowRec' );
             RoommateEventProcessing($hash,(split(':',$_))[0],$events) if( (split(':',$_))[1] eq 'AutoShuttersControl_Roommate_Device' );
+        
+        
+        
             Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing Hash Array: " . $_;
         }
-        
-        
-
-    
     } else {
-        if( $events =~ m#^ATTR.(.*).(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec).(.*)$# ) {
+        if( $events =~ m#^ATTR\s(.*)\s(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)\s(.*)$# ) {
             AddNotifyDev($hash,$3,$1 . ':' . $2 . ':' . $3);
         
-        } elsif($events =~ m#^DELETEATTR.(.*AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)$# ) {
+        } elsif($events =~ m#^DELETEATTR\s(.*AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)$# ) {
         
             DeleteNotifyDev($hash,$1);
         }
@@ -381,6 +386,7 @@ sub ShuttersDeviceScan($) {
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);
         #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
+        CreateSunRiseSetShuttersTimer($hash,$_);
         Log3 $name, 4, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
@@ -496,8 +502,10 @@ sub WindowRecEventProcessing($@) {
     my $name                    = $hash->{NAME};
     
     
-    if($events =~ m#^state:.(open|closed|tilted)$# ) {
-        
+    if($events =~ m#state:\s(open|closed|tilted)# ) {
+        my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+         
+        ShuttersCommandSet($shuttersDev,ReadingsVal($shuttersDev,'AutoShuttersControl_DelayCmd',0)) unless(ReadingsVal($shuttersDev,'AutoShuttersControl_DelayCmd','none') eq 'none' and $1 ne 'closed');
     }
 }
 
@@ -506,32 +514,116 @@ sub RoommateEventProcessing($@) {
     my ($hash,$shuttersDev,$events)    = @_;
     
     my $name                    = $hash->{NAME};
-    
-
     my $reading    = AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','state');
-    Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $reading";
-    Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events";
-    
-    if($events =~ m#$reading:.(gotosleep|asleep|awoken|home)# ) {
-        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: in der Schleife und state ist " . $1;
-        ShuttersCommandSet($hash,$shuttersDev,'100') if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') );
-        ShuttersCommandSet($hash,$shuttersDev,'0') if( ($1 eq 'home' or $1 eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') );
-    }
 
+    
+    if($events =~ m#$reading:\s(gotosleep|asleep|awoken|home)# ) {
+    
+        my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+        
+    
+        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $reading";
+        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events";
+    
+    
+
+        ShuttersCommandSet($shuttersDev,$openPos)
+        if( ($1 eq 'home' or $1 eq 'awoken') and (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') eq 'on' and CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise') );
+        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing - home awoken" if(CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise'));
+        Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing - sunrise: " . CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise');
+
+        if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
+
+            ShuttersCommandDelaySet($shuttersDev,$closedPos);
+            Log3 $name, 3, "AutoShuttersControl ($name) - RoommateEventProcessing - Spring in ShuttersCommandDelaySet";
+        } else {
+        
+            ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted))
+            if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+        }
+    }
 }
 
-sub ShuttersCommandSet($@) {
+sub ShuttersCommandSet($$) {
 
-    my ($hash,$shuttersDev,$posValue)   = @_;
-    
-    my $name                            = $hash->{NAME};
+    my ($shuttersDev,$posValue)   = @_;
 
 
     my $posCmd   = AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct');
     
     CommandSet(undef,$shuttersDev . ':FILTER=' . $posCmd . '!=' . $posValue . ' ' . $posCmd . ' ' . $posValue);
-    Log3 $name, 3, "AutoShuttersControl ($name) - ShuttersCommandSet: " . $shuttersDev . ' ' . $posCmd . ' ' . $posValue;
+    readingsSingleUpdate($defs{$shuttersDev},'AutoShuttersControl_DelayCmd','none',0) if(ReadingsVal($shuttersDev,'AutoShuttersControl_DelayCmd','none') ne 'none');
 }
+
+sub ShuttersCommandDelaySet($$) {
+
+    my ($shuttersDev,$posValue)   = @_;
+
+    readingsSingleUpdate($defs{$shuttersDev},'AutoShuttersControl_DelayCmd',$posValue,0);
+}
+
+sub CreateSunRiseSetShuttersTimer($$) {
+
+    my ($hash,$shuttersDev)             = @_;
+    
+    
+    my $name                            = $hash->{NAME} if( defined($hash) and $hash );
+    
+    my $autoShuttersControlTimeSunset   = sunset_abs(AttrVal($name,'autoAstroModeEvening','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00'));
+    my $autoShuttersControlTimeSunrise  = sunrise_abs(AttrVal($name,'autoAstroModeMorning','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','05:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'));
+
+    
+    readingsBeginUpdate($defs{$shuttersDev});
+    readingsBulkUpdateIfChanged( $defs{$shuttersDev},'AutoShuttersControl_Time_Sunset',(AttrVal($name,'autoShuttersControlEvening','off') eq 'on' ? $autoShuttersControlTimeSunset : 'AutoShuttersControl off') );
+    readingsBulkUpdateIfChanged($defs{$shuttersDev},'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'autoShutterControlMorning','off') eq 'on' ? $autoShuttersControlTimeSunrise : 'AutoShuttersControl off') );
+    readingsEndUpdate($defs{$shuttersDev},0);
+
+    
+    my %arg = ('h' => $hash, 'd' => $shuttersDev);
+    my $arg = \%arg;
+    
+    RemoveInternalTimer($arg,'SunSetShuttersTimerFn');
+    RemoveInternalTimer($arg,'SunRiseShuttersTimerFn');
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunset), 'SunSetShuttersTimerFn', $arg ) if( AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunrise), 'SunRiseShuttersTimerFn',$arg ) if( AttrVal($name,'autoShutterControlMorning','off') eq 'on' );
+}
+
+sub SunSetShuttersAfterTimerFn($) {
+
+    my $arg                                         = shift;
+    my $hash                                        = $arg->{h};
+    my $shuttersDev                                 = $arg->{d};
+    
+    
+    my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+    
+    if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
+
+        ShuttersCommandDelaySet($shuttersDev,$closedPos);
+    } else {
+        
+        ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted));
+    }
+    
+    CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
+}
+
+sub SunRiseShuttersAfterTimerFn($) {
+
+    my $arg                                         = shift;
+    my $hash                                        = $arg->{h};
+    my $shuttersDev                                 = $arg->{d};
+    
+    
+    my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+    
+    ShuttersCommandSet($shuttersDev,$openPos) if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'awoken') eq 'awoken' );
+    
+    CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
+}
+
+
+
 
 
 
@@ -557,17 +649,47 @@ sub extractNotifyDevfromReadingString($$) {
             Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - extractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
             $notifyDevString{(split(':',$notifyDev))[2]}    = [] unless( ref($notifyDevString{(split(':',$notifyDev))[2]}) eq "ARRAY" );
             push (@{$notifyDevString{(split(':',$notifyDev))[2]}},(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]) unless( $dev ne (split(':',$notifyDev))[2] );
-            #$notifyDevString{(split(':',$notifyDev))[2]}    = (split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1] unless( $dev ne (split(':',$notifyDev))[2] );
         }
 
     } else {
         foreach my $notifyDev (@notifyDev) {
             $notifyDevString{(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]}    = (split(':',$notifyDev))[2];
-             #Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - extractNotifyDevfromReadingString: FALSCH"
         }
     }
 
     return \%notifyDevString;
+}
+
+sub ShuttersReadAttrForShuttersControl($) {
+
+    my $shuttersDev                      = shift;
+    
+    my $shuttersOpenValue               = AttrVal($shuttersDev,'AutoShuttersControl_Open_Pos',0);
+    my $shuttersClosedValue             = AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos',100);
+    my $shuttersClosedByWindowRecTilted = AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos_WinRecTilted',80);
+
+    return ($shuttersOpenValue,$shuttersClosedValue,$shuttersClosedByWindowRecTilted);
+}
+
+sub CheckIfSunRiseSunSet($@) {
+
+    my ($hash,$shuttersDev,$sunvalue)   = @_;
+
+    return (gettimeofday() - str2time(ReadingsVal($shuttersDev,'AutoShuttersControl_Time_' . $sunvalue,'00:00:00')) >= 0 ? 1 : 0);
+}
+
+sub CheckIfShuttersWindowRecOpen($) {
+
+    my $shuttersDev = shift;
+
+
+    if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_WindowRec','none'),'state','closed') eq 'open' ) {
+        return 2;
+    } elsif( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_WindowRec','none'),'state','closed') eq 'tilted' and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate') {
+        return 1;
+    } elsif( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_WindowRec','none'),'state','closed') eq 'closed' ) {
+        return 0;
+    }
 }
 
 
