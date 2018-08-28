@@ -581,11 +581,11 @@ sub CreateSunRiseSetShuttersTimer($$) {
     
     my %arg = ('h' => $hash, 'd' => $shuttersDev);
     my $arg = \%arg;
-    
-    RemoveInternalTimer($arg,'SunSetShuttersTimerFn');
-    RemoveInternalTimer($arg,'SunRiseShuttersTimerFn');
-    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunset), 'SunSetShuttersTimerFn', $arg ) if( AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
-    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunrise), 'SunRiseShuttersTimerFn',$arg ) if( AttrVal($name,'autoShutterControlMorning','off') eq 'on' );
+    ## aktueller fehler - Undefined subroutine &main::SunSetShuttersTimerFn called at fhem.pl line 3112
+    RemoveInternalTimer($arg,'AutoShuttersControl::SunSetShuttersTimerFn');
+    RemoveInternalTimer($arg,'AutoShuttersControl::SunRiseShuttersTimerFn');
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunset), 'AutoShuttersControl::SunSetShuttersTimerFn', $arg ) if( AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunrise), 'AutoShuttersControl::SunRiseShuttersTimerFn',$arg ) if( AttrVal($name,'autoShutterControlMorning','off') eq 'on' );
 }
 
 sub SunSetShuttersAfterTimerFn($) {
