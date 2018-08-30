@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.36";
+my $version = "0.0.38";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -357,7 +357,7 @@ sub Set($$@) {
     
     my ($cmd, @args)        = @aa;
 
-    if( lc $cmd eq 'renewsunrisesetshutterstimer' ) {
+    if( lc $cmd eq 'renewsetsunrisesunsettimer' ) {
         return "usage: $cmd" if( @args != 0 );
         RenewSunRiseSetShuttersTimer($hash);
         
@@ -367,7 +367,7 @@ sub Set($$@) {
         WriteReadingsShuttersList($hash);
     
     } else {
-        my $list = "renewSetSunriseSunsetTimer";
+        my $list = "renewSetSunriseSunsetTimer:noArg";
         
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -551,20 +551,20 @@ sub RoommateEventProcessing($@) {
     
         Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing: $reading";
         Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events";
-    
-    
+
+
 
         ShuttersCommandSet($shuttersDev,$openPos)
         if( ($1 eq 'home' or $1 eq 'awoken') and (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') eq 'on' and CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise') );
-        Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing - home awoken" if(CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise'));
+
         Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing - sunrise: " . CheckIfSunRiseSunSet($hash,$shuttersDev,'Sunrise');
 
         if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
-
+            Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster offen";
             ShuttersCommandDelaySet($shuttersDev,$closedPos);
             Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing - Spring in ShuttersCommandDelaySet";
         } else {
-        
+            Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster nicht offen";
             ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted))
             if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
         }
@@ -595,10 +595,11 @@ sub ShuttersCommandDelaySet($$) {
 sub CreateSunRiseSetShuttersTimer($$) {
 
     my ($hash,$shuttersDev)             = @_;
+
+
+    my $name                            = $hash->{NAME};
     
-    return if (IsDisabled($hash->{NAME}));
-    
-    my $name                            = $hash->{NAME} if( defined($hash) and $hash );
+    return if( IsDisabled($name) );
     
 
     ### Zeiten berechnen auf Bases von Sunset und Sunrise und zusätzlichen Angaben REAL oder CIVIL ...
@@ -613,14 +614,18 @@ sub CreateSunRiseSetShuttersTimer($$) {
 
 
     ## kleine Hilfe für InternalTimer damit ich alle benötigten Variablen an die Funktion übergeben kann welche von Internal Timer aufgerufen wird.
-    my %arg = ('h' => $hash, 'd' => $shuttersDev);
-    my $arg = \%arg;
+    my %funcHash = ( hash => $hash, shuttersdevice => $shuttersDev);
 
-    RemoveInternalTimer($arg,'AutoShuttersControl::SunSetShuttersAfterTimerFn');
-    RemoveInternalTimer($arg,'AutoShuttersControl::SunRiseShuttersAfterTimerFn');
+    #RemoveInternalTimer(\%funcHash,'AutoShuttersControl::SunSetShuttersAfterTimerFn');
+    #RemoveInternalTimer(\%funcHash,'AutoShuttersControl::SunRiseShuttersAfterTimerFn');
+    RemoveInternalTimer(\%funcHash);
     
-    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunset), 'AutoShuttersControl::SunSetShuttersAfterTimerFn', $arg ) if( AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
-    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunrise), 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',$arg ) if( AttrVal($name,'autoShutterControlMorning','off') eq 'on' );
+    
+    
+    
+    
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunset), 'AutoShuttersControl::SunSetShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+    InternalTimer(computeAlignTime('24:00',$autoShuttersControlTimeSunrise), 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'autoShutterControlMorning','off') eq 'on' );
 }
 
 ## Funktion zum neu setzen der Timer und der Readings für Sunset/Rise
@@ -636,9 +641,9 @@ sub RenewSunRiseSetShuttersTimer($) {
 ## Funktion welche beim Ablaufen des Timers für Sunset aufgerufen werden soll
 sub SunSetShuttersAfterTimerFn($) {
 
-    my $arg                                         = shift;
-    my $hash                                        = $arg->{h};
-    my $shuttersDev                                 = $arg->{d};
+    my $funcHash                                    = shift;
+    my $hash                                        = $funcHash->{hash};
+    my $shuttersDev                                 = $funcHash->{shuttersdevice};
     
     
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
@@ -657,9 +662,9 @@ sub SunSetShuttersAfterTimerFn($) {
 ## Funktion welche beim Ablaufen des Timers für Sunrise aufgerufen werden soll
 sub SunRiseShuttersAfterTimerFn($) {
 
-    my $arg                                         = shift;
-    my $hash                                        = $arg->{h};
-    my $shuttersDev                                 = $arg->{d};
+    my $funcHash                                    = shift;
+    my $hash                                        = $funcHash->{hash};
+    my $shuttersDev                                 = $funcHash->{shuttersdevice};
     
     
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
@@ -724,7 +729,8 @@ sub CheckIfSunRiseSunSet($@) {
 
     my ($hash,$shuttersDev,$sunvalue)   = @_;
 
-    return (gettimeofday() - str2time(ReadingsVal($shuttersDev,'AutoShuttersControl_Time_' . $sunvalue,'00:00:00')) >= 0 ? 1 : 0);
+
+    return (gettimeofday() - str2time(eval lc ${sunvalue} . "_abs(AttrVal(${defs}->{NAME},'autoAstroModeEvening','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00')") >= 0 ? 1 : 0);
 }
 
 ## Kontrolliert ob das Fenster von einem bestimmten Rolladen offen ist
