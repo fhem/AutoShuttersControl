@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.42";
+my $version = "0.0.46";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -469,24 +469,22 @@ sub AddNotifyDev($@) {
     my ($hash,$dev,$readingPart)    = @_;
     
     my $name                        = $hash->{NAME};
+    my $readingPart3                = (split(':', $readingPart))[2];
 
 
-    my @notifyDev;
+    my $notifyDev                   = $hash->{NOTIFYDEV};
+    $notifyDev                      = "" if(!$notifyDev);
     
-    unless( $hash->{NOTIFYDEV} =~ m#$dev# ) {
-        @notifyDev  = split(',',$hash->{NOTIFYDEV});
-        
-        push (@notifyDev,$dev);
-        $hash->{NOTIFYDEV}  = join(',',@notifyDev);
-    }
+    my %hash =  map { ($_ => 1) }
+                split(",", "$notifyDev,$readingPart3");
+                
+    $hash->{NOTIFYDEV}              = join(",", sort keys %hash);
+
     
-    unless( ReadingsVal($name,'monitoredDevs','none') =~ m#$readingPart# ) {
-        if( ReadingsVal($name,'monitoredDevs','none') ne 'none' ) {
-                readingsSingleUpdate($hash,'monitoredDevs',ReadingsVal($name,'monitoredDevs','none') . ',' . $readingPart,0);
-            } else {
-                readingsSingleUpdate($hash,'monitoredDevs',$readingPart,0);
-            }
-    }
+    my $monitoredDevString          = ReadingsVal($name,'monitoredDevs','');
+    my %hash =  map { ($_ => 1) }
+                split(",", "$monitoredDevString,$readingPart");
+    readingsSingleUpdate($hash,'monitoredDevs',join(",", sort keys %hash),0);
 }
 
 ## entfernt aus dem NOTIFYDEV Hash Devices welche als Wert in Attributen steckten
@@ -498,17 +496,32 @@ sub DeleteNotifyDev($$) {
     $dev =~ s/\s/:/g;
 
 
-    my ($r,$v);
-    my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,undef);
+    my ($notifyDevHash)             = extractNotifyDevfromReadingString($hash,undef);
+    my $devFromDevHash              = $notifyDevHash->{$dev};
     
-    my @notifyDev           = split(',',$hash->{NOTIFYDEV});
-    my @notifyDevReading    = split(',',ReadingsVal($name,'monitoredDevs','none'));
+    ##### Entfernen des gesamten Device Stringes vom Reading monitoredDevs
+    my $monitoredDevString          = ReadingsVal($name,'monitoredDevs','none');
+    my $devStringAndDevFromDevHash  = $dev . ':' . $devFromDevHash;
     
-    @notifyDev          = grep {$_ ne $notifyDevHash->{$dev}} @notifyDev;
-    $hash->{NOTIFYDEV}  = join(',',@notifyDev);
+    my %hash =  map { ($_ => 1) }
+                grep { " $devStringAndDevFromDevHash " !~ m/ $_ / }
+                split(",", "$monitoredDevString,$devStringAndDevFromDevHash");
 
-    @notifyDevReading   = grep {$_ ne $dev.':'.$notifyDevHash->{$dev}} @notifyDevReading;
-    readingsSingleUpdate($hash,'monitoredDevs',join(',',@notifyDevReading),0);
+    readingsSingleUpdate($hash,'monitoredDevs',join(",", sort keys %hash),0);
+    
+    
+    ### Entfernen des Deviceeintrages aus dem NOTIFYDEV
+    unless( ReadingsVal($name,'monitoredDevs','none') =~ m#$devFromDevHash# ) {
+
+        my $notifyDevString             = $hash->{NOTIFYDEV};
+        $notifyDevString                = "" if(!$notifyDevString);
+
+        my %hash =  map { ($_ => 1) }
+                    grep { " $devFromDevHash " !~ m/ $_ / }
+                    split(",", "$notifyDevString,$devFromDevHash");
+                    
+        $hash->{NOTIFYDEV}              = join(",", sort keys %hash);
+    }
 }
 
 ## Sub zum steuern der Rolläden bei einem Fenster Event
