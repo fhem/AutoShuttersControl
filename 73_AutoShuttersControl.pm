@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.46";
+my $version = "0.0.48";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -143,8 +143,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Mode_Down:present,absent,always,off'   =>  'always',
                         'AutoShuttersControl_Up:time,astro' =>  'astro',
                         'AutoShuttersControl_Down:time,astro'   =>  'astro',
-                        'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  0,
-                        'AutoShuttersControl_Closed_Pos_WinRecTilted:0,10,20,30,40,50,60,70,80,90,100'   =>  80,
+                        'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  10,
                         'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  100,
                         'AutoShuttersControl_Pos_Cmd'   =>  'pct',
                         'AutoShuttersControl_Direction' =>  178,
@@ -164,8 +163,8 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'    =>  85,
                         'AutoShuttersControl_Shading_Brightness_Sensor' =>  '',
                         'AutoShuttersControl_Shading_Brightness_Reading'    =>  'brightness',
-                        'AutoShuttersControl_Shading_StateChange_Sunny'     =>  6000,
-                        'AutoShuttersControl_Shading_StateChange_Cloudy'    =>  4000,
+                        'AutoShuttersControl_Shading_StateChange_Sunny'     =>  '6000',
+                        'AutoShuttersControl_Shading_StateChange_Cloudy'    =>  '4000',
                         'AutoShuttersControl_Shading_WaitingPeriod' =>  20,
                         'AutoShuttersControl_Shading_Min_Elevation' =>  '',
                         'AutoShuttersControl_Shading_Min_OutsideTemperature'    =>  18,
@@ -173,10 +172,10 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' 
                         'AutoShuttersControl_Shading_BlockingTime_Twilight'     => 45,
                         'AutoShuttersControl_Shading_Fast_Open:on,off'  =>  '',
                         'AutoShuttersControl_Shading_Fast_Close:on,off' =>  '',
-                        'AutoShuttersControl_Offset_Minutes_Morning'    =>  0,
-                        'AutoShuttersControl_Offset_Minutes_Evening'    =>  0,
+                        'AutoShuttersControl_Offset_Minutes_Morning'    =>  1,
+                        'AutoShuttersControl_Offset_Minutes_Evening'    =>  1,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate' =>  'twostate',
-                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  30,
+                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  80,
                         'AutoShuttersControl_GuestRoom:on,off'  =>  '',
                         'AutoShuttersControl_Pos_after_ComfortOpen:-2,-1,0,10,20,30,40,50,60,70,80,90,100'  =>  '',
                         'AutoShuttersControl_Antifreeze:off,morning'    =>  'off',
@@ -284,7 +283,7 @@ sub Notify($$) {
     my $events = deviceEvents($dev,1);
     return if (!$events);
 
-    Log3 $name, 3, "AutoShuttersControl ($name) - Devname: ".$devname." Name: ".$name." Notify: ".Dumper $events;       # mit Dumper
+    Log3 $name, 5, "AutoShuttersControl ($name) - Devname: ".$devname." Name: ".$name." Notify: ".Dumper $events;       # mit Dumper
 
 
     if( (grep /^DEFINED.$name$/,@{$events}
@@ -328,7 +327,7 @@ sub GeneralEventProcessing($$$) {
     if( defined($devname) and ($devname) ) {                # es wird lediglich der Devicename der Funktion mitgegeben wenn es sich nicht um global handelt daher hier die Unterschiedung
     
         my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,$devname);     # da wir nicht wissen im welchen Zusammenhang das Device, welches das Event ausgelöst hat, mit unseren Attributen steht lesen wir ein spezielles Reading aus dessen Wert einen bestimmten Aufbau hat und uns sagen kann ob es ein Fenster oder ein Bewohner oder sonst was für ein Device ist.
-        Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing: " . $notifyDevHash->{$devname};
+        Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: " . $notifyDevHash->{$devname};
         
         foreach(@{$notifyDevHash->{$devname}}) {        # Wir lesen nun alle Einträge aus welche dieses Device betreffen. Kann ja mehrere Rolläden betreffen.
 
@@ -337,15 +336,15 @@ sub GeneralEventProcessing($$$) {
         
         
         
-            Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing Hash Array: " . $_;
+            Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing Hash Array: " . $_;
         }
     } else {        # alles was kein Devicenamen mit übergeben hat landet hier
 
         if( $events =~ m#^ATTR\s(.*)\s(AutoShuttersControl_Roommate_Device|AutoShuttersControl_WindowRec)\s(.*)$# ) {       # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev($hash,$3,$1 . ':' . $2 . ':' . $3);
-            Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing: ATTR";
+            Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: ATTR";
         } elsif($events =~ m#^DELETEATTR\s(.*AutoShuttersControl_Roommate_Device|.*AutoShuttersControl_WindowRec)$# ) {      # wurde das Attribut unserer Rolläden gelöscht ?
-            Log3 $name, 3, "AutoShuttersControl ($name) - EventProcessing: DELETEATTR";
+            Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: DELETEATTR";
             DeleteNotifyDev($hash,$1);
         }
     }
@@ -484,7 +483,7 @@ sub AddNotifyDev($@) {
     my $monitoredDevString          = ReadingsVal($name,'monitoredDevs','');
     my %hash =  map { ($_ => 1) }
                 split(",", "$monitoredDevString,$readingPart");
-    readingsSingleUpdate($hash,'monitoredDevs',join(",", sort keys %hash),0);
+    readingsSingleUpdate($hash,'monitoredDevs',(ReadingsVal($name,'monitoredDevs','none') eq 'none' ? join("", sort keys %hash) : join(",", sort keys %hash)),0);
 }
 
 ## entfernt aus dem NOTIFYDEV Hash Devices welche als Wert in Attributen steckten
@@ -529,11 +528,12 @@ sub WindowRecEventProcessing($@) {
 
     my ($hash,$shuttersDev,$events)    = @_;
     
-    my $name                    = $hash->{NAME};
+    my $name                           = $hash->{NAME};
 
 
     if($events =~ m#state:\s(open|closed|tilted)# ) {
         my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+        my $queryShuttersPosWinRecTilted                = (ShuttersPosCmdValueNegieren($shuttersDev) ? "ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) > $closedPosWinRecTilted" : "ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) < $closedPosWinRecTilted");
         
         if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none') {
             my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
@@ -541,12 +541,14 @@ sub WindowRecEventProcessing($@) {
             if( $1 eq 'closed' ) {
                 ShuttersCommandSet($shuttersDev,ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd',0));
 
-            } elsif( $1 eq 'tilted' ) {
+            } elsif( $1 eq 'tilted' and AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','off') eq 'on' and $queryShuttersPosWinRecTilted ) {
                 ShuttersCommandSet($shuttersDev,$closedPosWinRecTilted);
             }
         } elsif( $1 eq 'closed' ) {
             ShuttersCommandSet($shuttersDev,$closedPos) if(ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) == $closedPosWinRecTilted);
-
+        
+        } elsif( $1 eq 'tilted' and AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','off') eq 'on' and $queryShuttersPosWinRecTilted ) {
+            ShuttersCommandSet($shuttersDev,$closedPosWinRecTilted);
         }
     }
 }
@@ -726,7 +728,7 @@ sub ShuttersReadAttrForShuttersControl($) {
     
     my $shuttersOpenValue               = AttrVal($shuttersDev,'AutoShuttersControl_Open_Pos',0);
     my $shuttersClosedValue             = AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos',100);
-    my $shuttersClosedByWindowRecTilted = AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos_WinRecTilted',80);
+    my $shuttersClosedByWindowRecTilted = AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Pos',80);
 
     return ($shuttersOpenValue,$shuttersClosedValue,$shuttersClosedByWindowRecTilted);
 }
@@ -787,6 +789,13 @@ sub CheckIfShuttersWindowRecOpen($) {
     } elsif( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_WindowRec','none'),'state','closed') eq 'closed' ) {
         return 0;
     }
+}
+
+sub ShuttersPosCmdValueNegieren($) {
+
+    my $shuttersDev     = shift;
+    
+    return (AttrVal($shuttersDev,'AutoShuttersControl_Open_Pos',0) < AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos',100) ? 1 : 0);
 }
 
 
