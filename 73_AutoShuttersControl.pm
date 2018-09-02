@@ -6,7 +6,7 @@
 #  All rights reserved
 #
 #   Special thanks goes to:
-#       -
+#       - Bernd (Cluni) this module is based on the logic of his script "Rollladensteuerung für HM/ROLLO inkl. Abschattung und Komfortfunktionen in Perl" (https://forum.fhem.de/index.php/topic,73964.0.html)
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -41,7 +41,7 @@ use warnings;
 
 
 
-my $version = "0.0.48";
+my $version = "0.0.50";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -72,9 +72,9 @@ sub AutoShuttersControl_Initialize($) {
                             "presenceDevice ".
                             "presenceReading ".
                             "autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON ".
-                            "autoAstroModeMorningHorizon ".
+                            "autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 ".
                             "autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON ".
-                            "autoAstroModeEveningHorizon ".
+                            "autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 ".
                             "antifreezeTemp ".
                             "autoShutterControlPartymode:on,off ".
                             $readingFnAttributes;
@@ -139,8 +139,8 @@ BEGIN {
 
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
-my %userAttrList =  (   'AutoShuttersControl_Mode_Up:present,absent,always,off' =>  'always',
-                        'AutoShuttersControl_Mode_Down:present,absent,always,off'   =>  'always',
+my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off' =>  'always',
+                        'AutoShuttersControl_Mode_Down:absent,always,off'   =>  'always',
                         'AutoShuttersControl_Up:time,astro' =>  'astro',
                         'AutoShuttersControl_Down:time,astro'   =>  'astro',
                         'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  10,
@@ -326,7 +326,7 @@ sub GeneralEventProcessing($$$) {
 
     if( defined($devname) and ($devname) ) {                # es wird lediglich der Devicename der Funktion mitgegeben wenn es sich nicht um global handelt daher hier die Unterschiedung
     
-        my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,$devname);     # da wir nicht wissen im welchen Zusammenhang das Device, welches das Event ausgelöst hat, mit unseren Attributen steht lesen wir ein spezielles Reading aus dessen Wert einen bestimmten Aufbau hat und uns sagen kann ob es ein Fenster oder ein Bewohner oder sonst was für ein Device ist.
+        my ($notifyDevHash)    = ExtractNotifyDevfromReadingString($hash,$devname);     # da wir nicht wissen im welchen Zusammenhang das Device, welches das Event ausgelöst hat, mit unseren Attributen steht lesen wir ein spezielles Reading aus dessen Wert einen bestimmten Aufbau hat und uns sagen kann ob es ein Fenster oder ein Bewohner oder sonst was für ein Device ist.
         Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: " . $notifyDevHash->{$devname};
         
         foreach(@{$notifyDevHash->{$devname}}) {        # Wir lesen nun alle Einträge aus welche dieses Device betreffen. Kann ja mehrere Rolläden betreffen.
@@ -383,7 +383,7 @@ sub ShuttersDeviceScan($) {
     
     my @list;
     ### Es wird versucht sofern das Internal DETECTDEV auto beinhaltet alle Rolläden automatisch zu erkennen. Die Devicenamen müßen dazu mit Roll oder Shutter beginnen
-    @list = devspec2array('(Roll.*|Shutter.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
+    @list = devspec2array('(Roll.*|Shutter.*|Jalou.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
     @list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
     
     delete $hash->{helper}{shuttersList};
@@ -402,13 +402,14 @@ sub ShuttersDeviceScan($) {
 
         # Der Aufbau des Strings im Reading monitoredDevs sieht so aus Rolloname:Attributname:Wert_desAttributes
         # Wert des Attributes beinhaltet in diesem Fall immer den Devcenamen von dem auch Events von unserem Modul getriggert werden sollen.
-        my ($notifyDevHash)    = extractNotifyDevfromReadingString($hash,undef);        # in der Funktion wird aus dem String ein Hash wo wir über den Devicenamen z.B. FensterLinks ganz einfach den Rest des Strings heraus bekommen. Also welches Rollo und welches Attribut. So wissen wir das es sich um ein Fenster handelt und dem Rollo bla bla zu geordnet wird.
-        my $notifyDevString;
+        my ($notifyDevHash)    = ExtractNotifyDevfromReadingString($hash,undef);        # in der Funktion wird aus dem String ein Hash wo wir über den Devicenamen z.B. FensterLinks ganz einfach den Rest des Strings heraus bekommen. Also welches Rollo und welches Attribut. So wissen wir das es sich um ein Fenster handelt und dem Rollo bla bla zu geordnet wird.
+        my $notifyDevString = "";
         
         while( my  (undef,$notifyDev) = each %{$notifyDevHash}) {
-            $notifyDevString .= ',' . $notifyDev;
+            $notifyDevString .= ',' . $notifyDev unless( $notifyDevString =~ /$notifyDev/ );
+            #Log3 $name, 2, "AutoShuttersControl ($name) - NotifyDev: " . $notifyDev . ", NotifyDevString: " . $notifyDevString;
         }
-        
+
         $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
     }
 
@@ -495,7 +496,7 @@ sub DeleteNotifyDev($$) {
     $dev =~ s/\s/:/g;
 
 
-    my ($notifyDevHash)             = extractNotifyDevfromReadingString($hash,undef);
+    my ($notifyDevHash)             = ExtractNotifyDevfromReadingString($hash,undef);
     my $devFromDevHash              = $notifyDevHash->{$dev};
     
     ##### Entfernen des gesamten Device Stringes vom Reading monitoredDevs
@@ -571,17 +572,21 @@ sub RoommateEventProcessing($@) {
         Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events";
 
 
-        ShuttersCommandSet($shuttersDev,$openPos)
-        if( ($1 eq 'home' or $1 eq 'awoken') and (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') eq 'on' and IsDay($hash,$shuttersDev) );
+        if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' ) {
+            ShuttersCommandSet($shuttersDev,$openPos)
+            if( ($1 eq 'home' or $1 eq 'awoken') and (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken') and AttrVal($name,'autoShutterControlMorning','off') eq 'on' and IsDay($hash,$shuttersDev) );
+        }
 
-        if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
-            Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster offen";
-            ShuttersCommandDelaySet($shuttersDev,$closedPos);
-            Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing - Spring in ShuttersCommandDelaySet";
-        } else {
-            Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster nicht offen";
-            ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted))
-            if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+         if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' ) {
+            if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
+                Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster offen";
+                ShuttersCommandDelaySet($shuttersDev,$closedPos);
+                Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing - Spring in ShuttersCommandDelaySet";
+            } else {
+                Log3 $name, 4, "AutoShuttersControl ($name) - RoommateEventProcessing Fenster nicht offen";
+                ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted))
+                if( ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'autoShuttersControlEvening','off') eq 'on' );
+            }
         }
     }
 }
@@ -657,12 +662,14 @@ sub SunSetShuttersAfterTimerFn($) {
     
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
     
-    if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
+    if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' ) {
+        if( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 ) {
 
-        ShuttersCommandDelaySet($shuttersDev,$closedPos);
-    } else {
-        
-        ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted));
+            ShuttersCommandDelaySet($shuttersDev,$closedPos);
+        } else {
+            
+            ShuttersCommandSet($shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 ? $closedPos : $closedPosWinRecTilted));
+        }
     }
     
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
@@ -678,7 +685,9 @@ sub SunRiseShuttersAfterTimerFn($) {
     
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
     
-    ShuttersCommandSet($shuttersDev,$openPos) if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'awoken') eq 'awoken' );
+    if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' ) {
+        ShuttersCommandSet($shuttersDev,$openPos) if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'awoken') eq 'awoken' );
+    }
     
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
 }
@@ -696,7 +705,7 @@ sub SunRiseShuttersAfterTimerFn($) {
 #################################
 
 # Hilfsfunktion welche meinen ReadingString zum finden der getriggerten Devices und der Zurdnung was das Device überhaupt ist und zu welchen Rolladen es gehört aus liest und das Device extraiert
-sub extractNotifyDevfromReadingString($$) {
+sub ExtractNotifyDevfromReadingString($$) {
 
     my ($hash,$dev) = @_;
 
@@ -707,7 +716,7 @@ sub extractNotifyDevfromReadingString($$) {
 
     if( defined($dev) ) {
         foreach my $notifyDev (@notifyDev) {
-            Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - extractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
+            Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - ExtractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
             $notifyDevString{(split(':',$notifyDev))[2]}    = [] unless( ref($notifyDevString{(split(':',$notifyDev))[2]}) eq "ARRAY" );
             push (@{$notifyDevString{(split(':',$notifyDev))[2]}},(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]) unless( $dev ne (split(':',$notifyDev))[2] );
         }
@@ -749,13 +758,15 @@ sub ShuttersSunrise($$$) {
     my ($hash,$shuttersDev,$tm) = @_;       # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
     
     my $name                    = $hash->{NAME};
+    my $autoAstroMode           = AttrVal($name,'autoAstroModeMorning','REAL');
+    $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'autoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
 
 
     if( $tm eq 'unix' ) {
-        return computeAlignTime('24:00',sunrise_abs(AttrVal($name,'autoAstroModeMorning','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00')));
+        return computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00')));
         
     } elsif( $tm eq 'real' ) {
-        return sunrise_abs(AttrVal($name,'autoAstroModeMorning','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'));
+        return sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'));
     }
 }
 
@@ -764,13 +775,15 @@ sub ShuttersSunset($$@) {
     my ($hash,$shuttersDev,$tm) = @_;       # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
     
     my $name                    = $hash->{NAME};
+    my $autoAstroMode           = AttrVal($name,'autoAstroModeEvening','REAL');
+    $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
 
 
     if( $tm eq 'unix' ) {
-        return computeAlignTime('24:00',sunset_abs(AttrVal($name,'autoAstroModeEvening','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00')));
+        return computeAlignTime('24:00',sunset_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00')));
         
     } elsif( $tm eq 'real' ) {
-        return sunset_abs(AttrVal($name,'autoAstroModeEvening','REAL'),0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00'));
+        return sunset_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00'));
     }
 }
 
