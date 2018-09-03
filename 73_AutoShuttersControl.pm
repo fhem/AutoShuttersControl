@@ -7,6 +7,7 @@
 #
 #   Special thanks goes to:
 #       - Bernd (Cluni) this module is based on the logic of his script "Rollladensteuerung für HM/ROLLO inkl. Abschattung und Komfortfunktionen in Perl" (https://forum.fhem.de/index.php/topic,73964.0.html)
+#       - Beta-User for many tests and ideas
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -41,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.0.53";
+my $version = "0.0.55";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -126,7 +127,9 @@ BEGIN {
         deviceEvents
         init_done
         addToDevAttrList
+        addToAttrList
         delFromDevAttrList
+        delFromAttrList
         gettimeofday
         sunset_abs
         sunrise_abs
@@ -143,9 +146,9 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off' =>  'alw
                         'AutoShuttersControl_Mode_Down:absent,always,off'   =>  'always',
                         'AutoShuttersControl_Up:time,astro' =>  'astro',
                         'AutoShuttersControl_Down:time,astro'   =>  'astro',
-                        'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  10,
-                        'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  100,
-                        'AutoShuttersControl_Pos_Cmd'   =>  'pct',
+                        'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  ['',0,100],
+                        'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'   =>  ['',100,0],
+                        'AutoShuttersControl_Pos_Cmd'   =>  ['','position','pct'],
                         'AutoShuttersControl_Direction' =>  178,
                         'AutoShuttersControl_Time_Up_Early' =>  '04:30:00',
                         'AutoShuttersControl_Time_Up_Late'  =>  '09:00:00',
@@ -175,7 +178,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off' =>  'alw
                         'AutoShuttersControl_Offset_Minutes_Morning'    =>  1,
                         'AutoShuttersControl_Offset_Minutes_Evening'    =>  1,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate' =>  'twostate',
-                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  80,
+                        'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'  =>  ['',80,30],
                         'AutoShuttersControl_GuestRoom:on,off'  =>  '',
                         'AutoShuttersControl_Pos_after_ComfortOpen:-2,-1,0,10,20,30,40,50,60,70,80,90,100'  =>  '',
                         'AutoShuttersControl_Antifreeze:off,morning'    =>  'off',
@@ -194,7 +197,8 @@ sub Define($$) {
     my @a = split( "[ \t][ \t]*", $def );
     
     return "only one AutoShuttersControl instance allowed" if( devspec2array('TYPE=AutoShuttersControl') > 1 ); # es wird geprüft ob bereits eine Instanz unseres Modules existiert, wenn ja wird abgebrochen
-    return "too few parameters: define <name> ShuttersControl <Shutters1 Shutters2 ...> or <auto>" if( @a < 3 );    # es dürfen nicht weniger wie 3 Optionen unserem define mitgegeben werden
+    #return "too few parameters: define <name> ShuttersControl <Shutters1 Shutters2 ...> or <auto>" if( @a < 3 );    # es dürfen nicht weniger wie 3 Optionen unserem define mitgegeben werden
+    return "too few parameters: define <name> ShuttersControl <Shutters1 Shutters2 ...> or <auto>" if( @a < 2 );
     return "Cannot define ShuttersControl device. Perl modul ${missingModul}is missing." if ( $missingModul );  # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
     
 
@@ -202,17 +206,19 @@ sub Define($$) {
 
     $hash->{VERSION}            = $version;
     $hash->{MID}                = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';   # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-    $hash->{DETECTDEV}          = ($a[2] eq 'auto' ? 'auto' : 'manual');        # ein Marker ob die Devices automatisch oder manuell erkannt werden sollen.
+    #$hash->{DETECTDEV}          = ($a[2] eq 'auto' ? 'auto' : 'manual');        # ein Marker ob die Devices automatisch oder manuell erkannt werden sollen.
     $hash->{NotifyOrderPrefix}  = "51-";                                        # Order Nummer für NotifyFn
     $hash->{NOTIFYDEV}          = "global,".$name;                              # Liste aller Devices auf deren Events gehört werden sollen
     
 
-    readingsSingleUpdate($hash,"state","initialized", 1);
+    readingsSingleUpdate($hash,"state","please set attribut 'AutoShuttersControl' with value 1 to all your auto controled shutters and and then do 'set DEVICENAME scanForShutters", 1);
     CommandAttr(undef,$name . ' room AutoShuttersControl') if( AttrVal($name,'room','none') eq 'none' );
     CommandAttr(undef,$name . ' autoAstroModeEvening REAL') if( AttrVal($name,'autoAstroModeEvening','none') eq 'none' );
     CommandAttr(undef,$name . ' autoAstroModeMorning REAL') if( AttrVal($name,'autoAstroModeMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' autoShutterControlMorning on') if( AttrVal($name,'autoShutterControlMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' autoShuttersControlEvening on') if( AttrVal($name,'autoShuttersControlEvening','none') eq 'none' );
+    
+    addToAttrList('AutoShuttersControl:0,1,2');
     
     Log3 $name, 3, "AutoShuttersControl ($name) - defined";
     
@@ -229,6 +235,7 @@ sub Undef($$) {
     my $name = $hash->{NAME};
     
     UserAttributs_Readings_ForShutters($hash,'del');          # es sollen alle Attribute und Readings in den Rolläden Devices gelöscht werden welche vom Modul angelegt wurden
+    delFromAttrList('AutoShuttersControl:0,1');
     
     delete($modules{AutoShuttersControl}{defptr}{$hash->{MID}});
     
@@ -277,6 +284,7 @@ sub Notify($$) {
     my ($hash,$dev) = @_;
     my $name = $hash->{NAME};
     return if (IsDisabled($name));
+
     
     my $devname = $dev->{NAME};
     my $devtype = $dev->{TYPE};
@@ -295,16 +303,21 @@ sub Notify($$) {
         and $devname eq 'global') {
 
             ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
-            ShuttersDeviceScan($hash);
-            WriteReadingsShuttersList($hash)
-            unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
+            ShuttersDeviceScan($hash)
+            unless( ReadingsVal($name,'userAttrList','none') eq 'none');
     
-    } elsif( grep /^userAttrList:.rolled.out$/,@{$events}       # kommt ein Event vom Modul Device selbst das so ausschaut wird die Funktion gestartet
+    } 
+    
+    return unless( ref($hash->{helper}{shuttersList}) eq 'ARRAY' and scalar(@{$hash->{helper}{shuttersList}}) > 0);
+    
+    if( grep /^userAttrList:.rolled.out$/,@{$events}       # kommt ein Event vom Modul Device selbst das so ausschaut wird die Funktion gestartet
             and $devname eq $name) {
-
-                UserAttributs_Readings_ForShutters($hash,'add')
-                unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 );
-                InternalTimer(gettimeofday() + 3,'AutoShuttersControl::RenewSunRiseSetShuttersTimer',$hash);
+                
+                unless( scalar(@{$hash->{helper}{shuttersList}} ) == 0 ) {
+                    WriteReadingsShuttersList($hash);
+                    UserAttributs_Readings_ForShutters($hash,'add');
+                    InternalTimer(gettimeofday() + 3,'AutoShuttersControl::RenewSunRiseSetShuttersTimer',$hash);
+                }
 
     } elsif( $devname eq "global" ) {           # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (grep /^(ATTR|DELETEATTR)\s(.*AutoShuttersControl_Roommate_Device|.*AutoShuttersControl_WindowRec)(\s.*|$)/,@{$events}) {
@@ -361,13 +374,14 @@ sub Set($$@) {
         return "usage: $cmd" if( @args != 0 );
         RenewSunRiseSetShuttersTimer($hash);
         
-    } elsif( lc $cmd eq 'shutterslist' ) {
+    } elsif( lc $cmd eq 'scanforshutters' ) {
         return "usage: $cmd" if( @args != 0 );
         
-        WriteReadingsShuttersList($hash);
+        ShuttersDeviceScan($hash);
     
     } else {
-        my $list = "renewSetSunriseSunsetTimer:noArg";
+        my $list = "scanForShutters:noArg";
+        $list .= " renewSetSunriseSunsetTimer:noArg" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
         
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -383,13 +397,20 @@ sub ShuttersDeviceScan($) {
     
     my @list;
     ### Es wird versucht sofern das Internal DETECTDEV auto beinhaltet alle Rolläden automatisch zu erkennen. Die Devicenamen müßen dazu mit Roll oder Shutter beginnen
-    @list = devspec2array('(Roll.*|Shutter.*|Jalou.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
-    @list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
+    #@list = devspec2array('(Roll.*|Shutter.*|Jalou.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
+    #@list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
+    @list = devspec2array('AutoShuttersControl=[1-2]');
     
     delete $hash->{helper}{shuttersList};
-    
-    return unless( scalar(@list) > 0 );
 
+    unless( scalar(@list) > 0 ) {
+        CommandDeleteReading(undef,$name . ' room_.*');
+        readingsBeginUpdate($hash);
+        readingsBulkUpdate($hash,'userAttrList','none');
+        readingsBulkUpdate($hash,'state','no shutters found');
+        readingsEndUpdate($hash,1);
+        return;
+    }
     
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);             ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
@@ -452,11 +473,16 @@ sub UserAttributs_Readings_ForShutters($$) {
             
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
             if( $cmd eq 'add' ) {
-                CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                if( ref($attribValue) ne 'ARRAY' ) {
+                    CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                } else {
+                    CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue->[AttrVal($_,'AutoShuttersControl',2)]) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                }
             ## Oder das Attribut wird wieder gelöscht.
             } elsif( $cmd eq 'del' ) {
                 RemoveInternalTimer(ReadingsVal($_,'.AutoShuttersControl_InternalTimerFuncHash',0));
                 CommandDeleteReading(undef,$_ . ' \.?AutoShuttersControl_.*' );
+                CommandDeleteAttr(undef,$_ . ' AutoShuttersControl');
                 delFromDevAttrList($_,$attrib);         # Funktion in fhem.pl die ich Rudi als Patch eingereicht habe, hoffe wird angenommen
             }
         }
