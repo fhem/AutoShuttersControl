@@ -235,7 +235,7 @@ sub Undef($$) {
     my $name = $hash->{NAME};
     
     UserAttributs_Readings_ForShutters($hash,'del');          # es sollen alle Attribute und Readings in den Rolläden Devices gelöscht werden welche vom Modul angelegt wurden
-    delFromAttrList('AutoShuttersControl:0,1');
+    delFromAttrList('AutoShuttersControl:0,1,2');
     
     delete($modules{AutoShuttersControl}{defptr}{$hash->{MID}});
     
