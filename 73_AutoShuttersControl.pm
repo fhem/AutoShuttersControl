@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.3";
+my $version = "0.1.4";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -209,7 +209,7 @@ sub Define($$) {
     $hash->{NOTIFYDEV}          = "global,".$name;                              # Liste aller Devices auf deren Events gehört werden sollen
     
 
-    readingsSingleUpdate($hash,"state","please set attribut 'AutoShuttersControl' with value 1 to all your auto controled shutters and and then do 'set DEVICENAME scanForShutters", 1);
+    readingsSingleUpdate($hash,"state","please set attribut 'AutoShuttersControl' with value 1 to all your auto controlled shutters and and then do 'set DEVICENAME scanForShutters", 1);
     CommandAttr(undef,$name . ' room AutoShuttersControl') if( AttrVal($name,'room','none') eq 'none' );
     CommandAttr(undef,$name . ' autoAstroModeEvening REAL') if( AttrVal($name,'autoAstroModeEvening','none') eq 'none' );
     CommandAttr(undef,$name . ' autoAstroModeMorning REAL') if( AttrVal($name,'autoAstroModeMorning','none') eq 'none' );
