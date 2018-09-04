@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.0.55";
+my $version = "0.1.1";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -206,7 +206,6 @@ sub Define($$) {
 
     $hash->{VERSION}            = $version;
     $hash->{MID}                = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';   # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-    #$hash->{DETECTDEV}          = ($a[2] eq 'auto' ? 'auto' : 'manual');        # ein Marker ob die Devices automatisch oder manuell erkannt werden sollen.
     $hash->{NotifyOrderPrefix}  = "51-";                                        # Order Nummer für NotifyFn
     $hash->{NOTIFYDEV}          = "global,".$name;                              # Liste aller Devices auf deren Events gehört werden sollen
     
@@ -396,9 +395,6 @@ sub ShuttersDeviceScan($) {
     
     
     my @list;
-    ### Es wird versucht sofern das Internal DETECTDEV auto beinhaltet alle Rolläden automatisch zu erkennen. Die Devicenamen müßen dazu mit Roll oder Shutter beginnen
-    #@list = devspec2array('(Roll.*|Shutter.*|Jalou.*):FILTER=TYPE!=AutoShuttersControl') if($hash->{DETECTDEV} eq 'auto');
-    #@list = split( "[ \t][ \t]*", $hash->{DEF} ) if($hash->{DETECTDEV} eq 'manual');
     @list = devspec2array('AutoShuttersControl=[1-2]');
     
     delete $hash->{helper}{shuttersList};
@@ -419,7 +415,7 @@ sub ShuttersDeviceScan($) {
     }
     
 
-    if( ReadingsVal($name,'monitoredDevs','none') ne 'none' ) {             # Dieses besondere Reading ist so aufgebaut das egal wie der Devicename bei einem Event lautet dieses Device nach seiner Funktionalität in FHEM zugeordnet werden kann
+    if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {             # Dieses besondere Reading ist so aufgebaut das egal wie der Devicename bei einem Event lautet dieses Device nach seiner Funktionalität in FHEM zugeordnet werden kann
 
         # Der Aufbau des Strings im Reading monitoredDevs sieht so aus Rolloname:Attributname:Wert_desAttributes
         # Wert des Attributes beinhaltet in diesem Fall immer den Devcenamen von dem auch Events von unserem Modul getriggert werden sollen.
@@ -500,17 +496,18 @@ sub AddNotifyDev($@) {
 
     my $notifyDev                   = $hash->{NOTIFYDEV};
     $notifyDev                      = "" if(!$notifyDev);
+    my %hash;
     
-    my %hash =  map { ($_ => 1) }
-                split(",", "$notifyDev,$readingPart3");
+    %hash = map { ($_ => 1) }
+            split(",", "$notifyDev,$readingPart3");
                 
     $hash->{NOTIFYDEV}              = join(",", sort keys %hash);
 
     
-    my $monitoredDevString          = ReadingsVal($name,'monitoredDevs','');
-    my %hash =  map { ($_ => 1) }
-                split(",", "$monitoredDevString,$readingPart");
-    readingsSingleUpdate($hash,'monitoredDevs',(ReadingsVal($name,'monitoredDevs','none') eq 'none' ? join("", sort keys %hash) : join(",", sort keys %hash)),0);
+    my $monitoredDevString          = ReadingsVal($name,'.monitoredDevs','');
+    %hash = map { ($_ => 1) }
+            split(",", "$monitoredDevString,$readingPart");
+    readingsSingleUpdate($hash,'.monitoredDevs',(ReadingsVal($name,'.monitoredDevs','none') eq 'none' ? join("", sort keys %hash) : join(",", sort keys %hash)),0);
 }
 
 ## entfernt aus dem NOTIFYDEV Hash Devices welche als Wert in Attributen steckten
@@ -526,25 +523,26 @@ sub DeleteNotifyDev($$) {
     my $devFromDevHash              = $notifyDevHash->{$dev};
     
     ##### Entfernen des gesamten Device Stringes vom Reading monitoredDevs
-    my $monitoredDevString          = ReadingsVal($name,'monitoredDevs','none');
+    my $monitoredDevString          = ReadingsVal($name,'.monitoredDevs','none');
     my $devStringAndDevFromDevHash  = $dev . ':' . $devFromDevHash;
+    my %hash;
     
-    my %hash =  map { ($_ => 1) }
-                grep { " $devStringAndDevFromDevHash " !~ m/ $_ / }
-                split(",", "$monitoredDevString,$devStringAndDevFromDevHash");
+    %hash = map { ($_ => 1) }
+            grep { " $devStringAndDevFromDevHash " !~ m/ $_ / }
+            split(",", "$monitoredDevString,$devStringAndDevFromDevHash");
 
-    readingsSingleUpdate($hash,'monitoredDevs',join(",", sort keys %hash),0);
+    readingsSingleUpdate($hash,'.monitoredDevs',join(",", sort keys %hash),0);
     
     
     ### Entfernen des Deviceeintrages aus dem NOTIFYDEV
-    unless( ReadingsVal($name,'monitoredDevs','none') =~ m#$devFromDevHash# ) {
+    unless( ReadingsVal($name,'.monitoredDevs','none') =~ m#$devFromDevHash# ) {
 
         my $notifyDevString             = $hash->{NOTIFYDEV};
         $notifyDevString                = "" if(!$notifyDevString);
 
-        my %hash =  map { ($_ => 1) }
-                    grep { " $devFromDevHash " !~ m/ $_ / }
-                    split(",", "$notifyDevString,$devFromDevHash");
+        %hash = map { ($_ => 1) }
+                grep { " $devFromDevHash " !~ m/ $_ / }
+                split(",", "$notifyDevString,$devFromDevHash");
                     
         $hash->{NOTIFYDEV}              = join(",", sort keys %hash);
     }
@@ -630,7 +628,7 @@ sub ShuttersCommandSet($$) {
     readingsSingleUpdate($defs{$shuttersDev},'.AutoShuttersControl_DelayCmd','none',0) if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none');    # setzt den Wert des Readings auf none da der Rolladen nun gesteuert werden kann. Dieses Reading setzt die Delay Funktion ShuttersCommandDelaySet
 }
 
-# Sub zum späteren ausfphren der Steuerbefehle für Rolläden, zum Beispiel weil Fenster noch auf ist
+# Sub zum späteren ausführen der Steuerbefehle für Rolläden, zum Beispiel weil Fenster noch auf ist
 sub ShuttersCommandDelaySet($$) {
 
     my ($shuttersDev,$posValue)   = @_;
@@ -739,11 +737,11 @@ sub ExtractNotifyDevfromReadingString($$) {
 
     my %notifyDevString;
     
-    my @notifyDev = split(',',ReadingsVal($hash->{NAME},'monitoredDevs','none'));
+    my @notifyDev = split(',',ReadingsVal($hash->{NAME},'.monitoredDevs','none'));
 
     if( defined($dev) ) {
         foreach my $notifyDev (@notifyDev) {
-            Log3 $hash->{NAME}, 3, "AutoShuttersControl ($hash->{NAME}) - ExtractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
+            Log3 $hash->{NAME}, 4, "AutoShuttersControl ($hash->{NAME}) - ExtractNotifyDevfromReadingString: " . (split(':',$notifyDev))[2].'-'.(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1];
             $notifyDevString{(split(':',$notifyDev))[2]}    = [] unless( ref($notifyDevString{(split(':',$notifyDev))[2]}) eq "ARRAY" );
             push (@{$notifyDevString{(split(':',$notifyDev))[2]}},(split(':',$notifyDev))[0].':'.(split(':',$notifyDev))[1]) unless( $dev ne (split(':',$notifyDev))[2] );
         }
