@@ -912,9 +912,9 @@ sub ShuttersPosCmdValueNegieren($) {
 =begin html_DE
 
 <a name="AutoShuttersControl"></a>
-<h3>Automatische Rolladensteuerung - ACS</h3>
+<h3>Automatische Rolladensteuerung - ASC</h3>
 <ul>
-  <u><b>AutoShuttersControl oder kurz ACS, steuert automatisch Deine Rolladen nach bestimmten Vorgaben. Zum Beispiel Sonnenaufgang und Sonnenuntergang oder je nach Fenstervent</b></u>
+  <u><b>AutoShuttersControl oder kurz ASC, steuert automatisch Deine Rolladen nach bestimmten Vorgaben. Zum Beispiel Sonnenaufgang und Sonnenuntergang oder je nach Fenstervent</b></u>
   <br>
   Dieses Modul soll alle vom Modul &uuml;berwachten Roll&auml;den entsprechend der Konfiguration &uuml;ber die Attribute im Rolladen Device steuern. Es wird bei entsprechender Konfiguration zum Beispiel die Roll&auml;den hochfahren wenn ein Bewohner erwacht ist und draussen bereits die Sonne aufgegangen ist. Auch ist es m&ouml;glich das bei ankippen eines Fensters der geschlossene Rolladen in eine L&uuml;ftungsposition f&auml;hrt.
   <br><br>
@@ -939,7 +939,7 @@ sub ShuttersPosCmdValueNegieren($) {
   <ul>
     Im Modul Device
     <ul>
-      <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut AutoShuttersControl_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ACS-Device partyMode off ausgef&uuml;hrt</li>
+      <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut AutoShuttersControl_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
       <li>userAttrList - Status der UserAttribute welche an die Roll&auml;den gesendet werden</li>
