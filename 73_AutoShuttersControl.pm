@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.25";
+my $version = "0.1.26";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -684,17 +684,17 @@ sub CreateSunRiseSetShuttersTimer($$) {
     return if( IsDisabled($name) );
 
     
-    my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
-    my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
+    my $shuttersSunriseUnixtime = (ShuttersSunrise($hash,$shuttersDev,'unix') + 1);
+    my $shuttersSunsetUnixtime  = (ShuttersSunset($hash,$shuttersDev,'unix') + 1);
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     
     if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
     
         $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-        unless($shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 3600) or $shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime});
+        unless($shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} or $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 3600));
 
         $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
-        unless($shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 3600) or ShuttersSunset($hash,$shuttersDev,'unix') == $oldFuncHash->{sunsettime});
+        unless($shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} or $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 3600));
     }
     
     
