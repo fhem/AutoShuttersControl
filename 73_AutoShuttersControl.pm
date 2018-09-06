@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.16";
+my $version = "0.1.20";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -178,6 +178,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Offset_Minutes_Evening'                                                        =>  1,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate'                                         =>  'twostate',
                         'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'                                  =>  ['',70,30],
+                        'AutoShuttersControl_Pos_after_ComfortOpen:0,10,20,30,40,50,60,70,80,90,100'                        =>  ['',20,80],
                         'AutoShuttersControl_GuestRoom:on,off'                                                              =>  '',
                         'AutoShuttersControl_Antifreeze:off,on'                                                             =>  'off',
                         'AutoShuttersControl_Partymode:on,off'                                                              =>  'off',
@@ -570,10 +571,11 @@ sub WindowRecEventProcessing($@) {
     if($events =~ m#state:\s(open|closed|tilted)# ) {
         my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
         my $queryShuttersPosWinRecTilted                = (ShuttersPosCmdValueNegieren($shuttersDev) ? ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) > $closedPosWinRecTilted : ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) < $closedPosWinRecTilted);
+
         
         if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none') {                # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam, wenn ja wird dieser aus geführt
             my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
-            
+
             ### Es wird ausgewertet ob ein normaler Fensterkontakt oder ein Drehgriff vorhanden ist. Beim normalen Fensterkontakt bedeutet ein open das selbe wie tilted beim Drehgriffkontakt.
             if( $1 eq 'closed' ) {
                 ShuttersCommandSet($hash,$shuttersDev,$closedPos);
@@ -582,10 +584,13 @@ sub WindowRecEventProcessing($@) {
                 ShuttersCommandSet($hash,$shuttersDev,$closedPosWinRecTilted);
             }
         } elsif( $1 eq 'closed' ) {             # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
-            ShuttersCommandSet($hash,$shuttersDev,$closedPos) if(ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) == $closedPosWinRecTilted);
+            ShuttersCommandSet($hash,$shuttersDev,$closedPos) if(ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) == $closedPosWinRecTilted or ReadingsVal($shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct'),0) == AttrVal($shuttersDev,'AutoShuttersControl_Pos_after_ComfortOpen',50));
         
         } elsif( ($1 eq 'tilted' or ($1 eq 'open' and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'twostate')) and AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','off') eq 'on' and $queryShuttersPosWinRecTilted ) {
             ShuttersCommandSet($hash,$shuttersDev,$closedPosWinRecTilted);
+        
+        } elsif($1 eq 'open' and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'AutoShuttersControl_autoShuttersControlComfort','off') eq 'on') {
+            ShuttersCommandSet($hash,$shuttersDev,AttrVal($shuttersDev,'AutoShuttersControl_Pos_after_ComfortOpen',50));
         }
     }
 }
@@ -643,13 +648,13 @@ sub ShuttersCommandSet($$$) {
     my ($hash,$shuttersDev,$posValue)   = @_;
     my $name                            = $hash->{NAME};
     
-    
-    if( (AttrVal($shuttersDev,'AutoShuttersControl_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_lock-out','on') eq 'on') or (AttrVal($shuttersDev,'AutoShuttersControl_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'AutoShuttersControl_temperatureSensor','none'),AttrVal($name,'AutoShuttersControl_temperatureReading','temperature'),100) <=  AttrVal($name,'AutoShuttersControl_antifreezeTemp',0)) ) {
-    
+
+    if( (AttrVal($shuttersDev,'AutoShuttersControl_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'AutoShuttersControl_autoShuttersControlComfort','on') eq 'off') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_lock-out','on') eq 'on') or (AttrVal($shuttersDev,'AutoShuttersControl_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'AutoShuttersControl_temperatureSensor','none'),AttrVal($name,'AutoShuttersControl_temperatureReading','temperature'),100) <=  AttrVal($name,'AutoShuttersControl_antifreezeTemp',0)) ) {
+
         ShuttersCommandDelaySet($shuttersDev,$posValue);
-        
+
     } else {
-    
+
         my $posCmd   = AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct');
 
         CommandSet(undef,$shuttersDev . ':FILTER=' . $posCmd . '!=' . $posValue . ' ' . $posCmd . ' ' . $posValue);
