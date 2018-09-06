@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.20";
+my $version = "0.1.25";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -117,6 +117,7 @@ BEGIN {
         modules
         Log3
         CommandAttr
+        attr
         CommandDeleteAttr
         CommandDeleteReading
         CommandSet
@@ -482,9 +483,11 @@ sub UserAttributs_Readings_ForShutters($$) {
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
             if( $cmd eq 'add' ) {
                 if( ref($attribValue) ne 'ARRAY' ) {
-                    CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                    #CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                    $attr{$_}{(split(':',$attrib))[0]}  = $attribValue if( not defined($attr{$_}{(split(':',$attrib))[0]}) );
                 } else {
-                    CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue->[AttrVal($_,'AutoShuttersControl',2)]) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                    #CommandAttr(undef,$_ . ' ' . (split(':',$attrib))[0] . ' ' . $attribValue->[AttrVal($_,'AutoShuttersControl',2)]) if( defined($attribValue) and $attribValue and AttrVal($_,(split(':',$attrib))[0],'none') eq 'none' );
+                    $attr{$_}{(split(':',$attrib))[0]}  = $attribValue->[AttrVal($_,'AutoShuttersControl',2)] if( not defined($attr{$_}{(split(':',$attrib))[0]}) );
                 }
             ## Oder das Attribut wird wieder gelöscht.
             } elsif( $cmd eq 'del' ) {
@@ -981,6 +984,7 @@ sub ShuttersPosCmdValueNegieren($) {
       <li>AutoShuttersControl_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
       <li>AutoShuttersControl_autoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
       <li>AutoShuttersControl_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
+      <li>AutoShuttersControl_autoShuttersControlComfort - on/off schaltet die Komfortfunktion an. Bedeutet das ein Rolladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine weit offen Position  f&auml;hrt. Die Offenposition wird beim Rolladen &uuml;ber das Attribut AutoShuttersControl_Pos_after_ComfortOpen eingestellt.</li>
       <li>AutoShuttersControl_autoShuttersControlEvening - on/off, ob Abends die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>AutoShuttersControl_autoShuttersControlMorning - on/off, ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>AutoShuttersControl_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
@@ -997,6 +1001,7 @@ sub ShuttersPosCmdValueNegieren($) {
       <li>AutoShuttersControl_Open_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>AutoShuttersControl_Partymode -  on/off  schaltet den Partymodus an oder aus, Wird dann am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Roll&auml;den welche das Attribut auf on haben zwischen gespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
       <li>AutoShuttersControl_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren, muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
+      <li>AutoShuttersControl_Pos_after_ComfortOpen - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>AutoShuttersControl_Roommate_Reading - das Reading zum Roommate Device welches den Status wieder gibt</li>
       <li>AutoShuttersControl_Roommate_Device - Name des Roommate Devices welcher den Bewohner des Raumes vom Rolladen wieder gibt</li>
       <li>AutoShuttersControl_Time_Down_Early - Sunset frühste Zeit zum runter fahren</li>
