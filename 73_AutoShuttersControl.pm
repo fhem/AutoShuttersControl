@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.12";
+my $version = "0.1.12_HotFix";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -179,7 +179,6 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate'                                         =>  'twostate',
                         'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'                                  =>  ['',70,30],
                         'AutoShuttersControl_GuestRoom:on,off'                                                              =>  '',
-                        'AutoShuttersControl_Pos_after_ComfortOpen:-2,-1,0,10,20,30,40,50,60,70,80,90,100'                  =>  '',
                         'AutoShuttersControl_Antifreeze:off,on'                                                             =>  'off',
                         'AutoShuttersControl_Partymode:on,off'                                                              =>  'off',
                         'AutoShuttersControl_Roommate_Device'                                                               =>  '',
@@ -681,14 +680,14 @@ sub CreateSunRiseSetShuttersTimer($$) {
     my $shuttersSunsetUnixtime;
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     
-    if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
-        $shuttersSunriseUnixtime = (ShuttersSunrise($hash,$shuttersDev,'unix') > $oldFuncHash->{sunrisetime} + 3600 or ShuttersSunrise($hash,$shuttersDev,'unix') == $oldFuncHash->{sunrisetime} ? ShuttersSunrise($hash,$shuttersDev,'unix') : ShuttersSunrise($hash,$shuttersDev,'unix') + 86400 );
-        $shuttersSunsetUnixtime  = (ShuttersSunset($hash,$shuttersDev,'unix') > $oldFuncHash->{sunsettime} + 3600 or ShuttersSunset($hash,$shuttersDev,'unix') == $oldFuncHash->{sunsettime} ? ShuttersSunset($hash,$shuttersDev,'unix') : ShuttersSunset($hash,$shuttersDev,'unix') + 86400 );
-    
-    } else {
+#     if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
+#         $shuttersSunriseUnixtime = (ShuttersSunrise($hash,$shuttersDev,'unix') > $oldFuncHash->{sunrisetime} + 3600 or ShuttersSunrise($hash,$shuttersDev,'unix') == $oldFuncHash->{sunrisetime} ? ShuttersSunrise($hash,$shuttersDev,'unix') : ShuttersSunrise($hash,$shuttersDev,'unix') + 86400 );
+#         $shuttersSunsetUnixtime  = (ShuttersSunset($hash,$shuttersDev,'unix') > $oldFuncHash->{sunsettime} + 3600 or ShuttersSunset($hash,$shuttersDev,'unix') == $oldFuncHash->{sunsettime} ? ShuttersSunset($hash,$shuttersDev,'unix') : ShuttersSunset($hash,$shuttersDev,'unix') + 86400 );
+#     
+#     } else {
         $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
         $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
-    }
+#     }
     
     Log3 $name, 2, "AutoShuttersControl ($name) - CreateSunRiseSetShuttersTimer, neuer Sunset: $shuttersSunsetUnixtime neuer Sunrise: $shuttersSunriseUnixtime";
     
