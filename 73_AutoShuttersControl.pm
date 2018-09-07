@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.26";
+my $version = "0.1.27";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -684,20 +684,9 @@ sub CreateSunRiseSetShuttersTimer($$) {
     return if( IsDisabled($name) );
 
     
-    my $shuttersSunriseUnixtime = (ShuttersSunrise($hash,$shuttersDev,'unix') + 1);
-    my $shuttersSunsetUnixtime  = (ShuttersSunset($hash,$shuttersDev,'unix') + 1);
-    my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
-    
-    if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
-    
-        $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-        unless($shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} or $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 3600));
+    my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
+    my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
 
-        $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
-        unless($shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} or $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 3600));
-    }
-    
-    
     Log3 $name, 2, "AutoShuttersControl ($name) - CreateSunRiseSetShuttersTimer, neuer Sunset: $shuttersSunsetUnixtime neuer Sunrise: $shuttersSunriseUnixtime";
     
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
@@ -832,12 +821,25 @@ sub ShuttersSunrise($$$) {
     my $name                    = $hash->{NAME};
     my $autoAstroMode           = AttrVal($name,'AutoShuttersControl_autoAstroModeMorning','REAL');
     $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
+    my $shuttersSunriseUnixtime;
 
 
     if( $tm eq 'unix' ) {
-        return computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro');
+        if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro') {
         
-        return computeAlignTime('24:00',AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00')) if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'time');
+            $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
+            
+            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
+                $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
+                    unless($shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} or $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 3600));
+            }
+        } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'time' ) {
+        
+            $shuttersSunriseUnixtime    = computeAlignTime('24:00',AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'));
+        }
+        
+        return $shuttersSunriseUnixtime;
         
     } elsif( $tm eq 'real' ) {
         return sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00')) if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro');
@@ -853,21 +855,32 @@ sub ShuttersSunset($$$) {
     my $name                    = $hash->{NAME};
     my $autoAstroMode           = AttrVal($name,'AutoShuttersControl_autoAstroModeEvening','REAL');
     $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
+    my $shuttersSunsetUnixtime;
 
 
     if( $tm eq 'unix' ) {
-        return computeAlignTime('24:00',sunset_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00'))) if( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'astro');
+        if( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'astro') {
         
-        return computeAlignTime('24:00',AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00')) if( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'time');
+            $shuttersSunsetUnixtime     = (computeAlignTime('24:00',sunset_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00'))) + 1);
+            
+            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
+                $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
+                    unless($shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} or $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 3600));
+            }
+        } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'time' ) {
         
+            $shuttersSunsetUnixtime     = computeAlignTime('24:00',AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'));
+        }
+        
+        return $shuttersSunsetUnixtime;
+
     } elsif( $tm eq 'real' ) {
         return sunset_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Late','22:30:00')) if( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'astro');
         
         return AttrVal($shuttersDev,'AutoShuttersControl_Time_Down_Early','15:30:00') if( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'time');
     }
 }
-
-
 
 ## Kontrolliert ob das Fenster von einem bestimmten Rolladen offen ist
 sub CheckIfShuttersWindowRecOpen($) {
