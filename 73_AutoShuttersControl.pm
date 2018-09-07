@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.27";
+my $version = "0.1.31";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -424,7 +424,7 @@ sub ShuttersDeviceScan($) {
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);             ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
         #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
-        Log3 $name, 4, "AutoShuttersControl ($name) - ShuttersList: " . $_;
+        Log3 $name, 2, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
 
@@ -433,14 +433,19 @@ sub ShuttersDeviceScan($) {
         # Der Aufbau des Strings im Reading monitoredDevs sieht so aus Rolloname:Attributname:Wert_desAttributes
         # Wert des Attributes beinhaltet in diesem Fall immer den Devcenamen von dem auch Events von unserem Modul getriggert werden sollen.
         my ($notifyDevHash)    = ExtractNotifyDevfromReadingString($hash,undef);        # in der Funktion wird aus dem String ein Hash wo wir über den Devicenamen z.B. FensterLinks ganz einfach den Rest des Strings heraus bekommen. Also welches Rollo und welches Attribut. So wissen wir das es sich um ein Fenster handelt und dem Rollo bla bla zu geordnet wird.
-        my $notifyDevString = "";
+        
+#         my $notifyDevString;
+        my $notifyDevString = $hash->{NOTIFYDEV};
         
         while( my  (undef,$notifyDev) = each %{$notifyDevHash}) {
         
             $notifyDevString .= ',' . $notifyDev unless( $notifyDevString =~ /$notifyDev/ );
+
+            Log3 $name, 2, "AutoShuttersControl ($name) - NotifyDev: " . $notifyDev . ", NotifyDevString: " . $notifyDevString;
         }
 
-        $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
+#         $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
+        $hash->{NOTIFYDEV}  = $notifyDevString;
     }
 
     
@@ -460,9 +465,9 @@ sub WriteReadingsShuttersList($) {
     
     foreach (@{$hash->{helper}{shuttersList}}) {
     
-        readingsBulkUpdate($hash,'room_' . AttrVal($_,'room','unsorted'),ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'') . ', ' . $_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') ne 'none' );
+        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'') . ', ' . $_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') ne 'none' );
         
-        readingsBulkUpdate($hash,'room_' . AttrVal($_,'room','unsorted'),$_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') eq 'none' );
+        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),$_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') eq 'none' );
     }
     
     readingsBulkUpdate($hash,'state','active');
@@ -655,13 +660,18 @@ sub ShuttersCommandSet($$$) {
     if( (AttrVal($shuttersDev,'AutoShuttersControl_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'AutoShuttersControl_autoShuttersControlComfort','on') eq 'off') or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_lock-out','on') eq 'on') or (AttrVal($shuttersDev,'AutoShuttersControl_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'AutoShuttersControl_temperatureSensor','none'),AttrVal($name,'AutoShuttersControl_temperatureReading','temperature'),100) <=  AttrVal($name,'AutoShuttersControl_antifreezeTemp',0)) ) {
 
         ShuttersCommandDelaySet($shuttersDev,$posValue);
-
+        readingsBeginUpdate($hash);
+        readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastDelayPosValue',$posValue);
+        readingsEndUpdate($hash,1);
     } else {
 
         my $posCmd   = AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct');
 
         CommandSet(undef,$shuttersDev . ':FILTER=' . $posCmd . '!=' . $posValue . ' ' . $posCmd . ' ' . $posValue);
-        readingsSingleUpdate($defs{$shuttersDev},'.AutoShuttersControl_DelayCmd','none',0) if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none');    # setzt den Wert des Readings auf none da der Rolladen nun gesteuert werden kann. Dieses Reading setzt die Delay Funktion ShuttersCommandDelaySet 
+        readingsSingleUpdate($defs{$shuttersDev},'.AutoShuttersControl_DelayCmd','none',0) if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none');    # setzt den Wert des Readings auf none da der Rolladen nun gesteuert werden kann. Dieses Reading setzt die Delay Funktion ShuttersCommandDelaySet
+        readingsBeginUpdate($hash);
+        readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastPosValue',$posValue);
+        readingsEndUpdate($hash,1);
     }
 }
 
@@ -686,16 +696,20 @@ sub CreateSunRiseSetShuttersTimer($$) {
     
     my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
     my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
+    my $shuttersSunriseRealtime = ShuttersSunrise($hash,$shuttersDev,'real');
+    my $shuttersSunsetRealtime  = ShuttersSunset($hash,$shuttersDev,'real');
 
     Log3 $name, 2, "AutoShuttersControl ($name) - CreateSunRiseSetShuttersTimer, neuer Sunset: $shuttersSunsetUnixtime neuer Sunrise: $shuttersSunriseUnixtime";
     
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
     readingsBeginUpdate($defs{$shuttersDev});
-    
-    readingsBulkUpdate( $defs{$shuttersDev},'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? ShuttersSunset($hash,$shuttersDev,'real') : 'AutoShuttersControl off') );
-    readingsBulkUpdate($defs{$shuttersDev},'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? ShuttersSunrise($hash,$shuttersDev,'real') : 'AutoShuttersControl off') );
-    
+    readingsBulkUpdate( $defs{$shuttersDev},'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? $shuttersSunsetRealtime : 'AutoShuttersControl off') );
+    readingsBulkUpdate($defs{$shuttersDev},'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? $shuttersSunriseRealtime : 'AutoShuttersControl off') );
     readingsEndUpdate($defs{$shuttersDev},0);
+    
+    readingsBeginUpdate($hash);
+    readingsBulkUpdateIfChanged($hash,$shuttersDev.'_nextAstroEvent',($shuttersSunriseUnixtime < $shuttersSunsetUnixtime ? $shuttersSunriseRealtime : $shuttersSunsetRealtime));
+    readingsEndUpdate($hash,1);
 
     
     RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0));
@@ -904,6 +918,23 @@ sub ShuttersPosCmdValueNegieren($) {
     return (AttrVal($shuttersDev,'AutoShuttersControl_Open_Pos',0) < AttrVal($shuttersDev,'AutoShuttersControl_Closed_Pos',100) ? 1 : 0);
 }
 
+sub makeReadingName($) {
+
+    my ($name)      = @_;
+    
+    
+    my %charHash    = ("ä" => "ae", "Ä" => "Ae", "ü" => "ue", "Ü" => "Ue", "ö" => "oe", "Ö" => "Oe", "ß" => "ss" );
+    my $charHashkeys = join ("|", keys(%charHash));
+
+    $name = "UNDEFINED" if(!defined($name));
+    return $name if($name =~ m/^\./);
+
+    $name =~ s/($charHashkeys)/$charHash{$1}/gi;
+    $name =~ s/[^a-z0-9._\-\/]/_/gi;
+
+    return $name;
+}
+
 
 
 
@@ -960,6 +991,9 @@ sub ShuttersPosCmdValueNegieren($) {
   <ul>
     Im Modul Device
     <ul>
+      <li>..._nextAstroEvent - Uhrzeit des nächsten Astro Events, Sonnenauf, Sonnenuntergang oder feste Zeit pro Rollonamen</li>
+      <li>..._lastPosValue - letzter abgesetzter Fahrbefehl pro Rollanamen</li>
+      <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut AutoShuttersControl_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
