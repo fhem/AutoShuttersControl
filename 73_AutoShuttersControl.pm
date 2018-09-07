@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.31";
+my $version = "0.1.32";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -424,7 +424,7 @@ sub ShuttersDeviceScan($) {
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);             ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
         #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
-        Log3 $name, 2, "AutoShuttersControl ($name) - ShuttersList: " . $_;
+        Log3 $name, 5, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
 
@@ -441,7 +441,7 @@ sub ShuttersDeviceScan($) {
         
             $notifyDevString .= ',' . $notifyDev unless( $notifyDevString =~ /$notifyDev/ );
 
-            Log3 $name, 2, "AutoShuttersControl ($name) - NotifyDev: " . $notifyDev . ", NotifyDevString: " . $notifyDevString;
+            Log3 $name, 5, "AutoShuttersControl ($name) - NotifyDev: " . $notifyDev . ", NotifyDevString: " . $notifyDevString;
         }
 
 #         $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
@@ -923,7 +923,7 @@ sub makeReadingName($) {
     my ($name)      = @_;
     
     
-    my %charHash    = ("ä" => "ae", "Ä" => "Ae", "ü" => "ue", "Ü" => "Ue", "ö" => "oe", "Ö" => "Oe", "ß" => "ss" );
+    my %charHash    = ("ä" => "ae", "Ä" => "Ae", "ü" => "ue", "Ü" => "Ue", "ö" => "oe", "Ö" => "Oe", "ß" => "ss");
     my $charHashkeys = join ("|", keys(%charHash));
 
     $name = "UNDEFINED" if(!defined($name));
