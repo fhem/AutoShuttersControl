@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.34";
+my $version = "0.1.35";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -212,6 +212,7 @@ sub Define($$) {
 
     readingsSingleUpdate($hash,"state","please set attribut 'AutoShuttersControl' with value 1 or 2 to all your auto controlled shutters and then do 'set DEVICENAME scanForShutters", 1);
     CommandAttr(undef,$name . ' room AutoShuttersControl') if( AttrVal($name,'room','none') eq 'none' );
+    CommandAttr(undef,$name . ' icon fts_shutter_automatic') if( AttrVal($name,'icon','none') eq 'none' );
     CommandAttr(undef,$name . ' AutoShuttersControl_autoAstroModeEvening REAL') if( AttrVal($name,'AutoShuttersControl_autoAstroModeEvening','none') eq 'none' );
     CommandAttr(undef,$name . ' AutoShuttersControl_autoAstroModeMorning REAL') if( AttrVal($name,'AutoShuttersControl_autoAstroModeMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' AutoShuttersControl_autoShuttersControlMorning on') if( AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','none') eq 'none' );
@@ -751,10 +752,18 @@ sub SunSetShuttersAfterTimerFn($) {
     my $hash                                        = $funcHash->{hash};
     my $shuttersDev                                 = $funcHash->{shuttersdevice};
     
-    
-    my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
 
-    ShuttersCommandSet($hash,$shuttersDev,(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 or AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','on') eq 'off' ? $closedPos : $closedPosWinRecTilted))
+    my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
+    my $posValue;
+    
+    if( CheckIfShuttersWindowRecOpen($shuttersDev) == 0 or AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','on') eq 'off' ) {
+        $posValue                                   = $closedPos;
+    } else {
+        $posValue                                   =  $closedPosWinRecTilted;
+    }
+
+
+    ShuttersCommandSet($hash,$shuttersDev,$posValue)
     if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' );
 
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
