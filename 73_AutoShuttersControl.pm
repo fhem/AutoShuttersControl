@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.39";
+my $version = "0.1.40";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -412,13 +412,16 @@ sub ShuttersDeviceScan($) {
     my $name    = $hash->{NAME};
     
     
+    delete $hash->{helper}{shuttersList};
+
     my @list;
     @list = devspec2array('AutoShuttersControl=[1-2]');
     
-    delete $hash->{helper}{shuttersList};
-
+    CommandDeleteReading(undef,$name . ' room_.*');
+    CommandDeleteReading(undef,$name . ' .*_nextAstroTimeEvent');
+    CommandDeleteReading(undef,$name . ' .*_lastDelayPosValue');
+    CommandDeleteReading(undef,$name . ' .*_lastPosValue');
     unless( scalar(@list) > 0 ) {
-        CommandDeleteReading(undef,$name . ' room_.*');
         readingsBeginUpdate($hash);
         readingsBulkUpdate($hash,'userAttrList','none');
         readingsBulkUpdate($hash,'state','no shutters found');
@@ -430,7 +433,7 @@ sub ShuttersDeviceScan($) {
         push (@{$hash->{helper}{shuttersList}},$_);             ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
         #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
     }
-    
+
 
     if( ReadingsVal($name,'.monitoredDevs','none') ne 'none' ) {             # Dieses besondere Reading ist so aufgebaut das egal wie der Devicename bei einem Event lautet dieses Device nach seiner Funktionalität in FHEM zugeordnet werden kann
 
@@ -499,7 +502,7 @@ sub UserAttributs_Readings_ForShutters($$) {
             ## Oder das Attribut wird wieder gelöscht.
             } elsif( $cmd eq 'del' ) {
                 RemoveInternalTimer(ReadingsVal($_,'.AutoShuttersControl_InternalTimerFuncHash',0));
-                CommandDeleteReading(undef,$_ . ' \.?AutoShuttersControl_.*' );
+                CommandDeleteReading(undef,$_ . ' .?AutoShuttersControl_.*' );
                 CommandDeleteAttr(undef,$_ . ' AutoShuttersControl');
                 delFromDevAttrList($_,$attrib);
             }
@@ -715,20 +718,17 @@ sub CreateSunRiseSetShuttersTimer($$) {
 
     my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
     my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
-    #my $shuttersSunriseRealtime = ShuttersSunrise($hash,$shuttersDev,'real');
-    #my $shuttersSunsetRealtime  = ShuttersSunset($hash,$shuttersDev,'real');
-
 
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
     readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? localtime($shuttersSunsetUnixtime) : 'AutoShuttersControl off') );
-    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? localtime($shuttersSunriseUnixtime) : 'AutoShuttersControl off') );
-    readingsEndUpdate($shuttersDevHash,1);
-
+    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? localtime($shuttersSunsetUnixtime) : 'AutoShuttersControl off'),1 );
+    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? localtime($shuttersSunriseUnixtime) : 'AutoShuttersControl off'),1 );
+    readingsEndUpdate($shuttersDevHash,0);
 
     readingsBeginUpdate($hash);
     readingsBulkUpdateIfChanged($hash,$shuttersDev . '_nextAstroTimeEvent',($shuttersSunriseUnixtime < $shuttersSunsetUnixtime ? localtime($shuttersSunriseUnixtime) : localtime($shuttersSunsetUnixtime)));
     readingsEndUpdate($hash,1);
+
     CommandDeleteReading(undef,$name . ' ' . $shuttersDev . '_nextAstroEvent') if( ReadingsVal($name,$shuttersDev . '_nextAstroEvent','none') ne 'none' );  # temporär
 
 
@@ -739,7 +739,6 @@ sub CreateSunRiseSetShuttersTimer($$) {
     
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe, dieser muss gesichert werden
     readingsSingleUpdate($shuttersDevHash,'.AutoShuttersControl_InternalTimerFuncHash',\%funcHash,0);
-
     InternalTimer($shuttersSunsetUnixtime, 'AutoShuttersControl::SunSetShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' );
     InternalTimer($shuttersSunriseUnixtime, 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' );
 }
@@ -749,8 +748,9 @@ sub RenewSunRiseSetShuttersTimer($) {
 
     my $hash    = shift;
 
+
     foreach (@{$hash->{helper}{shuttersList}}) {
-        CommandDeleteReading(undef,$_ . ' \.AutoShuttersControl_InternalTimerFuncHash' );
+        CommandDeleteReading(undef,$_ . ' .AutoShuttersControl_InternalTimerFuncHash' );
         CreateSunRiseSetShuttersTimer($hash,$_);
     }
 }
