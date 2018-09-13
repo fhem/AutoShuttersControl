@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.40";
+my $version = "0.1.41";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -416,8 +416,7 @@ sub ShuttersDeviceScan($) {
 
     my @list;
     @list = devspec2array('AutoShuttersControl=[1-2]');
-    
-    CommandDeleteReading(undef,$name . ' room_.*');
+
     CommandDeleteReading(undef,$name . ' .*_nextAstroTimeEvent');
     CommandDeleteReading(undef,$name . ' .*_lastDelayPosValue');
     CommandDeleteReading(undef,$name . ' .*_lastPosValue');
@@ -470,9 +469,9 @@ sub WriteReadingsShuttersList($) {
     
     foreach (@{$hash->{helper}{shuttersList}}) {
     
-        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'') . ', ' . $_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') ne 'none' );
+        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),ReadingsVal($name,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),'') . ', ' . $_) if( ReadingsVal($name,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),'none') ne 'none' );
         
-        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),$_) if( ReadingsVal($name,'room_' . AttrVal($_,'room','unsorted'),'none') eq 'none' );
+        readingsBulkUpdate($hash,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),$_) if( ReadingsVal($name,'room_' . makeReadingName(AttrVal($_,'room','unsorted')),'none') eq 'none' );
     }
     
     readingsBulkUpdate($hash,'state','active');
@@ -864,13 +863,13 @@ sub ShuttersSunrise($$$) {
     my $name                    = $hash->{NAME};
     my $autoAstroMode;
     
-#     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','none') ne 'none' ) {
-#         $autoAstroMode           = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','REAL');
-#         $autoAstroMode              = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
-#     } else {
+    if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','none') ne 'none' ) {
+        $autoAstroMode          = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','REAL');
+        $autoAstroMode          = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    } else {
         $autoAstroMode          = AttrVal($name,'AutoShuttersControl_autoAstroModeMorning','REAL');
         $autoAstroMode          = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
-#     }
+    }
     
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     my $shuttersSunriseUnixtime;
@@ -906,13 +905,13 @@ sub ShuttersSunset($$$) {
     my $name                    = $hash->{NAME};
     my $autoAstroMode;
     
-#     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','none') ne 'none') {
-#         $autoAstroMode           = AttrVal($shuttersDev,'AutoShuttersControl_autoAstroModeEvening','REAL');
-#         $autoAstroMode              = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
-#     } else {
+    if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','none') ne 'none') {
+        $autoAstroMode          = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','REAL');
+        $autoAstroMode          = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    } else {
         $autoAstroMode          = AttrVal($name,'AutoShuttersControl_autoAstroModeEvening','REAL');
         $autoAstroMode          = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
-#     }
+    }
     
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     my $shuttersSunsetUnixtime;
