@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.35";
+my $version = "0.1.39";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -146,6 +146,10 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Mode_Down:absent,always,off'                                                   =>  'always',
                         'AutoShuttersControl_Up:time,astro'                                                                 =>  'astro',
                         'AutoShuttersControl_Down:time,astro'                                                               =>  'astro',
+                        'AutoShuttersControl_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON'                     =>  'none',
+                        'AutoShuttersControl_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'    =>  'none',
+                        'AutoShuttersControl_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON'                     =>  'none',
+                        'AutoShuttersControl_AutoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'    =>  'none',
                         'AutoShuttersControl_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'                                     =>  ['',0,100],
                         'AutoShuttersControl_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'                                   =>  ['',100,0],
                         'AutoShuttersControl_Pos_Cmd'                                                                       =>  ['','position','pct'],
@@ -154,9 +158,9 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Time_Up_Late'                                                                  =>  '09:00:00',
                         'AutoShuttersControl_Time_Up_WE_Holiday'                                                            =>  '09:30:00',
                         'AutoShuttersControl_Time_Down_Early'                                                               =>  '15:30:00', 
-                        'AutoShuttersControl_Time_Down_Late'                                                                =>   '22:30:00',
+                        'AutoShuttersControl_Time_Down_Late'                                                                =>  '22:30:00',
                         'AutoShuttersControl_Rand_Minutes'                                                                  =>  20,
-                        'AutoShuttersControl_WindowRec'                                                                     =>  '',
+                        'AutoShuttersControl_WindowRec'                                                                     =>  'none',
                         'AutoShuttersControl_Ventilate_Window_Open:on,off'                                                  =>  'on',
                         'AutoShuttersControl_lock-out:on,off'                                                               =>  'off',
                         'AutoShuttersControl_Shading_Pos:10,20,30,40,50,60,70,80,90,100'                                    =>  30,
@@ -164,26 +168,26 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Shading_Pos_after_Shading:-1,0,10,20,30,40,50,60,70,80,90,100'                 =>  -1,
                         'AutoShuttersControl_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'     =>  85,
                         'AutoShuttersControl_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'    =>  85,
-                        'AutoShuttersControl_Shading_Brightness_Sensor'                                                     =>  '',
+                        'AutoShuttersControl_Shading_Brightness_Sensor'                                                     =>  'none',
                         'AutoShuttersControl_Shading_Brightness_Reading'                                                    =>  'brightness',
                         'AutoShuttersControl_Shading_StateChange_Sunny'                                                     =>  '6000',
                         'AutoShuttersControl_Shading_StateChange_Cloudy'                                                    =>  '4000',
                         'AutoShuttersControl_Shading_WaitingPeriod'                                                         =>  20,
-                        'AutoShuttersControl_Shading_Min_Elevation'                                                         =>  '',
+                        'AutoShuttersControl_Shading_Min_Elevation'                                                         =>  'none',
                         'AutoShuttersControl_Shading_Min_OutsideTemperature'                                                =>  18,
                         'AutoShuttersControl_Shading_BlockingTime_After_Manual'                                             =>  20,
-                        'AutoShuttersControl_Shading_BlockingTime_Twilight'                                                 => 45,
-                        'AutoShuttersControl_Shading_Fast_Open:on,off'                                                      =>  '',
-                        'AutoShuttersControl_Shading_Fast_Close:on,off'                                                     =>  '',
+                        'AutoShuttersControl_Shading_BlockingTime_Twilight'                                                 =>  45,
+                        'AutoShuttersControl_Shading_Fast_Open:on,off'                                                      =>  'none',
+                        'AutoShuttersControl_Shading_Fast_Close:on,off'                                                     =>  'none',
                         'AutoShuttersControl_Offset_Minutes_Morning'                                                        =>  1,
                         'AutoShuttersControl_Offset_Minutes_Evening'                                                        =>  1,
                         'AutoShuttersControl_WindowRec_subType:twostate,threestate'                                         =>  'twostate',
                         'AutoShuttersControl_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'                                  =>  ['',70,30],
                         'AutoShuttersControl_Pos_after_ComfortOpen:0,10,20,30,40,50,60,70,80,90,100'                        =>  ['',20,80],
-                        'AutoShuttersControl_GuestRoom:on,off'                                                              =>  '',
+                        'AutoShuttersControl_GuestRoom:on,off'                                                              =>  'none',
                         'AutoShuttersControl_Antifreeze:off,on'                                                             =>  'off',
                         'AutoShuttersControl_Partymode:on,off'                                                              =>  'off',
-                        'AutoShuttersControl_Roommate_Device'                                                               =>  '',
+                        'AutoShuttersControl_Roommate_Device'                                                               =>  'none',
                         'AutoShuttersControl_Roommate_Reading'                                                              =>  'state',
                     );
 
@@ -305,9 +309,9 @@ sub Notify($$) {
         or grep /^MODIFIED.$name$/,@{$events})
         and $devname eq 'global') {
 
-            ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
             readingsSingleUpdate($hash,'partyMode','off',0) if(ReadingsVal($name,'partyMode','none') eq 'none');
             
+            ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
             ShuttersDeviceScan($hash)
             unless( ReadingsVal($name,'userAttrList','none') eq 'none');
     
@@ -390,7 +394,7 @@ sub Set($$@) {
     } elsif( lc $cmd eq 'partymode' ) {
         return "usage: $cmd" if( @args > 1 );
         
-        readingsSingleUpdate ($hash, "partyMode", join(' ',@args), 1);
+        readingsSingleUpdate($hash, "partyMode", join(' ',@args), 1);
     
     } else {
         my $list = "scanForShutters:noArg";
@@ -421,11 +425,10 @@ sub ShuttersDeviceScan($) {
         readingsEndUpdate($hash,1);
         return;
     }
-    
+
     foreach(@list) {
         push (@{$hash->{helper}{shuttersList}},$_);             ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
         #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
-        Log3 $name, 5, "AutoShuttersControl ($name) - ShuttersList: " . $_;
     }
     
 
@@ -434,8 +437,7 @@ sub ShuttersDeviceScan($) {
         # Der Aufbau des Strings im Reading monitoredDevs sieht so aus Rolloname:Attributname:Wert_desAttributes
         # Wert des Attributes beinhaltet in diesem Fall immer den Devcenamen von dem auch Events von unserem Modul getriggert werden sollen.
         my ($notifyDevHash)    = ExtractNotifyDevfromReadingString($hash,undef);        # in der Funktion wird aus dem String ein Hash wo wir über den Devicenamen z.B. FensterLinks ganz einfach den Rest des Strings heraus bekommen. Also welches Rollo und welches Attribut. So wissen wir das es sich um ein Fenster handelt und dem Rollo bla bla zu geordnet wird.
-        
-#         my $notifyDevString;
+
         my $notifyDevString = $hash->{NOTIFYDEV};
         
         while( my  (undef,$notifyDev) = each %{$notifyDevHash}) {
@@ -445,7 +447,6 @@ sub ShuttersDeviceScan($) {
             Log3 $name, 5, "AutoShuttersControl ($name) - NotifyDev: " . $notifyDev . ", NotifyDevString: " . $notifyDevString;
         }
 
-#         $hash->{NOTIFYDEV}  = $hash->{NOTIFYDEV} . $notifyDevString;
         $hash->{NOTIFYDEV}  = $notifyDevString;
     }
 
@@ -622,18 +623,24 @@ sub RoommateEventProcessing($@) {
 
 
         ShuttersCommandSet($hash,$shuttersDev,$openPos)
-        if( ($1 eq 'home' or $1 eq 'awoken') and (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken') and AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' and IsDay($hash,$shuttersDev) and AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' );
+        if( ($1 eq 'home' or $1 eq 'awoken') and
+            (ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),'lastState','none') eq 'awoken')
+                and AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on'
+                and IsDay($hash,$shuttersDev)
+                and AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' );
 
 
-        my $position;
-        if(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 or AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','on') eq 'off') {
-            $position   = $closedPos;
-        } else {
-            $position   = $closedPosWinRecTilted;
+        if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' and ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ) {
+        
+            my $position;
+            if(CheckIfShuttersWindowRecOpen($shuttersDev) == 0 or AttrVal($shuttersDev,'AutoShuttersControl_Ventilate_Window_Open','on') eq 'off') {
+                $position   = $closedPos;
+            } else {
+                $position   = $closedPosWinRecTilted;
+            }
+            
+            ShuttersCommandSet($hash,$shuttersDev,$position)
         }
-
-        ShuttersCommandSet($hash,$shuttersDev,$position)
-        if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' and ($1 eq 'gotosleep' or $1 eq 'asleep') and AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' );
     }
 }
 
@@ -663,27 +670,29 @@ sub ShuttersCommandSet($$$) {
 
     my ($hash,$shuttersDev,$posValue)   = @_;
     my $name                            = $hash->{NAME};
-    
 
+
+    readingsBeginUpdate($hash);
+    
     if( (AttrVal($shuttersDev,'AutoShuttersControl_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'AutoShuttersControl_autoShuttersControlComfort','on') eq 'off')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_lock-out','on') eq 'on')
         or (AttrVal($shuttersDev,'AutoShuttersControl_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'AutoShuttersControl_temperatureSensor','none'),AttrVal($name,'AutoShuttersControl_temperatureReading','temperature'),100) <=  AttrVal($name,'AutoShuttersControl_antifreezeTemp',0)) ) {
 
         ShuttersCommandDelaySet($shuttersDev,$posValue);
-        readingsBeginUpdate($hash);
         readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastDelayPosValue',$posValue);
-        readingsEndUpdate($hash,1);
+
     } else {
 
         my $posCmd   = AttrVal($shuttersDev,'AutoShuttersControl_Pos_Cmd','pct');
 
         CommandSet(undef,$shuttersDev . ':FILTER=' . $posCmd . '!=' . $posValue . ' ' . $posCmd . ' ' . $posValue);
         readingsSingleUpdate($defs{$shuttersDev},'.AutoShuttersControl_DelayCmd','none',0) if(ReadingsVal($shuttersDev,'.AutoShuttersControl_DelayCmd','none') ne 'none');    # setzt den Wert des Readings auf none da der Rolladen nun gesteuert werden kann. Dieses Reading setzt die Delay Funktion ShuttersCommandDelaySet
-        readingsBeginUpdate($hash);
+        
         readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastPosValue',$posValue);
-        readingsEndUpdate($hash,1);
     }
+    
+    readingsEndUpdate($hash,1);
 }
 
 # Sub zum späteren ausführen der Steuerbefehle für Rolläden, zum Beispiel weil Fenster noch auf ist
@@ -698,38 +707,38 @@ sub ShuttersCommandDelaySet($$) {
 sub CreateSunRiseSetShuttersTimer($$) {
 
     my ($hash,$shuttersDev)     = @_;
-
     my $name                    = $hash->{NAME};
+    my $shuttersDevHash         = $defs{$shuttersDev};
 
-    
     return if( IsDisabled($name) );
 
-    
+
     my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
     my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
-    my $shuttersSunriseRealtime = ShuttersSunrise($hash,$shuttersDev,'real');
-    my $shuttersSunsetRealtime  = ShuttersSunset($hash,$shuttersDev,'real');
+    #my $shuttersSunriseRealtime = ShuttersSunrise($hash,$shuttersDev,'real');
+    #my $shuttersSunsetRealtime  = ShuttersSunset($hash,$shuttersDev,'real');
 
 
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
-    readingsBeginUpdate($defs{$shuttersDev});
-    readingsBulkUpdate( $defs{$shuttersDev},'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? $shuttersSunsetRealtime : 'AutoShuttersControl off') );
-    readingsBulkUpdate($defs{$shuttersDev},'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? $shuttersSunriseRealtime : 'AutoShuttersControl off') );
-    readingsEndUpdate($defs{$shuttersDev},0);
-    
+    readingsBeginUpdate($shuttersDevHash);
+    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? localtime($shuttersSunsetUnixtime) : 'AutoShuttersControl off') );
+    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? localtime($shuttersSunriseUnixtime) : 'AutoShuttersControl off') );
+    readingsEndUpdate($shuttersDevHash,1);
+
+
     readingsBeginUpdate($hash);
     readingsBulkUpdateIfChanged($hash,$shuttersDev . '_nextAstroTimeEvent',($shuttersSunriseUnixtime < $shuttersSunsetUnixtime ? localtime($shuttersSunriseUnixtime) : localtime($shuttersSunsetUnixtime)));
     readingsEndUpdate($hash,1);
     CommandDeleteReading(undef,$name . ' ' . $shuttersDev . '_nextAstroEvent') if( ReadingsVal($name,$shuttersDev . '_nextAstroEvent','none') ne 'none' );  # temporär
 
-    
+
     RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0));
     
     ## kleine Hilfe für InternalTimer damit ich alle benötigten Variablen an die Funktion übergeben kann welche von Internal Timer aufgerufen wird.
     my %funcHash = ( hash => $hash, shuttersdevice => $shuttersDev, sunsettime => $shuttersSunsetUnixtime, sunrisetime => $shuttersSunriseUnixtime);
     
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe, dieser muss gesichert werden
-    readingsSingleUpdate($defs{$shuttersDev},'.AutoShuttersControl_InternalTimerFuncHash',\%funcHash,0);
+    readingsSingleUpdate($shuttersDevHash,'.AutoShuttersControl_InternalTimerFuncHash',\%funcHash,0);
 
     InternalTimer($shuttersSunsetUnixtime, 'AutoShuttersControl::SunSetShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' );
     InternalTimer($shuttersSunriseUnixtime, 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' );
@@ -741,6 +750,7 @@ sub RenewSunRiseSetShuttersTimer($) {
     my $hash    = shift;
 
     foreach (@{$hash->{helper}{shuttersList}}) {
+        CommandDeleteReading(undef,$_ . ' \.AutoShuttersControl_InternalTimerFuncHash' );
         CreateSunRiseSetShuttersTimer($hash,$_);
     }
 }
@@ -852,8 +862,16 @@ sub ShuttersSunrise($$$) {
     my ($hash,$shuttersDev,$tm) = @_;       # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
     
     my $name                    = $hash->{NAME};
-    my $autoAstroMode           = AttrVal($name,'AutoShuttersControl_autoAstroModeMorning','REAL');
-    $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    my $autoAstroMode;
+    
+#     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','none') ne 'none' ) {
+#         $autoAstroMode           = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','REAL');
+#         $autoAstroMode              = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+#     } else {
+        $autoAstroMode          = AttrVal($name,'AutoShuttersControl_autoAstroModeMorning','REAL');
+        $autoAstroMode          = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+#     }
+    
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     my $shuttersSunriseUnixtime;
 
@@ -865,7 +883,7 @@ sub ShuttersSunrise($$$) {
             
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-                    unless($shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} or $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 3600));
+                    unless( $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} );
             }
         } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'time' ) {
         
@@ -886,8 +904,16 @@ sub ShuttersSunset($$$) {
     my ($hash,$shuttersDev,$tm) = @_;       # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
     
     my $name                    = $hash->{NAME};
-    my $autoAstroMode           = AttrVal($name,'AutoShuttersControl_autoAstroModeEvening','REAL');
-    $autoAstroMode              = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+    my $autoAstroMode;
+    
+#     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','none') ne 'none') {
+#         $autoAstroMode           = AttrVal($shuttersDev,'AutoShuttersControl_autoAstroModeEvening','REAL');
+#         $autoAstroMode              = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+#     } else {
+        $autoAstroMode          = AttrVal($name,'AutoShuttersControl_autoAstroModeEvening','REAL');
+        $autoAstroMode          = $autoAstroMode . '=' . AttrVal($name,'AutoShuttersControl_autoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
+#     }
+    
     my $oldFuncHash             = ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0);
     my $shuttersSunsetUnixtime;
 
@@ -899,7 +925,7 @@ sub ShuttersSunset($$$) {
             
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
-                    unless($shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} or $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 3600));
+                    unless( $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 900) or $shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} );
             }
         } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'time' ) {
         
