@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.41";
+my $version = "0.1.43";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -162,7 +162,8 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Rand_Minutes'                                                                  =>  20,
                         'AutoShuttersControl_WindowRec'                                                                     =>  'none',
                         'AutoShuttersControl_Ventilate_Window_Open:on,off'                                                  =>  'on',
-                        'AutoShuttersControl_lock-out:on,off'                                                               =>  'off',
+                        'AutoShuttersControl_lock-out:soft,hard'                                                            =>  'soft',
+                        'AutoShuttersControl_lock-outCmd:inhibit,blocked'                                                   =>  'none',
                         'AutoShuttersControl_Shading_Pos:10,20,30,40,50,60,70,80,90,100'                                    =>  30,
                         'AutoShuttersControl_Shading:on,off,delayed,present,absent'                                         =>  'off',
                         'AutoShuttersControl_Shading_Pos_after_Shading:-1,0,10,20,30,40,50,60,70,80,90,100'                 =>  -1,
@@ -310,6 +311,7 @@ sub Notify($$) {
         and $devname eq 'global') {
 
             readingsSingleUpdate($hash,'partyMode','off',0) if(ReadingsVal($name,'partyMode','none') eq 'none');
+            readingsSingleUpdate($hash,'lockOut','off',0) if(ReadingsVal($name,'lockOut','none') eq 'none');
             
             ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
             ShuttersDeviceScan($hash)
@@ -395,10 +397,16 @@ sub Set($$@) {
         return "usage: $cmd" if( @args > 1 );
         
         readingsSingleUpdate($hash, "partyMode", join(' ',@args), 1);
+        
+    } elsif( lc $cmd eq 'lockout' ) {
+        return "usage: $cmd" if( @args > 1 );
+        
+        readingsSingleUpdate($hash, "lockOut", join(' ',@args), 1);
+        SetHardewareBlockForShutters($hash,join(' ',@args));
     
     } else {
         my $list = "scanForShutters:noArg";
-        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
+        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
         
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -678,7 +686,7 @@ sub ShuttersCommandSet($$$) {
     
     if( (AttrVal($shuttersDev,'AutoShuttersControl_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'AutoShuttersControl_autoShuttersControlComfort','on') eq 'off')
-        or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'AutoShuttersControl_lock-out','on') eq 'on')
+        or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and (AttrVal($shuttersDev,'AutoShuttersControl_lock-out','soft') eq 'soft' or AttrVal($shuttersDev,'AutoShuttersControl_lock-out','hard') eq 'hard') and ReadingsVal($shuttersDev,'lockOut','off') eq 'on')
         or (AttrVal($shuttersDev,'AutoShuttersControl_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'AutoShuttersControl_temperatureSensor','none'),AttrVal($name,'AutoShuttersControl_temperatureReading','temperature'),100) <=  AttrVal($name,'AutoShuttersControl_antifreezeTemp',0)) ) {
 
         ShuttersCommandDelaySet($shuttersDev,$posValue);
@@ -715,8 +723,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     return if( IsDisabled($name) );
 
 
-    my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix');
-    my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix');
+    my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix') + int(rand(TimeMin2Sec(AttrVal($shuttersDev,'AutoShuttersControl_Offset_Minutes_Morning',0))));
+    my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix') + int(rand(TimeMin2Sec(AttrVal($shuttersDev,'AutoShuttersControl_Offset_Minutes_Evening',0))));
 
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
     readingsBeginUpdate($shuttersDevHash);
@@ -731,7 +739,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     CommandDeleteReading(undef,$name . ' ' . $shuttersDev . '_nextAstroEvent') if( ReadingsVal($name,$shuttersDev . '_nextAstroEvent','none') ne 'none' );  # temporär
 
 
-    RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash',0));
+    RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash','none'))
+        unless(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash','none') eq 'none');
     
     ## kleine Hilfe für InternalTimer damit ich alle benötigten Variablen an die Funktion übergeben kann welche von Internal Timer aufgerufen wird.
     my %funcHash = ( hash => $hash, shuttersdevice => $shuttersDev, sunsettime => $shuttersSunsetUnixtime, sunrisetime => $shuttersSunriseUnixtime);
@@ -749,10 +758,27 @@ sub RenewSunRiseSetShuttersTimer($) {
 
 
     foreach (@{$hash->{helper}{shuttersList}}) {
+        RemoveInternalTimer(ReadingsVal($_,'.AutoShuttersControl_InternalTimerFuncHash','none'));
         CommandDeleteReading(undef,$_ . ' .AutoShuttersControl_InternalTimerFuncHash' );
         CreateSunRiseSetShuttersTimer($hash,$_);
     }
 }
+
+## Funktion zum hardwareseitigen setzen des lock-out oder blocking beim Rolladen selbst
+sub SetHardewareBlockForShutters($$) {
+
+    my ($hash,$cmd) = @_;
+
+
+    foreach (@{$hash->{helper}{shuttersList}}) {
+        if( AttrVal($_,'AutoShuttersControl_lock-out','soft') eq 'hard' and AttrVal($_,'AutoShuttersControl_lock-outCmd','none') ne 'none' ) {
+            CommandSet(undef,$_ . ' inhibit ' . $cmd) if(AttrVal($_,'AutoShuttersControl_lock-outCmd','none') eq 'inhibit');
+            CommandSet(undef,$_ . ' ' . ($cmd eq 'on' ? 'blocked' : 'unblocked')) if(AttrVal($_,'AutoShuttersControl_lock-outCmd','none') eq 'blocked');
+        }
+    }
+}
+
+## Funktion zum hardwareseitigen setzen des lock-out oder blocking beim Rolladen selbst
 
 ## Funktion welche beim Ablaufen des Timers für Sunset aufgerufen werden soll
 sub SunSetShuttersAfterTimerFn($) {
@@ -773,7 +799,7 @@ sub SunSetShuttersAfterTimerFn($) {
 
 
     ShuttersCommandSet($hash,$shuttersDev,$posValue)
-    if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' );
+        if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Down','off') eq 'always' );
 
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
 }
@@ -789,7 +815,9 @@ sub SunRiseShuttersAfterTimerFn($) {
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
     
     if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' ) {
-        ShuttersCommandSet($hash,$shuttersDev,$openPos) if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'awoken') eq 'awoken' );
+    
+        ShuttersCommandSet($hash,$shuttersDev,$openPos)
+            if( ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'awoken') eq 'awoken' );
     }
     
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
@@ -979,6 +1007,16 @@ sub makeReadingName($) {
     return $name;
 }
 
+sub TimeMin2Sec($) {
+
+    my $min = shift;
+    my $sec;
+    
+    $sec    = $min * 60;
+    
+    return $sec;
+}
+
 
 
 
@@ -998,9 +1036,116 @@ sub makeReadingName($) {
 =begin html
 
 <a name="AutoShuttersControl"></a>
-<h3>Auto Shutters Control</h3>
+<h3>Automated Shutter Control - ASC</h3>
 <ul>
-  
+  <u><b>AutoShuttersControl (shurt: ASC) is designed for automation of shutter levels based on individual presets and timers. Timers can use sunrise and sunset events, reaction on opening or closing of correspondant window contacts is possible.</b></u>
+  <br>
+  This module generates a virtual device. If your shutters are represented in FHEM as devices, just put them under controll of this module. Then you get further options to let ASC controll them. Set the provided attributes and ASC will e.g. open your shutter after sunrise when resident is awoken. Or let it go to a predifined position for ventilation when window is tilted. 
+  <br><br>
+  <a name="AutoShuttersControlDefine"></a>
+  <b>Define</b>
+  <ul><br>
+    <code>define &lt;name&gt; AutoShuttersControl</code>
+    <br><br>
+    Example:
+    <ul><br>
+      <code>define Rolladensteuerung AutoShuttersControl</code><br>
+    </ul>
+    <br>
+    This creates a AutoShuttersControl Device named Rolladensteuerung.<br>
+    After this first step, start adding shutter devices by assigning the new attribute  "AutoShuttersControl" using "1" or "2" as value.<br>
+    Use "1" if your shutter is open at lower position (typically: 0 = open, 100 = closed) and shutter command "position" is used. Right choice for ROLLO devices.
+	"2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.<br>
+    Next use the "scanForShutters" setter to get your shutter(s) controlled by ASC and start configuring your shutter devices by setting the ASC attributes to your needs.
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlReadings"></a>
+  <b>Readings</b>
+  <ul>
+    Module Device
+    <ul>
+      <li>..._nextAstroTimeEvent - Execution time of the next Astro Event, sunrise, sunset or fixed time per shutter</li>
+      <li>..._lastPosValue - last sent positioning command per shutter</li>
+      <li>..._lastDelayPosValue - last positioning command per shutter not yet sent, waiting for event dependent execution.</li>
+      <li>partyMode - on/off; activates a global party mode, all shutters with AutoShuttersControl_Partymode attribute set to "on" will not get any command from ASC until part is set to "off" again. Then the last intermediate positioning command will be executed, e.g. based on window opening or resident state.</li>
+      <li>lockOut - on/off</li>
+      <li>room_... - List of all shutter devices under ASC control per room</li>
+      <li>state - State of the ASC device (active, enabled or disabled)</li>
+      <li>userAttrList - Indicates if all UserAttributes are rolled out to shutter devices.</li>
+    </ul><br>
+    Shutter Devices
+    <ul>
+      <li>AutoShuttersControl_Time_Sunrise - Shutter's individual sunrise time</li>
+      <li>AutoShuttersControl_Time_Sunset - Shutter's individual sunset time</li>
+    </ul>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlSet"></a>
+  <b>Set</b>
+  <ul>
+    <li>partyMode - on/off activates global party mode. See Reading partyMode</li>
+    <li>lockOut - on/off</li>
+    <li>renewSetSunriseSunsetTimer - renews individual times and internal timers for all shutters under ASC control.</li>
+    <li>scanForShutters - add all FHEM devices to ASC control; looks up for devices with attribute "AutoShuttersControl" set to 1 or 2.</li>
+    <li></li>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlGet"></a>
+  <b>Get</b>
+  <ul>
+    <li></li>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlAttributes"></a>
+  <b>Attributes</b>
+  <ul>
+  Modul Device
+    <ul>
+      <li>AutoShuttersControl_antifreezeTemp - Temperature limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
+      <li>AutoShuttersControl_autoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_autoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute AutoShuttersControl_autoAstroModeEvening set to HORIZON</li>
+      <li>AutoShuttersControl_autoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_autoAstroModeMorningHorizon - similar to AutoShuttersControl_autoAstroModeEvening</li>
+      <li>AutoShuttersControl_autoShuttersControlComfort - on/off. Switch to on to react on open or tilted events. Needs further info in shutter attributes about WindowRec, WindowRecType and AutoShuttersControl_Pos_after_ComfortOpen (last sets target position).</li>
+      <li>AutoShuttersControl_autoShuttersControlEvening - on/off; Switch to on to close this shutter in the evening</li>
+      <li>AutoShuttersControl_autoShuttersControlMorning - on/off; similar to AutoShuttersControl_autoShuttersControlEvening for opening.</li>
+      <li>AutoShuttersControl_temperatureReading - Reading name for outside temperature</li>
+      <li>AutoShuttersControl_temperatureSensor - Device name for outside temperature</li>
+    </ul><br>
+    Individual Shutter Devices
+    <ul>
+      <li>AutoShuttersControl - 0/1/2. Use "1" if your shutter is open at lower position (typically: 0 = open, 100 = closed) and shutter command "position" is used. Right choice for ROLLO devices.
+	"2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.</li>
+      <li>AutoShuttersControl_Antifreeze - on/off; Set to on to prevent ASC commands under the set temperature limit</li>
+      <li>AutoShuttersControl_AutoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_AutoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute AutoShuttersControl_autoAstroModeEvening set to HORIZON</li>
+      <li>AutoShuttersControl_AutoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_AutoAstroModeMorningHorizon - similar to AutoShuttersControl_autoAstroModeEvening</li>
+      <li>AutoShuttersControl_Closed_Pos - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>AutoShuttersControl_Down - astro/time. "Astro" uses sunrise logic to calculate sunset time, "time" uses AutoShuttersControl_Time_Down_Early attibute's value.</li>
+      <li>AutoShuttersControl_Mode_Down - always/absent/off. Additional conditions for close commands based on roommate state. Please note: If there's no roommate and attribute set to "absent" no closing command will be issued.</li>
+      <li>AutoShuttersControl_Mode_Up - always/absent/off. Like AutoShuttersControl_Mode_Down for opening commands.</li>
+      <li>AutoShuttersControl_Offset_Minutes_Evening - </li>
+      <li>AutoShuttersControl_Offset_Minutes_Morning - </li>
+      <li>AutoShuttersControl_Open_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>AutoShuttersControl_Partymode -  on/off. See correspondant Attribute for ASC Module.</li>
+      <li>AutoShuttersControl_Pos_Cmd - set command for setting the shutter to a decent level; must correspond to the reading name for the actual position of the shutter</li>
+      <li>AutoShuttersControl_Pos_after_ComfortOpen - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>AutoShuttersControl_Roommate_Reading - Reading name of the roommate device's status info.</li>
+      <li>AutoShuttersControl_Roommate_Device - Name of the roommate device to be used to controll all shutters in the same room as the roommate.</li>
+      <li>AutoShuttersControl_Time_Down_Early - Early limit for closing timer calculation using sunset</li>
+      <li>AutoShuttersControl_Time_Down_Late - Latest limit for closing timer calculation using sunset</li>
+      <li>AutoShuttersControl_Time_Up_Early - Like ...Time_Down... for opening</li>
+      <li>AutoShuttersControl_Time_Up_Late - Like ...Time_Down... for opening</li>
+      <li>AutoShuttersControl_Up - astro/time "Astro" will use sunrise calculation for opening times, "time" uses AutoShuttersControl_Time_Up_Early value.</li>
+      <li>AutoShuttersControl_Ventilate_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>AutoShuttersControl_Ventilate_Window_Open - Level to be set for ventilation in case of opening or tilted event (only if current shutter position is below this level</li>
+      <li>AutoShuttersControl_WindowRec - Name of the window contact corresponding to the shutter</li>
+      <li>AutoShuttersControl_WindowRec_subType - Type of the used window contact: twostate (only sends open and closed) or threestate (sends also tilted)</li>
+      <li>AutoShuttersControl_lock-out - soft/hard </li>
+      <li>AutoShuttersControl_lock-outCmd - lock-out Command</li>
+    </ul>
+  </ul>
 </ul>
 
 =end html
@@ -1039,6 +1184,7 @@ sub makeReadingName($) {
       <li>..._lastPosValue - letzter abgesetzter Fahrbefehl pro Rollanamen</li>
       <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut AutoShuttersControl_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
+      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
       <li>userAttrList - Status der UserAttribute welche an die Roll&auml;den gesendet werden</li>
@@ -1054,6 +1200,7 @@ sub makeReadingName($) {
   <b>Set</b>
   <ul>
     <li>partyMode - on/off aktiviert den globalen Partymodus. Siehe Reading partyMode</li>
+    <li>lockOut - on/off aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
     <li></li>
@@ -1085,10 +1232,16 @@ sub makeReadingName($) {
     <ul>
       <li>AutoShuttersControl - 0/1/2 1 = "Inverse oder Rollo Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum Prozentualen fahren ist position", 2 = "Homematic Style Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum Prozentualen fahren ist pct</li>
       <li>AutoShuttersControl_Antifreeze - on/off Frostschutz an oder aus</li>
+      <li>AutoShuttersControl_AutoAstroModeEvening - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
+      <li>AutoShuttersControl_AutoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>AutoShuttersControl_AutoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
       <li>AutoShuttersControl_Closed_Pos - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>AutoShuttersControl_Down - astro/time bei Astro wird Sonnenuntergang berechnet, bei time wird der Wert aus AutoShuttersControl_Time_Down_Early als Fahrzeit verwendet</li>
       <li>AutoShuttersControl_Mode_Down - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
       <li>AutoShuttersControl_Mode_Up - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
+      <li>AutoShuttersControl_Offset_Minutes_Evening - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Abends</li>
+      <li>AutoShuttersControl_Offset_Minutes_Morning - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Morgens</li>
       <li>AutoShuttersControl_Open_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>AutoShuttersControl_Partymode -  on/off  schaltet den Partymodus an oder aus, Wird dann am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Roll&auml;den welche das Attribut auf on haben zwischen gespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
       <li>AutoShuttersControl_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren, muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
@@ -1104,7 +1257,8 @@ sub makeReadingName($) {
       <li>AutoShuttersControl_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
       <li>AutoShuttersControl_WindowRec - Name des Fensterkontaktes an welchen Fenster der Rolladen angebracht ist</li>
       <li>AutoShuttersControl_WindowRec_subType - Typ des verwendeten Fensterkontakts: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt)</li>
-      <li>AutoShuttersControl_lock-out - on/off aktiviert oder deaktiviert den Aussperrschutz. Bei aktiven Aussperrschutz und einem Kontakt open bleibt dann der Rolladen oben.</li>
+      <li>AutoShuttersControl_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
+      <li>AutoShuttersControl_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "AutoShuttersControl_lock-out" auf hard setzt</li>
     </ul>
   </ul>
 </ul>
