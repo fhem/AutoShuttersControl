@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.43";
+my $version = "0.1.45";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -910,7 +910,7 @@ sub ShuttersSunrise($$$) {
             
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-                    unless( $shuttersSunriseUnixtime > ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime == $oldFuncHash->{sunrisetime} );
+                    if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
             }
         } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'time' ) {
         
@@ -952,7 +952,7 @@ sub ShuttersSunset($$$) {
             
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
-                    unless( $shuttersSunsetUnixtime > ($oldFuncHash->{sunsettime} + 900) or $shuttersSunsetUnixtime == $oldFuncHash->{sunsettime} );
+                    if( ($shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 900) or $shuttersSunsetUnixtime != $oldFuncHash->{sunsettime}) and $oldFuncHash->{sunsettime} < gettimeofday() );
             }
         } elsif( AttrVal($shuttersDev,'AutoShuttersControl_Down','astro') eq 'time' ) {
         
