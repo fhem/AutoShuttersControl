@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.45";
+my $version = "0.1.48";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -77,6 +77,7 @@ sub AutoShuttersControl_Initialize($) {
                             "AutoShuttersControl_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON ".
                             "AutoShuttersControl_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 ".
                             "AutoShuttersControl_antifreezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 ".
+                            "AutoShuttersControl_timeUpHolidayDevice ".
                             $readingFnAttributes;
 
 ## Ist nur damit sich bei einem reload auch die Versionsnummer erneuert.
@@ -123,6 +124,7 @@ BEGIN {
         CommandSet
         AttrVal
         ReadingsVal
+        Value
         IsDisabled
         deviceEvents
         init_done
@@ -136,6 +138,7 @@ BEGIN {
         InternalTimer
         RemoveInternalTimer
         computeAlignTime
+        ReplaceEventMap
     ))
 };
 
@@ -156,7 +159,7 @@ my %userAttrList =  (   'AutoShuttersControl_Mode_Up:absent,always,off'         
                         'AutoShuttersControl_Direction'                                                                     =>  178,
                         'AutoShuttersControl_Time_Up_Early'                                                                 =>  '04:30:00',
                         'AutoShuttersControl_Time_Up_Late'                                                                  =>  '09:00:00',
-                        'AutoShuttersControl_Time_Up_WE_Holiday'                                                            =>  '09:30:00',
+                        'AutoShuttersControl_Time_Up_WE_Holiday'                                                            =>  '08:30:00',
                         'AutoShuttersControl_Time_Down_Early'                                                               =>  '15:30:00', 
                         'AutoShuttersControl_Time_Down_Late'                                                                =>  '22:30:00',
                         'AutoShuttersControl_Rand_Minutes'                                                                  =>  20,
@@ -312,6 +315,7 @@ sub Notify($$) {
 
             readingsSingleUpdate($hash,'partyMode','off',0) if(ReadingsVal($name,'partyMode','none') eq 'none');
             readingsSingleUpdate($hash,'lockOut','off',0) if(ReadingsVal($name,'lockOut','none') eq 'none');
+            readingsSingleUpdate($hash,'sunriseTimeWeHoliday','off',0) if(ReadingsVal($name,'sunriseTimeWeHoliday','none') eq 'none');
             
             ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
             ShuttersDeviceScan($hash)
@@ -331,11 +335,18 @@ sub Notify($$) {
             
         } elsif( grep /^partyMode:.off$/,@{$events} ) {
             PartyModeEventProcessing($hash);
+        
+        } elsif( grep /^sunriseTimeWeHoliday:.(on|off)$/,@{$events} ) {
+            RenewSunRiseSetShuttersTimer($hash);
         }
 
     } elsif( $devname eq "global" ) {           # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
-        if (grep /^(ATTR|DELETEATTR)\s(.*AutoShuttersControl_Roommate_Device|.*AutoShuttersControl_WindowRec)(\s.*|$)/,@{$events}) {
+        if( grep /^(ATTR|DELETEATTR)\s(.*AutoShuttersControl_Roommate_Device|.*AutoShuttersControl_WindowRec)(\s.*|$)/,@{$events}) {
             GeneralEventProcessing($hash,undef,join(' ',@{$events}));
+        
+        } elsif(grep /^(ATTR|DELETEATTR)\s(.*AutoShuttersControl_Time_Up_WE_Holiday)(\s.*|$)/,@{$events}) {
+            RenewSunRiseSetShuttersTimer($hash)
+                unless( ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'off' );
         }
         
     } else {
@@ -403,10 +414,15 @@ sub Set($$@) {
         
         readingsSingleUpdate($hash, "lockOut", join(' ',@args), 1);
         SetHardewareBlockForShutters($hash,join(' ',@args));
+        
+    } elsif( lc $cmd eq 'sunrisetimeweholiday' ) {
+        return "usage: $cmd" if( @args > 1 );
+        
+        readingsSingleUpdate($hash, "sunriseTimeWeHoliday", join(' ',@args), 1);
     
     } else {
         my $list = "scanForShutters:noArg";
-        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
+        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
         
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -810,8 +826,8 @@ sub SunRiseShuttersAfterTimerFn($) {
     my $funcHash                                    = shift;
     my $hash                                        = $funcHash->{hash};
     my $shuttersDev                                 = $funcHash->{shuttersdevice};
-    
-    
+
+
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
     
     if( AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq ReadingsVal(AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Device','none'),AttrVal($shuttersDev,'AutoShuttersControl_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'AutoShuttersControl_Mode_Up','off') eq 'always' ) {
@@ -890,7 +906,7 @@ sub ShuttersSunrise($$$) {
     
     my $name                    = $hash->{NAME};
     my $autoAstroMode;
-    
+
     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','none') ne 'none' ) {
         $autoAstroMode          = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorning','REAL');
         $autoAstroMode          = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeMorningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
@@ -905,9 +921,13 @@ sub ShuttersSunrise($$$) {
 
     if( $tm eq 'unix' ) {
         if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro') {
-        
-            $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
-            
+            if( (IsWe() or IsWeTomorrow()) and ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'on' ) {
+                $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','10:00:00'))) + 1);
+                
+            } else {
+                $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
+            }
+
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
                     if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
@@ -932,7 +952,7 @@ sub ShuttersSunset($$$) {
     
     my $name                    = $hash->{NAME};
     my $autoAstroMode;
-    
+
     if( AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','none') ne 'none') {
         $autoAstroMode          = AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEvening','REAL');
         $autoAstroMode          = $autoAstroMode . '=' . AttrVal($shuttersDev,'AutoShuttersControl_AutoAstroModeEveningHorizon',0) if( $autoAstroMode eq 'HORIZON' );
@@ -1017,6 +1037,45 @@ sub TimeMin2Sec($) {
     return $sec;
 }
 
+sub IsWe() {
+    
+    my (undef,undef,undef,undef,undef,undef,$wday,undef,undef) = localtime(gettimeofday());
+    my $we  = (($wday == 0 || $wday == 6) ? 1 : 0);
+
+
+    if(!$we) {
+        foreach my $h2we (split(",", AttrVal("global", "holiday2we", ""))) {
+            my ($a, $b) = ReplaceEventMap($h2we, [$h2we, Value($h2we)], 0);
+            $we = 1 if($b && $b ne "none");
+        }
+    }
+    
+    return $we
+}
+
+sub IsWeTomorrow() {
+
+    my (undef,undef,undef,undef,undef,undef,$wday,undef,undef) = localtime(gettimeofday());
+    my $we  = ((($wday+1) == 0 || ($wday+1) == 6) ? 1 : 0);
+    
+    if(!$we) {
+        foreach my $h2we (split(",", AttrVal("global", "holiday2we", ""))) {
+            my ($a, $b) = ReplaceEventMap($h2we, [$h2we, ReadingsVal($h2we,"tomorrow","none")], 0);
+            $we = 1 if($b && $b ne "none");
+        }
+    }
+    
+    return $we
+}
+
+sub IsHoliday($) {
+
+    my $hash    = shift;
+    my $name    = $hash->{NAME};
+    
+    return ( ReadingsVal(AttrVal($name,'AutoShuttersControl_timeUpHolidayDevice','none'),'state',0) == 1 ? 1 : 0 );
+}
+
 
 
 
@@ -1068,7 +1127,7 @@ sub TimeMin2Sec($) {
       <li>..._lastPosValue - last sent positioning command per shutter</li>
       <li>..._lastDelayPosValue - last positioning command per shutter not yet sent, waiting for event dependent execution.</li>
       <li>partyMode - on/off; activates a global party mode, all shutters with AutoShuttersControl_Partymode attribute set to "on" will not get any command from ASC until part is set to "off" again. Then the last intermediate positioning command will be executed, e.g. based on window opening or resident state.</li>
-      <li>lockOut - on/off</li>
+      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - List of all shutter devices under ASC control per room</li>
       <li>state - State of the ASC device (active, enabled or disabled)</li>
       <li>userAttrList - Indicates if all UserAttributes are rolled out to shutter devices.</li>
@@ -1084,7 +1143,7 @@ sub TimeMin2Sec($) {
   <b>Set</b>
   <ul>
     <li>partyMode - on/off activates global party mode. See Reading partyMode</li>
-    <li>lockOut - on/off</li>
+    <li>lockOut - on/off aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - renews individual times and internal timers for all shutters under ASC control.</li>
     <li>scanForShutters - add all FHEM devices to ASC control; looks up for devices with attribute "AutoShuttersControl" set to 1 or 2.</li>
     <li></li>
@@ -1137,13 +1196,15 @@ sub TimeMin2Sec($) {
       <li>AutoShuttersControl_Time_Down_Late - Latest limit for closing timer calculation using sunset</li>
       <li>AutoShuttersControl_Time_Up_Early - Like ...Time_Down... for opening</li>
       <li>AutoShuttersControl_Time_Up_Late - Like ...Time_Down... for opening</li>
+      <li>AutoShuttersControl_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub</li>
+      <li>AutoShuttersControl_Time_Up_HolidayDevice - Device zur Urlaubserkennung/muss 0 oder 1 im Reading state beinhalten.
       <li>AutoShuttersControl_Up - astro/time "Astro" will use sunrise calculation for opening times, "time" uses AutoShuttersControl_Time_Up_Early value.</li>
       <li>AutoShuttersControl_Ventilate_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
       <li>AutoShuttersControl_Ventilate_Window_Open - Level to be set for ventilation in case of opening or tilted event (only if current shutter position is below this level</li>
       <li>AutoShuttersControl_WindowRec - Name of the window contact corresponding to the shutter</li>
       <li>AutoShuttersControl_WindowRec_subType - Type of the used window contact: twostate (only sends open and closed) or threestate (sends also tilted)</li>
-      <li>AutoShuttersControl_lock-out - soft/hard </li>
-      <li>AutoShuttersControl_lock-outCmd - lock-out Command</li>
+      <li>AutoShuttersControl_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
+      <li>AutoShuttersControl_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "AutoShuttersControl_lock-out" auf hard setzt</li>
     </ul>
   </ul>
 </ul>
@@ -1187,6 +1248,7 @@ sub TimeMin2Sec($) {
       <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
+      <li>sunriseTimeWeHoliday - </li>
       <li>userAttrList - Status der UserAttribute welche an die Roll&auml;den gesendet werden</li>
     </ul><br>
     In den Roll&auml;den Devices
@@ -1203,7 +1265,7 @@ sub TimeMin2Sec($) {
     <li>lockOut - on/off aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
-    <li></li>
+    <li>sunriseTimeWeHoliday - </li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlGet"></a>
@@ -1227,6 +1289,7 @@ sub TimeMin2Sec($) {
       <li>AutoShuttersControl_autoShuttersControlMorning - on/off, ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>AutoShuttersControl_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
       <li>AutoShuttersControl_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
+      <li>AutoShuttersControl_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
@@ -1252,6 +1315,7 @@ sub TimeMin2Sec($) {
       <li>AutoShuttersControl_Time_Down_Late - Sunset späteste Zeit zum runter fahren</li>
       <li>AutoShuttersControl_Time_Up_Early - Sunrise frühste Zeit zum hoch fahren</li>
       <li>AutoShuttersControl_Time_Up_Late - Sunrise späteste Zeit zum hoch fahren</li>
+      <li>AutoShuttersControl_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub (we2holiday wird beachtet), Achtung sollte nicht gr&ouml;&szlig;er sein wie AutoShuttersControl_Time_Up_Late sonst wird AutoShuttersControl_Time_Up_Late verwendet</li>
       <li>AutoShuttersControl_Up - astro/time bei Astro wird Sonnenaufgang berechnet, bei time wird der Wert aus AutoShuttersControl_Time_Up_Early als Fahrzeit verwendet</li>
       <li>AutoShuttersControl_Ventilate_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>AutoShuttersControl_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
