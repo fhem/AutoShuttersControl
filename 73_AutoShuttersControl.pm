@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.48";
+my $version = "0.1.49";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -205,8 +205,7 @@ sub Define($$) {
     my @a = split( "[ \t][ \t]*", $def );
     
     return "only one AutoShuttersControl instance allowed" if( devspec2array('TYPE=AutoShuttersControl') > 1 ); # es wird geprüft ob bereits eine Instanz unseres Modules existiert, wenn ja wird abgebrochen
-    #return "too few parameters: define <name> ShuttersControl <Shutters1 Shutters2 ...> or <auto>" if( @a < 3 );    # es dürfen nicht weniger wie 3 Optionen unserem define mitgegeben werden
-    return "too few parameters: define <name> ShuttersControl <Shutters1 Shutters2 ...> or <auto>" if( @a < 2 );
+    return "too few parameters: define <name> ShuttersControl" if( @a != 2 );
     return "Cannot define ShuttersControl device. Perl modul ${missingModul}is missing." if ( $missingModul );  # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
     
 
@@ -1056,8 +1055,9 @@ sub IsWe() {
 sub IsWeTomorrow() {
 
     my (undef,undef,undef,undef,undef,undef,$wday,undef,undef) = localtime(gettimeofday());
-    my $we  = ((($wday+1) == 0 || ($wday+1) == 6) ? 1 : 0);
-    
+    my $we  = (((($wday+1 == 7 ? 0 : $wday+1)) == 0 || ($wday+1) == 6) ? 1 : 0);
+
+
     if(!$we) {
         foreach my $h2we (split(",", AttrVal("global", "holiday2we", ""))) {
             my ($a, $b) = ReplaceEventMap($h2we, [$h2we, ReadingsVal($h2we,"tomorrow","none")], 0);
@@ -1248,7 +1248,7 @@ sub IsHoliday($) {
       <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
-      <li>sunriseTimeWeHoliday - </li>
+      <li>sunriseTimeWeHoliday - on/off wird das Rolladen Device Attribut Attributes AutoShuttersControl_Time_Up_WE_Holiday Beachtet oder nicht</li>
       <li>userAttrList - Status der UserAttribute welche an die Roll&auml;den gesendet werden</li>
     </ul><br>
     In den Roll&auml;den Devices
@@ -1265,7 +1265,7 @@ sub IsHoliday($) {
     <li>lockOut - on/off aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
-    <li>sunriseTimeWeHoliday - </li>
+    <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes AutoShuttersControl_Time_Up_WE_Holiday</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlGet"></a>
