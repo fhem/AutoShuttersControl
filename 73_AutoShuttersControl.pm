@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.49";
+my $version = "0.1.50";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -51,7 +51,7 @@ sub AutoShuttersControl_Initialize($) {
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
 #  und davor mit :: getrennt der eigentliche package Name des Modules
     $hash->{SetFn}      = "AutoShuttersControl::Set";
-    #$hash->{GetFn}      = "ShuttersControl::Get";
+    $hash->{GetFn}      = "AutoShuttersControl::Get";
     $hash->{DefFn}      = "AutoShuttersControl::Define";
     $hash->{NotifyFn}   = "AutoShuttersControl::Notify";
     $hash->{UndefFn}    = "AutoShuttersControl::Undef";
@@ -427,6 +427,27 @@ sub Set($$@) {
     }
     
     return undef;
+}
+
+sub Get($$@) {
+    
+    my ($hash, $name, @aa)  = @_;
+    
+    
+    my ($cmd, @args)        = @aa;
+
+    if( lc $cmd eq 'showshuttersinformations' ) {
+        return "usage: $cmd" if( @args != 0 );
+
+        my $ret = GetShuttersInformation($hash);
+        return $ret;
+
+    } else {
+        my $list = "";
+        #$list .= " showShuttersInformations:noArg" if( ReadingsVal($name,'userAttrList','none') eq 'rolled out' );
+
+        return "Unknown argument $cmd, choose one of $list";
+    }
 }
 
 sub ShuttersDeviceScan($) {
@@ -838,6 +859,64 @@ sub SunRiseShuttersAfterTimerFn($) {
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
 }
 
+sub GetShuttersInformation($) {
+
+    my $hash    = shift;
+    
+    my $name    = $hash->{NAME};
+    
+    
+    my $shuttersInformations    = ShuttersInformation($hash);
+
+    my $ret = '<html><table><tr><td>';
+    $ret .= '<table class="block wide">';
+    $ret .= '<tr class="even">';
+    $ret .= "<td><b>Shuttername</b></td>";
+    $ret .= "<td><b>Next Sunrise</b></td>";
+    $ret .= "<td><b>Next Sunset</b></td>";
+    $ret .= "<td></td>";
+    $ret .= '</tr>';
+    Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - for if";
+    if( ref($shuttersInformations) eq "HASH" ) {
+        Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - fafter if";
+        my $linecount = 1;
+        foreach my $shuttersInformation (keys (%{$shuttersInformations}) ) {
+            if ( $linecount % 2 == 0 ) {
+                $ret .= '<tr class="even">';
+            } else {
+                $ret .= '<tr class="odd">';
+            }
+
+            $ret .= "<td>$shuttersInformation</td>";
+            $ret .= "<td>$shuttersInformation->{Time_Sunrise}</td>";
+            $ret .= "<td>$shuttersInformation->{Time_Sunset}</td>";
+            
+            $ret .= '</tr>';
+            $linecount++;
+        }
+    }
+    
+    $ret .= '</table></td></tr>';
+    $ret .= '</table></html>';
+
+    return $ret;
+}
+
+sub ShuttersInformation($) {
+
+    my $hash    = shift;
+
+
+    my %shuttersInformations    = ();
+
+    foreach (@{$hash->{helper}{shuttersList}}) {
+        $_{'Time_Sunrise'}   = ReadingsVal($_,'AutoShuttersControl_Time_Sunrise','none');
+        $_{'Time_Sunset'}    = ReadingsVal($_,'AutoShuttersControl_Time_Sunset','none');
+    }
+
+    return \%shuttersInformations;
+}
+
 
 
 
@@ -921,13 +1000,17 @@ sub ShuttersSunrise($$$) {
     if( $tm eq 'unix' ) {
         if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro') {
             if( (IsWe() or IsWeTomorrow()) and ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'on' ) {
-                $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','10:00:00'))) + 1);
+                $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'))) + 1);
                 
             } else {
                 $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
             }
 
-            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
+            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'on' ) {
+                $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
+                    if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
+            
+            } elsif( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
                     if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
             }
