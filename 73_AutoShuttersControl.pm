@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.52";
+my $version = "0.1.53";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -883,9 +883,8 @@ sub GetShuttersInformation($) {
     $ret .= "<td> </td>";
     $ret .= "<td><b>Lock-Out</b></td>";
     $ret .= '</tr>';
-    Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - for if";
+
     if( ref($shuttersInformations) eq "HASH" ) {
-        Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - fafter if";
         my $linecount = 1;
         foreach my $shutter (keys (%{$shuttersInformations}) ) {
             if ( $linecount % 2 == 0 ) {
