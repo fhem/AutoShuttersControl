@@ -869,8 +869,6 @@ sub GetShuttersInformation($) {
     
     
     my $shuttersInformations    = ShuttersInformation($hash);
-
-    Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation Info " . $shuttersInformations->{'RolloKinZimSteven_F1'}{'Time_Sunrise'};
     
     my $ret = '<html><table><tr><td>';
     $ret .= '<table class="block wide">';
