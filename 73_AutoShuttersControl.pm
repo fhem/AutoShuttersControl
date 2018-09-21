@@ -42,7 +42,7 @@ use warnings;
 
 
 
-my $version = "0.1.50";
+my $version = "0.1.52";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -444,7 +444,7 @@ sub Get($$@) {
 
     } else {
         my $list = "";
-        #$list .= " showShuttersInformations:noArg" if( ReadingsVal($name,'userAttrList','none') eq 'rolled out' );
+        $list .= " showShuttersInformations:noArg" if( ReadingsVal($name,'userAttrList','none') eq 'rolled out' );
 
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -764,15 +764,17 @@ sub CreateSunRiseSetShuttersTimer($$) {
 
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
     readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_Sunset',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? localtime($shuttersSunsetUnixtime) : 'AutoShuttersControl off'),1 );
-    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_Sunrise',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? localtime($shuttersSunriseUnixtime) : 'AutoShuttersControl off'),1 );
+    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_DriveDown',(AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M:%S",localtime($shuttersSunsetUnixtime)) : 'AutoShuttersControl off'),1 );
+    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_DriveUp',(AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M:%S",localtime($shuttersSunriseUnixtime)) : 'AutoShuttersControl off'),1 );
     readingsEndUpdate($shuttersDevHash,0);
 
     readingsBeginUpdate($hash);
-    readingsBulkUpdateIfChanged($hash,$shuttersDev . '_nextAstroTimeEvent',($shuttersSunriseUnixtime < $shuttersSunsetUnixtime ? localtime($shuttersSunriseUnixtime) : localtime($shuttersSunsetUnixtime)));
+    readingsBulkUpdateIfChanged($hash,$shuttersDev . '_nextAstroTimeEvent',($shuttersSunriseUnixtime < $shuttersSunsetUnixtime ? strftime("%e.%m.%Y - %H:%M:%S",localtime($shuttersSunriseUnixtime)) : strftime("%e.%m.%Y - %H:%M:%S",localtime($shuttersSunsetUnixtime))));
     readingsEndUpdate($hash,1);
 
     CommandDeleteReading(undef,$name . ' ' . $shuttersDev . '_nextAstroEvent') if( ReadingsVal($name,$shuttersDev . '_nextAstroEvent','none') ne 'none' );  # temporär
+    CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_Sunrise') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_Sunrise','none') ne 'none' );  # temporär
+    CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_Sunset') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_Sunset','none') ne 'none' );  # temporär
 
 
     RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash','none'))
@@ -868,29 +870,41 @@ sub GetShuttersInformation($) {
     
     my $shuttersInformations    = ShuttersInformation($hash);
 
+    Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation Info " . $shuttersInformations->{'RolloKinZimSteven_F1'}{'Time_Sunrise'};
+    
     my $ret = '<html><table><tr><td>';
     $ret .= '<table class="block wide">';
     $ret .= '<tr class="even">';
     $ret .= "<td><b>Shuttername</b></td>";
-    $ret .= "<td><b>Next Sunrise</b></td>";
-    $ret .= "<td><b>Next Sunset</b></td>";
-    $ret .= "<td></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Next DriveUp</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Next DriveDown</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Partymode</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Lock-Out</b></td>";
     $ret .= '</tr>';
     Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - for if";
     if( ref($shuttersInformations) eq "HASH" ) {
         Log3 $name, 2, "AutoShuttersControl ($name) - GetShuttersInformation - fafter if";
         my $linecount = 1;
-        foreach my $shuttersInformation (keys (%{$shuttersInformations}) ) {
+        foreach my $shutter (keys (%{$shuttersInformations}) ) {
             if ( $linecount % 2 == 0 ) {
                 $ret .= '<tr class="even">';
             } else {
                 $ret .= '<tr class="odd">';
             }
 
-            $ret .= "<td>$shuttersInformation</td>";
-            $ret .= "<td>$shuttersInformation->{Time_Sunrise}</td>";
-            $ret .= "<td>$shuttersInformation->{Time_Sunset}</td>";
-            
+            $ret .= "<td>$shutter</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>$shuttersInformations->{$shutter}{Time_DriveUp}</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>$shuttersInformations->{$shutter}{Time_DriveDown}</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>$shuttersInformations->{$shutter}{Partymode}</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>$shuttersInformations->{$shutter}{'Lock-Out'}</td>";
             $ret .= '</tr>';
             $linecount++;
         }
@@ -910,8 +924,10 @@ sub ShuttersInformation($) {
     my %shuttersInformations    = ();
 
     foreach (@{$hash->{helper}{shuttersList}}) {
-        $_{'Time_Sunrise'}   = ReadingsVal($_,'AutoShuttersControl_Time_Sunrise','none');
-        $_{'Time_Sunset'}    = ReadingsVal($_,'AutoShuttersControl_Time_Sunset','none');
+        $shuttersInformations{$_}{'Time_DriveUp'}   = ReadingsVal($_,'AutoShuttersControl_Time_DriveUp','none');
+        $shuttersInformations{$_}{'Time_DriveDown'}    = ReadingsVal($_,'AutoShuttersControl_Time_DriveDown','none');
+        $shuttersInformations{$_}{'Partymode'}      = AttrVal($_,'AutoShuttersControl_Partymode','none');
+        $shuttersInformations{$_}{'Lock-Out'}       = AttrVal($_,'AutoShuttersControl_lock-out','none');
     }
 
     return \%shuttersInformations;
@@ -1217,8 +1233,8 @@ sub IsHoliday($) {
     </ul><br>
     Shutter Devices
     <ul>
-      <li>AutoShuttersControl_Time_Sunrise - Shutter's individual sunrise time</li>
-      <li>AutoShuttersControl_Time_Sunset - Shutter's individual sunset time</li>
+      <li>AutoShuttersControl_Time_DriveUp - Shutter's individual sunrise time</li>
+      <li>AutoShuttersControl_Time_DriveDown - Shutter's individual sunset time</li>
     </ul>
   </ul>
   <br><br>
@@ -1336,8 +1352,8 @@ sub IsHoliday($) {
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
-      <li>AutoShuttersControl_Time_Sunrise - Sonnenaufgangszei f&uuml;r das Rollo</li>
-      <li>AutoShuttersControl_Time_Sunset - Sonnenuntergangszeit f&uuml;r das Rollo</li>
+      <li>AutoShuttersControl_Time_DriveUp - Sonnenaufgangszei f&uuml;r das Rollo</li>
+      <li>AutoShuttersControl_Time_DriveDown - Sonnenuntergangszeit f&uuml;r das Rollo</li>
     </ul>
   </ul>
   <br><br>
