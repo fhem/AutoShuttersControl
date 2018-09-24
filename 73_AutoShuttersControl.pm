@@ -30,6 +30,10 @@
 #
 ###############################################################################
 
+### Notizen
+# - Wochenendesteuerung noch mal überarbeiten. Auswerten ob Folgetag ein Feiertag und Zeit für den Folgetag berechnet wird. (aktuell in Arbeit)
+# - Überarbeiten Komfortsteuerung für twostate
+# - Feststellen ob ein Rolladen fährt oder nicht 
 
 
 
@@ -42,7 +46,7 @@ use warnings;
 
 
 
-my $version = "0.1.53";
+my $version = "0.1.54";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -1013,8 +1017,15 @@ sub ShuttersSunrise($$$) {
     if( $tm eq 'unix' ) {
         if( AttrVal($shuttersDev,'AutoShuttersControl_Up','astro') eq 'astro') {
             if( (IsWe() or IsWeTomorrow()) and ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'on' ) {
-                $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'))) + 1);
-                
+                if( not IsWeTomorrow() ) {
+                    if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1) / 86400) ) {
+                        $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'))) + 1);
+                    } else {
+                        $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
+                    }
+                } else {
+                    $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_WE_Holiday','04:00:00'))) + 1);
+                }
             } else {
                 $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'AutoShuttersControl_Time_Up_Late','09:00:00'))) + 1);
             }
