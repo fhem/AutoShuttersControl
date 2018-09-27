@@ -46,7 +46,7 @@ use warnings;
 
 
 
-my $version = "0.1.55";
+my $version = "0.1.60";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -66,10 +66,10 @@ sub AutoShuttersControl_Initialize($) {
                             "ASC_temperatureSensor ".
                             "ASC_temperatureReading ".
                             "ASC_brightnessMinVal ".
-                            "ASC_ASCMorning:on,off ".
-                            "ASC_ASCEvening:on,off ".
-                            "ASC_ASC_Shading:on,off ".
-                            "ASC_ASCComfort:on,off ".
+                            "ASC_autoShuttersControlMorning:on,off ".
+                            "ASC_autoShuttersControlEvening:on,off ".
+                            "ASC_autoShuttersControl_Shading:on,off ".
+                            "ASC_autoShuttersControlComfort:on,off ".
                             "ASC_sunPosDevice ".
                             "ASC_sunPosReading ".
                             "ASC_sunElevationDevice ".
@@ -221,7 +221,7 @@ sub Define($$) {
     $hash->{NOTIFYDEV}          = "global,".$name;                              # Liste aller Devices auf deren Events gehört werden sollen
     
 
-    readingsSingleUpdate($hash,"state","please set attribut 'AutoShuttersControl' with value 1 or 2 to all your auto controlled shutters and then do 'set DEVICENAME scanForShutters", 1);
+    readingsSingleUpdate($hash,"state","please set attribut 'ACS' with value 1 or 2 to all your auto controlled shutters and then do 'set DEVICENAME scanForShutters", 1);
     CommandAttr(undef,$name . ' room ASC') if( AttrVal($name,'room','none') eq 'none' );
     CommandAttr(undef,$name . ' icon fts_shutter_automatic') if( AttrVal($name,'icon','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_autoAstroModeEvening REAL') if( AttrVal($name,'ASC_autoAstroModeEvening','none') eq 'none' );
@@ -787,8 +787,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe, dieser muss gesichert werden
     readingsSingleUpdate($shuttersDevHash,'.AutoShuttersControl_InternalTimerFuncHash',\%funcHash,0);
-    InternalTimer($shuttersSunsetUnixtime, 'AutoShuttersControl::SunSetShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlEvening','off') eq 'on' );
-    InternalTimer($shuttersSunriseUnixtime, 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'AutoShuttersControl_autoShuttersControlMorning','off') eq 'on' );
+    InternalTimer($shuttersSunsetUnixtime, 'AutoShuttersControl::SunSetShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'ASC_autoShuttersControlEvening','off') eq 'on' );
+    InternalTimer($shuttersSunriseUnixtime, 'AutoShuttersControl::SunRiseShuttersAfterTimerFn',\%funcHash ) if( AttrVal($name,'ASC_autoShuttersControlMorning','off') eq 'on' );
 }
 
 ## Funktion zum neu setzen der Timer und der Readings für Sunset/Rise
