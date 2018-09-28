@@ -33,7 +33,7 @@
 ### Notizen
 # - Wochenendesteuerung noch mal überarbeiten. Auswerten ob Folgetag ein Feiertag und Zeit für den Folgetag berechnet wird. (aktuell in Arbeit)
 # - Überarbeiten Komfortsteuerung für twostate
-# - Feststellen ob ein Rolladen fährt oder nicht 
+# - Feststellen ob ein Rolladen fährt oder nicht
 
 
 
@@ -46,7 +46,7 @@ use warnings;
 
 
 
-my $version = "0.1.60";
+my $version = "0.1.61";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -766,8 +766,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
 
     ## In jedem Rolladen werden die errechneten Zeiten hinterlegt, es sei denn das autoShuttersControlEvening/Morning auf off steht
     readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdate( $shuttersDevHash,'AutoShuttersControl_Time_DriveDown',(AttrVal($name,'ASC_autoShuttersControlEvening','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M",localtime($shuttersSunsetUnixtime)) : 'AutoShuttersControl off'),1 );
-    readingsBulkUpdate($shuttersDevHash,'AutoShuttersControl_Time_DriveUp',(AttrVal($name,'ASC_autoShuttersControlMorning','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M",localtime($shuttersSunriseUnixtime)) : 'AutoShuttersControl off'),1 );
+    readingsBulkUpdate( $shuttersDevHash,'ASC_Time_DriveDown',(AttrVal($name,'ASC_autoShuttersControlEvening','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M",localtime($shuttersSunsetUnixtime)) : 'AutoShuttersControl off'),1 );
+    readingsBulkUpdate($shuttersDevHash,'ASC_Time_DriveUp',(AttrVal($name,'ASC_autoShuttersControlMorning','off') eq 'on' ? strftime("%e.%m.%Y - %H:%M",localtime($shuttersSunriseUnixtime)) : 'AutoShuttersControl off'),1 );
     readingsEndUpdate($shuttersDevHash,0);
 
     readingsBeginUpdate($hash);
@@ -777,6 +777,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     CommandDeleteReading(undef,$name . ' ' . $shuttersDev . '_nextAstroEvent') if( ReadingsVal($name,$shuttersDev . '_nextAstroEvent','none') ne 'none' );  # temporär
     CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_Sunrise') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_Sunrise','none') ne 'none' );  # temporär
     CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_Sunset') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_Sunset','none') ne 'none' );  # temporär
+    CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_DriveDown') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_DriveDown','none') ne 'none' );  # temporär
+    CommandDeleteReading(undef,$shuttersDev . ' AutoShuttersControl_Time_DriveUp') if( ReadingsVal($shuttersDev,'AutoShuttersControl_Time_DriveUp','none') ne 'none' );  # temporär
 
 
     RemoveInternalTimer(ReadingsVal($shuttersDev,'.AutoShuttersControl_InternalTimerFuncHash','none'))
@@ -923,8 +925,8 @@ sub ShuttersInformation($) {
     my %shuttersInformations    = ();
 
     foreach (@{$hash->{helper}{shuttersList}}) {
-        $shuttersInformations{$_}{'Time_DriveUp'}   = ReadingsVal($_,'AutoShuttersControl_Time_DriveUp','none');
-        $shuttersInformations{$_}{'Time_DriveDown'} = ReadingsVal($_,'AutoShuttersControl_Time_DriveDown','none');
+        $shuttersInformations{$_}{'Time_DriveUp'}   = ReadingsVal($_,'ASC_Time_DriveUp','none');
+        $shuttersInformations{$_}{'Time_DriveDown'} = ReadingsVal($_,'ASC_Time_DriveDown','none');
         $shuttersInformations{$_}{'Partymode'}      = AttrVal($_,'ASC_Partymode','none');
         $shuttersInformations{$_}{'Lock-Out'}       = AttrVal($_,'ASC_lock-out','none');
     }
@@ -1030,7 +1032,7 @@ sub ShuttersSunrise($$$) {
 
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and ReadingsVal($name,'sunriseTimeWeHoliday','off') eq 'on' ) {
                 if( not IsWeTomorrow() ) {
-                    if( int(gettimeofday() / 86400) != int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'ASC_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'ASC_Time_Up_Late','09:00:00'))) + 1) / 86400) ) {
+                    if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'ASC_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'ASC_Time_Up_Late','09:00:00'))) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
                             #if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
                             if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) and $oldFuncHash->{sunrisetime} < gettimeofday() );
@@ -1237,16 +1239,16 @@ sub IsHoliday($) {
       <li>..._nextAstroTimeEvent - Execution time of the next Astro Event, sunrise, sunset or fixed time per shutter</li>
       <li>..._lastPosValue - last sent positioning command per shutter</li>
       <li>..._lastDelayPosValue - last positioning command per shutter not yet sent, waiting for event dependent execution.</li>
-      <li>partyMode - on/off; activates a global party mode, all shutters with AutoShuttersControl_Partymode attribute set to "on" will not get any command from ASC until part is set to "off" again. Then the last intermediate positioning command will be executed, e.g. based on window opening or resident state.</li>
-      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
+      <li>partyMode - on/off; activates a global party mode, all shutters with ASC_Partymode attribute set to "on" will not get any command from ASC until part is set to "off" again. Then the last intermediate positioning command will be executed, e.g. based on window opening or resident state.</li>
+      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut ASC_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - List of all shutter devices under ASC control per room</li>
       <li>state - State of the ASC device (active, enabled or disabled)</li>
       <li>userAttrList - Indicates if all UserAttributes are rolled out to shutter devices.</li>
     </ul><br>
     Shutter Devices
     <ul>
-      <li>AutoShuttersControl_Time_DriveUp - Shutter's individual sunrise time</li>
-      <li>AutoShuttersControl_Time_DriveDown - Shutter's individual sunset time</li>
+      <li>ASC_Time_DriveUp - Shutter's individual sunrise time</li>
+      <li>ASC_Time_DriveDown - Shutter's individual sunset time</li>
     </ul>
   </ul>
   <br><br>
@@ -1271,51 +1273,51 @@ sub IsHoliday($) {
   <ul>
   Modul Device
     <ul>
-      <li>AutoShuttersControl_antifreezeTemp - Temperature limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
-      <li>AutoShuttersControl_autoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_autoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute AutoShuttersControl_autoAstroModeEvening set to HORIZON</li>
-      <li>AutoShuttersControl_autoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_autoAstroModeMorningHorizon - similar to AutoShuttersControl_autoAstroModeEvening</li>
-      <li>AutoShuttersControl_autoShuttersControlComfort - on/off. Switch to on to react on open or tilted events. Needs further info in shutter attributes about WindowRec, WindowRecType and AutoShuttersControl_Pos_after_ComfortOpen (last sets target position).</li>
-      <li>AutoShuttersControl_autoShuttersControlEvening - on/off; Switch to on to close this shutter in the evening</li>
-      <li>AutoShuttersControl_autoShuttersControlMorning - on/off; similar to AutoShuttersControl_autoShuttersControlEvening for opening.</li>
-      <li>AutoShuttersControl_temperatureReading - Reading name for outside temperature</li>
-      <li>AutoShuttersControl_temperatureSensor - Device name for outside temperature</li>
+      <li>ASC_antifreezeTemp - Temperature limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
+      <li>ASC_autoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_autoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute ASC_autoAstroModeEvening set to HORIZON</li>
+      <li>ASC_autoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_autoAstroModeMorningHorizon - similar to ASC_autoAstroModeEvening</li>
+      <li>ASC_autoShuttersControlComfort - on/off. Switch to on to react on open or tilted events. Needs further info in shutter attributes about WindowRec, WindowRecType and ASC_Pos_after_ComfortOpen (last sets target position).</li>
+      <li>ASC_autoShuttersControlEvening - on/off; Switch to on to close this shutter in the evening</li>
+      <li>ASC_autoShuttersControlMorning - on/off; similar to ASC_autoShuttersControlEvening for opening.</li>
+      <li>ASC_temperatureReading - Reading name for outside temperature</li>
+      <li>ASC_temperatureSensor - Device name for outside temperature</li>
     </ul><br>
     Individual Shutter Devices
     <ul>
       <li>AutoShuttersControl - 0/1/2. Use "1" if your shutter is open at lower position (typically: 0 = open, 100 = closed) and shutter command "position" is used. Right choice for ROLLO devices.
 	"2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.</li>
-      <li>AutoShuttersControl_Antifreeze - on/off; Set to on to prevent ASC commands under the set temperature limit</li>
-      <li>AutoShuttersControl_AutoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_AutoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute AutoShuttersControl_autoAstroModeEvening set to HORIZON</li>
-      <li>AutoShuttersControl_AutoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_AutoAstroModeMorningHorizon - similar to AutoShuttersControl_autoAstroModeEvening</li>
-      <li>AutoShuttersControl_Closed_Pos - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
-      <li>AutoShuttersControl_Down - astro/time. "Astro" uses sunrise logic to calculate sunset time, "time" uses AutoShuttersControl_Time_Down_Early attibute's value.</li>
-      <li>AutoShuttersControl_Mode_Down - always/absent/off. Additional conditions for close commands based on roommate state. Please note: If there's no roommate and attribute set to "absent" no closing command will be issued.</li>
-      <li>AutoShuttersControl_Mode_Up - always/absent/off. Like AutoShuttersControl_Mode_Down for opening commands.</li>
-      <li>AutoShuttersControl_Offset_Minutes_Evening - </li>
-      <li>AutoShuttersControl_Offset_Minutes_Morning - </li>
-      <li>AutoShuttersControl_Open_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
-      <li>AutoShuttersControl_Partymode -  on/off. See correspondant Attribute for ASC Module.</li>
-      <li>AutoShuttersControl_Pos_Cmd - set command for setting the shutter to a decent level; must correspond to the reading name for the actual position of the shutter</li>
-      <li>AutoShuttersControl_Pos_after_ComfortOpen - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
-      <li>AutoShuttersControl_Roommate_Reading - Reading name of the roommate device's status info.</li>
-      <li>AutoShuttersControl_Roommate_Device - Name of the roommate device to be used to controll all shutters in the same room as the roommate.</li>
-      <li>AutoShuttersControl_Time_Down_Early - Early limit for closing timer calculation using sunset</li>
-      <li>AutoShuttersControl_Time_Down_Late - Latest limit for closing timer calculation using sunset</li>
-      <li>AutoShuttersControl_Time_Up_Early - Like ...Time_Down... for opening</li>
-      <li>AutoShuttersControl_Time_Up_Late - Like ...Time_Down... for opening</li>
-      <li>AutoShuttersControl_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub</li>
-      <li>AutoShuttersControl_Time_Up_HolidayDevice - Device zur Urlaubserkennung/muss 0 oder 1 im Reading state beinhalten.
-      <li>AutoShuttersControl_Up - astro/time "Astro" will use sunrise calculation for opening times, "time" uses AutoShuttersControl_Time_Up_Early value.</li>
-      <li>AutoShuttersControl_Ventilate_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
-      <li>AutoShuttersControl_Ventilate_Window_Open - Level to be set for ventilation in case of opening or tilted event (only if current shutter position is below this level</li>
-      <li>AutoShuttersControl_WindowRec - Name of the window contact corresponding to the shutter</li>
-      <li>AutoShuttersControl_WindowRec_subType - Type of the used window contact: twostate (only sends open and closed) or threestate (sends also tilted)</li>
-      <li>AutoShuttersControl_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
-      <li>AutoShuttersControl_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "AutoShuttersControl_lock-out" auf hard setzt</li>
+      <li>ASC_Antifreeze - on/off; Set to on to prevent ASC commands under the set temperature limit</li>
+      <li>ASC_AutoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_AutoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute ASC_autoAstroModeEvening set to HORIZON</li>
+      <li>ASC_AutoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_AutoAstroModeMorningHorizon - similar to ASC_autoAstroModeEvening</li>
+      <li>ASC_Closed_Pos - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>ASC_Down - astro/time. "Astro" uses sunrise logic to calculate sunset time, "time" uses ASC_Time_Down_Early attibute's value.</li>
+      <li>ASC_Mode_Down - always/absent/off. Additional conditions for close commands based on roommate state. Please note: If there's no roommate and attribute set to "absent" no closing command will be issued.</li>
+      <li>ASC_Mode_Up - always/absent/off. Like ASC_Mode_Down for opening commands.</li>
+      <li>ASC_Offset_Minutes_Evening - </li>
+      <li>ASC_Offset_Minutes_Morning - </li>
+      <li>ASC_Open_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>ASC_Partymode -  on/off. See correspondant Attribute for ASC Module.</li>
+      <li>ASC_Pos_Cmd - set command for setting the shutter to a decent level; must correspond to the reading name for the actual position of the shutter</li>
+      <li>ASC_Pos_after_ComfortOpen - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>ASC_Roommate_Reading - Reading name of the roommate device's status info.</li>
+      <li>ASC_Roommate_Device - Name of the roommate device to be used to controll all shutters in the same room as the roommate.</li>
+      <li>ASC_Time_Down_Early - Early limit for closing timer calculation using sunset</li>
+      <li>ASC_Time_Down_Late - Latest limit for closing timer calculation using sunset</li>
+      <li>ASC_Time_Up_Early - Like ...Time_Down... for opening</li>
+      <li>ASC_Time_Up_Late - Like ...Time_Down... for opening</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub</li>
+      <li>ASC_Time_Up_HolidayDevice - Device zur Urlaubserkennung/muss 0 oder 1 im Reading state beinhalten.
+      <li>ASC_Up - astro/time "Astro" will use sunrise calculation for opening times, "time" uses ASC_Time_Up_Early value.</li>
+      <li>ASC_Ventilate_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
+      <li>ASC_Ventilate_Window_Open - Level to be set for ventilation in case of opening or tilted event (only if current shutter position is below this level</li>
+      <li>ASC_WindowRec - Name of the window contact corresponding to the shutter</li>
+      <li>ASC_WindowRec_subType - Type of the used window contact: twostate (only sends open and closed) or threestate (sends also tilted)</li>
+      <li>ASC_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
+      <li>ASC_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "ASC_lock-out" auf hard setzt</li>
     </ul>
   </ul>
 </ul>
@@ -1355,17 +1357,17 @@ sub IsHoliday($) {
       <li>..._nextAstroTimeEvent - Uhrzeit des nächsten Astro Events, Sonnenauf, Sonnenuntergang oder feste Zeit pro Rollonamen</li>
       <li>..._lastPosValue - letzter abgesetzter Fahrbefehl pro Rollanamen</li>
       <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
-      <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut AutoShuttersControl_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
-      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut AutoShuttersControl_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
+      <li>partyMode - on/off aktiviert den globalen Partymodus, alle Roll&auml;den welche das Attribut ASC_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
+      <li>lockOut - on/off f&uuml;r das aktivieren des Aussperrschutzes gem&auml;&szlig; dem entsprechenden Attribut ASC_lock-out im jeweiligen Rolladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rolladendevices)</li>
       <li>room_... - Auflistung aller Roll&auml;den welche in den jeweiligen R&auml;men gefunden wurde, Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices active, enabled, disabled</li>
-      <li>sunriseTimeWeHoliday - on/off wird das Rolladen Device Attribut Attributes AutoShuttersControl_Time_Up_WE_Holiday Beachtet oder nicht</li>
+      <li>sunriseTimeWeHoliday - on/off wird das Rolladen Device Attribut Attributes ASC_Time_Up_WE_Holiday Beachtet oder nicht</li>
       <li>userAttrList - Status der UserAttribute welche an die Roll&auml;den gesendet werden</li>
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
-      <li>AutoShuttersControl_Time_DriveUp - Sonnenaufgangszei f&uuml;r das Rollo</li>
-      <li>AutoShuttersControl_Time_DriveDown - Sonnenuntergangszeit f&uuml;r das Rollo</li>
+      <li>ASC_Time_DriveUp - Sonnenaufgangszei f&uuml;r das Rollo</li>
+      <li>ASC_Time_DriveDown - Sonnenuntergangszeit f&uuml;r das Rollo</li>
     </ul>
   </ul>
   <br><br>
@@ -1376,7 +1378,7 @@ sub IsHoliday($) {
     <li>lockOut - on/off aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
-    <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes AutoShuttersControl_Time_Up_WE_Holiday</li>
+    <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes ASC_Time_Up_WE_Holiday</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlGet"></a>
@@ -1390,50 +1392,50 @@ sub IsHoliday($) {
   <ul>
   Im Modul Device
     <ul>
-      <li>AutoShuttersControl_antifreezeTemp - Temperatur ab welcher der Frostschutz greifen soll und das Rollo nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
-      <li>AutoShuttersControl_autoAstroModeEvening - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
-      <li>AutoShuttersControl_autoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
-      <li>AutoShuttersControl_autoShuttersControlComfort - on/off schaltet die Komfortfunktion an. Bedeutet das ein Rolladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine weit offen Position  f&auml;hrt. Die Offenposition wird beim Rolladen &uuml;ber das Attribut AutoShuttersControl_Pos_after_ComfortOpen eingestellt.</li>
-      <li>AutoShuttersControl_autoShuttersControlEvening - on/off, ob Abends die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
-      <li>AutoShuttersControl_autoShuttersControlMorning - on/off, ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
-      <li>AutoShuttersControl_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
-      <li>AutoShuttersControl_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
-      <li>AutoShuttersControl_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.
+      <li>ASC_antifreezeTemp - Temperatur ab welcher der Frostschutz greifen soll und das Rollo nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
+      <li>ASC_autoAstroModeEvening - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
+      <li>ASC_autoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
+      <li>ASC_autoShuttersControlComfort - on/off schaltet die Komfortfunktion an. Bedeutet das ein Rolladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine weit offen Position  f&auml;hrt. Die Offenposition wird beim Rolladen &uuml;ber das Attribut ASC_Pos_after_ComfortOpen eingestellt.</li>
+      <li>ASC_autoShuttersControlEvening - on/off, ob Abends die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <li>ASC_autoShuttersControlMorning - on/off, ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <li>ASC_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
+      <li>ASC_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
+      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
       <li>AutoShuttersControl - 0/1/2 1 = "Inverse oder Rollo Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum Prozentualen fahren ist position", 2 = "Homematic Style Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum Prozentualen fahren ist pct</li>
-      <li>AutoShuttersControl_Antifreeze - on/off Frostschutz an oder aus</li>
-      <li>AutoShuttersControl_AutoAstroModeEvening - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
-      <li>AutoShuttersControl_AutoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
-      <li>AutoShuttersControl_AutoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut AutoShuttersControl_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
-      <li>AutoShuttersControl_Closed_Pos - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
-      <li>AutoShuttersControl_Down - astro/time bei Astro wird Sonnenuntergang berechnet, bei time wird der Wert aus AutoShuttersControl_Time_Down_Early als Fahrzeit verwendet</li>
-      <li>AutoShuttersControl_Mode_Down - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
-      <li>AutoShuttersControl_Mode_Up - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
-      <li>AutoShuttersControl_Offset_Minutes_Evening - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Abends</li>
-      <li>AutoShuttersControl_Offset_Minutes_Morning - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Morgens</li>
-      <li>AutoShuttersControl_Open_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
-      <li>AutoShuttersControl_Partymode -  on/off  schaltet den Partymodus an oder aus, Wird dann am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Roll&auml;den welche das Attribut auf on haben zwischen gespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
-      <li>AutoShuttersControl_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren, muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
-      <li>AutoShuttersControl_Pos_after_ComfortOpen - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
-      <li>AutoShuttersControl_Roommate_Reading - das Reading zum Roommate Device welches den Status wieder gibt</li>
-      <li>AutoShuttersControl_Roommate_Device - Name des Roommate Devices welcher den Bewohner des Raumes vom Rolladen wieder gibt</li>
-      <li>AutoShuttersControl_Time_Down_Early - Sunset frühste Zeit zum runter fahren</li>
-      <li>AutoShuttersControl_Time_Down_Late - Sunset späteste Zeit zum runter fahren</li>
-      <li>AutoShuttersControl_Time_Up_Early - Sunrise frühste Zeit zum hoch fahren</li>
-      <li>AutoShuttersControl_Time_Up_Late - Sunrise späteste Zeit zum hoch fahren</li>
-      <li>AutoShuttersControl_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub (we2holiday wird beachtet), Achtung sollte nicht gr&ouml;&szlig;er sein wie AutoShuttersControl_Time_Up_Late sonst wird AutoShuttersControl_Time_Up_Late verwendet</li>
-      <li>AutoShuttersControl_Up - astro/time bei Astro wird Sonnenaufgang berechnet, bei time wird der Wert aus AutoShuttersControl_Time_Up_Early als Fahrzeit verwendet</li>
-      <li>AutoShuttersControl_Ventilate_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
-      <li>AutoShuttersControl_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
-      <li>AutoShuttersControl_WindowRec - Name des Fensterkontaktes an welchen Fenster der Rolladen angebracht ist</li>
-      <li>AutoShuttersControl_WindowRec_subType - Typ des verwendeten Fensterkontakts: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt)</li>
-      <li>AutoShuttersControl_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
-      <li>AutoShuttersControl_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "AutoShuttersControl_lock-out" auf hard setzt</li>
+      <li>ASC_Antifreeze - on/off Frostschutz an oder aus</li>
+      <li>ASC_AutoAstroModeEvening - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
+      <li>ASC_AutoAstroModeMorning - aktuell REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
+      <li>ASC_AutoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
+      <li>ASC_Closed_Pos - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
+      <li>ASC_Down - astro/time bei Astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet</li>
+      <li>ASC_Mode_Down - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
+      <li>ASC_Mode_Up - always/absent/off wann darf die Automatik steuern. immer, niemals, bei abwesenheit des Roomate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
+      <li>ASC_Offset_Minutes_Evening - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Abends</li>
+      <li>ASC_Offset_Minutes_Morning - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Morgens</li>
+      <li>ASC_Open_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
+      <li>ASC_Partymode -  on/off  schaltet den Partymodus an oder aus, Wird dann am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Roll&auml;den welche das Attribut auf on haben zwischen gespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
+      <li>ASC_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren, muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
+      <li>ASC_Pos_after_ComfortOpen - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
+      <li>ASC_Roommate_Reading - das Reading zum Roommate Device welches den Status wieder gibt</li>
+      <li>ASC_Roommate_Device - Name des Roommate Devices welcher den Bewohner des Raumes vom Rolladen wieder gibt</li>
+      <li>ASC_Time_Down_Early - Sunset frühste Zeit zum runter fahren</li>
+      <li>ASC_Time_Down_Late - Sunset späteste Zeit zum runter fahren</li>
+      <li>ASC_Time_Up_Early - Sunrise frühste Zeit zum hoch fahren</li>
+      <li>ASC_Time_Up_Late - Sunrise späteste Zeit zum hoch fahren</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub (we2holiday wird beachtet), Achtung sollte nicht gr&ouml;&szlig;er sein wie ASC_Time_Up_Late sonst wird ASC_Time_Up_Late verwendet</li>
+      <li>ASC_Up - astro/time bei Astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet</li>
+      <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
+      <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
+      <li>ASC_WindowRec - Name des Fensterkontaktes an welchen Fenster der Rolladen angebracht ist</li>
+      <li>ASC_WindowRec_subType - Typ des verwendeten Fensterkontakts: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt)</li>
+      <li>ASC_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
+      <li>ASC_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "ASC_lock-out" auf hard setzt</li>
     </ul>
   </ul>
 </ul>
