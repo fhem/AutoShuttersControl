@@ -46,7 +46,7 @@ use warnings;
 
 
 
-my $version = "0.1.61";
+my $version = "0.1.66";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -672,7 +672,7 @@ sub RoommateEventProcessing($@) {
 
         ShuttersCommandSet($hash,$shuttersDev,$openPos)
         if( ($1 eq 'home' or $1 eq 'awoken') and
-            (ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),'lastState','none') eq 'asleep' or ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),'lastState','none') eq 'awoken')
+            (LastStateRoommates($shuttersDev) eq 'asleep' or LastStateRoommates($shuttersDev) eq 'awoken')
                 and AttrVal($name,'ASC_autoShuttersControlMorning','off') eq 'on'
                 and IsDay($hash,$shuttersDev)
                 and AttrVal($shuttersDev,'ASC_Mode_Up','off') eq 'always' );
@@ -841,7 +841,7 @@ sub SunSetShuttersAfterTimerFn($) {
 
 
     ShuttersCommandSet($hash,$shuttersDev,$posValue)
-        if( AttrVal($shuttersDev,'ASC_Mode_Down','off') eq ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'ASC_Mode_Down','off') eq 'always' );
+        if( AttrVal($shuttersDev,'ASC_Mode_Down','off') eq StateRoommates($shuttersDev) or AttrVal($shuttersDev,'ASC_Mode_Down','off') eq 'always' );
 
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
 }
@@ -856,10 +856,10 @@ sub SunRiseShuttersAfterTimerFn($) {
 
     my ($openPos,$closedPos,$closedPosWinRecTilted) = ShuttersReadAttrForShuttersControl($shuttersDev);
     
-    if( AttrVal($shuttersDev,'ASC_Mode_Up','off') eq ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'home') or AttrVal($shuttersDev,'ASC_Mode_Up','off') eq 'always' ) {
+    if( AttrVal($shuttersDev,'ASC_Mode_Up','off') eq StateRoommates($shuttersDev) or AttrVal($shuttersDev,'ASC_Mode_Up','off') eq 'always' ) {
     
         ShuttersCommandSet($hash,$shuttersDev,$openPos)
-            if( ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'home') eq 'home' or ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'awoken') eq 'awoken' or ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'absent') eq 'absent' or ReadingsVal(AttrVal($shuttersDev,'ASC_Roommate_Device','none'),AttrVal($shuttersDev,'ASC_Roommate_Reading','none'),'gone') eq 'gone' );
+            if( StateRoommates($shuttersDev) eq 'home' or StateRoommates($shuttersDev) eq 'awoken' or StateRoommates($shuttersDev) eq 'absent' or StateRoommates($shuttersDev) eq 'gone' );
     }
     
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
@@ -1187,6 +1187,46 @@ sub IsHoliday($) {
     my $name    = $hash->{NAME};
     
     return ( ReadingsVal(AttrVal($name,'ASC_timeUpHolidayDevice','none'),'state',0) == 1 ? 1 : 0 );
+}
+
+sub StateRoommates($) {
+
+    my ($shuttersDev)   = @_;
+
+
+    my $loop            = 0;
+    my @roState;
+    my %statePrio       = ('asleep' => 1, 'gotosleep' => 2, 'awoken' => 3, 'home' => 4, 'absent' => 5, 'gone' => 6, 'none' => 7);
+    my $minPrio         = 10;
+    
+    foreach my $ro (split(",", AttrVal($shuttersDev,'ASC_Roommate_Device',''))) {
+        my $currentPrio = $statePrio{ReadingsVal($ro,AttrVal($shuttersDev,'ASC_Roommate_Reading','state'),'home')};
+        $minPrio = $currentPrio if($minPrio > $currentPrio);
+    }
+
+    my %revStatePrio    = reverse %statePrio;
+    Log3 $shuttersDev, 1, "AutoShuttersControl ($shuttersDev) - StateRoommates: " . $revStatePrio{$minPrio};
+    return $revStatePrio{$minPrio};
+}
+
+sub LastStateRoommates($) {
+
+    my ($shuttersDev)   = @_;
+
+
+    my $loop            = 0;
+    my @roState;
+    my %statePrio       = ('asleep' => 7, 'gotosleep' => 6, 'awoken' => 5, 'home' => 4, 'absent' => 3, 'gone' => 2, 'none' => 1);
+    my $minPrio         = 10;
+    
+    foreach my $ro (split(",", AttrVal($shuttersDev,'ASC_Roommate_Device',''))) {
+        my $currentPrio = $statePrio{ReadingsVal($ro,'lastState','home')};
+        $minPrio = $currentPrio if($minPrio > $currentPrio);
+    }
+
+    my %revStatePrio    = reverse %statePrio;
+    Log3 $shuttersDev, 1, "AutoShuttersControl ($shuttersDev) - LastStateRoommates: " . $revStatePrio{$minPrio};
+    return $revStatePrio{$minPrio};
 }
 
 
