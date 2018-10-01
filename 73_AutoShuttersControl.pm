@@ -234,9 +234,9 @@ sub Define($$) {
     
     addToAttrList('ASC:0,1,2');
     
-    my @tempSensor split(":", AttrVal($name,'ASC_temperatureSensor','temperature:state'));
+    my @tempSensor = split(":", AttrVal($name,'ASC_temperatureSensor','temperature:state'));
     $tempSensor[1] = 'temperature' if defined ReadingsVal($tempSensor[0],'temperature',undef);
-    my @windSensor split(":", AttrVal($name,'ASC_windSensor','windspeed:state'));
+    my @windSensor = split(":", AttrVal($name,'ASC_windSensor','windspeed:state'));
     $windSensor[1] = 'windspeed' if defined ReadingsVal($windSensor[0],'windspeed',undef);
     
     Log3 $name, 3, "AutoShuttersControl ($name) - defined";
@@ -295,6 +295,27 @@ sub Attr(@) {
         }
     }
     
+    elsif( $attrName eq "ASC_temperatureReading" ) {
+        if( $cmd eq "set" ) {
+            @tempSensor = split(":", $attrVal);
+	    $tempSensor[1] = 'temperature' if defined ReadingsVal($tempSensor[0],'temperature',undef);
+	    Log3 $name, 4, "AutoShuttersControl ($name) - New temperature device $tempSensor[0], reading: $tempSensor[1]";
+        }
+        elsif( $cmd eq "del" ) {
+            Log3 $name, 3, "AutoShuttersControl ($name) - temperature device deleted";
+        }
+    }
+    
+    elsif( $attrName eq "ASC_windReading" ) {
+        if( $cmd eq "set" ) {
+            @windSensor = split(":", $attrVal);
+	    $windSensor[1] = 'windspeed' if defined ReadingsVal($windSensor[0],'windspeed',undef);
+	    Log3 $name, 4, "AutoShuttersControl ($name) - New windspeed device $windSensor[0], reading: $windSensor[1]";
+        }
+        elsif( $cmd eq "del" ) {
+            Log3 $name, 3, "AutoShuttersControl ($name) - Windspeed Device deleted";
+        }
+    }
     return undef;
 }
 
