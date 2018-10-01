@@ -64,8 +64,9 @@ sub AutoShuttersControl_Initialize($) {
                             "disabledForIntervals ".
                             "ASC_guestPresence:on,off ".
                             "ASC_temperatureSensor ".
-                            "ASC_temperatureReading ".
-                            "ASC_brightnessMinVal ".
+                            #"ASC_temperatureReading ".
+                            "ASC_windSensor ".
+			    "ASC_brightnessMinVal ".
                             "ASC_autoShuttersControlMorning:on,off ".
                             "ASC_autoShuttersControlEvening:on,off ".
                             "ASC_autoShuttersControl_Shading:on,off ".
@@ -83,6 +84,7 @@ sub AutoShuttersControl_Initialize($) {
                             "ASC_antifreezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 ".
                             "ASC_timeUpHolidayDevice ".
                             $readingFnAttributes;
+
 
 ## Ist nur damit sich bei einem reload auch die Versionsnummer erneuert.
     foreach my $d(sort keys %{$modules{AutoShuttersControl}{defptr}}) {
@@ -200,6 +202,8 @@ my %userAttrList =  (   'ASC_Mode_Up:absent,always,off'                         
                     );
 
 
+my @tempSensor; 
+my @windSensor; 
 
 
 
@@ -228,17 +232,23 @@ sub Define($$) {
     CommandAttr(undef,$name . ' ASC_autoAstroModeMorning REAL') if( AttrVal($name,'ASC_autoAstroModeMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_autoShuttersControlMorning on') if( AttrVal($name,'ASC_autoShuttersControlMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_autoShuttersControlEvening on') if( AttrVal($name,'ASC_autoShuttersControlEvening','none') eq 'none' );
-    CommandAttr(undef,$name . ' ASC_temperatureReading temperature') if( AttrVal($name,'ASC_temperatureReading','none') eq 'none' );
+    CommandAttr(undef,$name . ' ASC_temperatureReading temperature:state') if( AttrVal($name,'ASC_temperatureReading','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_antifreezeTemp 3') if( AttrVal($name,'ASC_antifreezeTemp','none') eq 'none' );
+    CommandAttr(undef,$name . ' ASC_windReading windspeed:state') if( AttrVal($name,'ASC_windReading','none') eq 'none' );
     
     addToAttrList('ASC:0,1,2');
-    
     
     Log3 $name, 3, "AutoShuttersControl ($name) - defined";
     
     $modules{AutoShuttersControl}{defptr}{$hash->{MID}} = $hash;
-    
+    @tempSensor = split(":", AttrVal($hash->{NAME},'ASC_temperatureSensor','temperature:state'));
+    $tempSensor[1] = defined $tempSensor[1] ?$tempSensor[1] : defined ReadingsVal($tempSensor[0],'temperature',undef)?'temperature':'state' ;
+
+    @windSensor = split(":", AttrVal($name,'ASC_windSensor','windspeed:state'));
+    $windSensor[1] = defined $windSensor[1] ?$windSensor[1] : defined ReadingsVal($windSensor[0],'windspeed',undef)?'windspeed':'state' ;
+
     return undef;
+
 }
 
 sub Undef($$) {
@@ -290,6 +300,27 @@ sub Attr(@) {
         }
     }
     
+    elsif( $attrName eq "ASC_temperatureSensor" ) {
+        if( $cmd eq "set" ) {
+            @tempSensor = split(":", $attrVal);
+            $tempSensor[1] = defined $tempSensor[1] ? $tempSensor[1] : defined ReadingsVal($tempSensor[0],'temperature',undef)?'temperature':'state';
+            Log3 ($name, 4, "AutoShuttersControl ($name) - New temperature device $tempSensor[0], reading: $tempSensor[1]");
+        }
+	elsif( $cmd eq "del" ) {
+            Log3 $name, 3, "AutoShuttersControl ($name) - temperature device deleted";
+        }
+    }
+    
+    elsif( $attrName eq "ASC_windSensor" ) {
+        if( $cmd eq "set" ) {
+            @windSensor = split(":", $attrVal);
+    	    $windSensor[1] = defined $windSensor[1] ?$windSensor[1] : defined ReadingsVal($windSensor[0],'windspeed',undef)?'windspeed':'state' ;
+	    Log3 ($name, 4, "AutoShuttersControl ($name) - New windspeed device $windSensor[0], reading: $windSensor[1]");
+        }
+        elsif( $cmd eq "del" ) {
+            Log3 $name, 3, "AutoShuttersControl ($name) - Windspeed Device deleted";
+        }
+    }
     return undef;
 }
 
@@ -705,7 +736,7 @@ sub ShuttersCommandSet($$$) {
     if( (AttrVal($shuttersDev,'ASC_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'ASC_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'ASC_autoShuttersControlComfort','on') eq 'off')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and (AttrVal($shuttersDev,'ASC_lock-out','soft') eq 'soft' or AttrVal($shuttersDev,'ASC_lock-out','hard') eq 'hard') and ReadingsVal($shuttersDev,'lockOut','off') eq 'on')
-        or (AttrVal($shuttersDev,'ASC_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'ASC_temperatureSensor','none'),AttrVal($name,'ASC_temperatureReading','temperature'),100) <=  AttrVal($name,'ASC_antifreezeTemp',0)) ) {
+        or (AttrVal($shuttersDev,'ASC_Antifreeze','off') eq 'on' and ReadingsVal($tempSensor[0],$tempSensor[1],100) <=  AttrVal($name,'ASC_antifreezeTemp',0)) ) {
 
         ShuttersCommandDelaySet($shuttersDev,$posValue);
         readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastDelayPosValue',$posValue);
@@ -1243,7 +1274,7 @@ sub LastStateRoommates($) {
     This creates a AutoShuttersControl Device named Rolladensteuerung.<br>
     After this first step, start adding shutter devices by assigning the new attribute  "AutoShuttersControl" using "1" or "2" as value.<br>
     Use "1" if your shutter is open at lower position (typically: 0 = open, 100 = closed) and shutter command "position" is used. Right choice for ROLLO devices.
-	"2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.<br>
+    "2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.<br>
     Next use the "scanForShutters" setter to get your shutter(s) controlled by ASC and start configuring your shutter devices by setting the ASC attributes to your needs.
   </ul>
   <br><br>
@@ -1289,7 +1320,7 @@ sub LastStateRoommates($) {
   <ul>
   Modul Device
     <ul>
-      <li>ASC_antifreezeTemp - Temperature limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
+      <li>ASC_antifreezeTemp - limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
       <li>ASC_autoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
       <li>ASC_autoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute ASC_autoAstroModeEvening set to HORIZON</li>
       <li>ASC_autoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
@@ -1303,7 +1334,7 @@ sub LastStateRoommates($) {
     Individual Shutter Devices
     <ul>
       <li>AutoShuttersControl - 0/1/2. Use "1" if your shutter is open at lower position (typically: 0 = open, 100 = closed) and shutter command "position" is used. Right choice for ROLLO devices.
-	"2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.</li>
+    "2" means opposite, so open is 100 and closed corresponds to 0; command for going to a specific position is "pct". Use "2" especially for HomeMatic devices.</li>
       <li>ASC_Antifreeze - on/off; Set to on to prevent ASC commands under the set temperature limit</li>
       <li>ASC_AutoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute ASC_autoAstroModeEvening set to HORIZON</li>
