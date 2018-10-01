@@ -1320,7 +1320,7 @@ sub LastStateRoommates($) {
       <li>ASC_Pos_Cmd - set command for setting the shutter to a decent level; must correspond to the reading name for the actual position of the shutter</li>
       <li>ASC_Pos_after_ComfortOpen - in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
       <li>ASC_Roommate_Reading - Reading name of the roommate device's status info.</li>
-      <li>ASC_Roommate_Device - Name of the roommate device to be used to controll all shutters in the same room as the roommate.</li>
+      <li>ASC_Roommate_Device - Name of comma seperated roommate device/s to be used to controll all shutters in the same room as the roommate.</li>
       <li>ASC_Time_Down_Early - Early limit for closing timer calculation using sunset</li>
       <li>ASC_Time_Down_Late - Latest limit for closing timer calculation using sunset</li>
       <li>ASC_Time_Up_Early - Like ...Time_Down... for opening</li>
@@ -1439,7 +1439,7 @@ sub LastStateRoommates($) {
       <li>ASC_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren, muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
       <li>ASC_Pos_after_ComfortOpen - in 10 Schritten von 0 bis 100, default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>ASC_Roommate_Reading - das Reading zum Roommate Device welches den Status wieder gibt</li>
-      <li>ASC_Roommate_Device - Name des Roommate Devices welcher den Bewohner des Raumes vom Rolladen wieder gibt</li>
+      <li>ASC_Roommate_Device - mit Komma getrennte Namen des/der Roommate Device/s welche den/die Bewohner des Raumes vom Rolladen wieder gibt</li>
       <li>ASC_Time_Down_Early - Sunset frühste Zeit zum runter fahren</li>
       <li>ASC_Time_Down_Late - Sunset späteste Zeit zum runter fahren</li>
       <li>ASC_Time_Up_Early - Sunrise frühste Zeit zum hoch fahren</li>
