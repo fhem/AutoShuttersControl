@@ -64,7 +64,7 @@ sub AutoShuttersControl_Initialize($) {
                             "disabledForIntervals ".
                             "ASC_guestPresence:on,off ".
                             "ASC_temperatureSensor ".
-                            "ASC_temperatureReading ".
+                            #"ASC_temperatureReading ".
                             "ASC_brightnessMinVal ".
                             "ASC_autoShuttersControlMorning:on,off ".
                             "ASC_autoShuttersControlEvening:on,off ".
@@ -228,11 +228,16 @@ sub Define($$) {
     CommandAttr(undef,$name . ' ASC_autoAstroModeMorning REAL') if( AttrVal($name,'ASC_autoAstroModeMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_autoShuttersControlMorning on') if( AttrVal($name,'ASC_autoShuttersControlMorning','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_autoShuttersControlEvening on') if( AttrVal($name,'ASC_autoShuttersControlEvening','none') eq 'none' );
-    CommandAttr(undef,$name . ' ASC_temperatureReading temperature') if( AttrVal($name,'ASC_temperatureReading','none') eq 'none' );
+    CommandAttr(undef,$name . ' ASC_temperatureReading temperature:state') if( AttrVal($name,'ASC_temperatureReading','none') eq 'none' );
     CommandAttr(undef,$name . ' ASC_antifreezeTemp 3') if( AttrVal($name,'ASC_antifreezeTemp','none') eq 'none' );
+    CommandAttr(undef,$name . ' ASC_windReading windspeed:state') if( AttrVal($name,'ASC_windReading','none') eq 'none' );
     
     addToAttrList('ASC:0,1,2');
     
+    my @tempSensor split(":", AttrVal($name,'ASC_temperatureSensor','temperature:state'));
+    $tempSensor[1] = 'temperature' if defined ReadingsVal($tempSensor[0],'temperature',undef);
+    my @windSensor split(":", AttrVal($name,'ASC_windSensor','windspeed:state'));
+    $windSensor[1] = 'windspeed' if defined ReadingsVal($windSensor[0],'windspeed',undef);
     
     Log3 $name, 3, "AutoShuttersControl ($name) - defined";
     
@@ -705,7 +710,7 @@ sub ShuttersCommandSet($$$) {
     if( (AttrVal($shuttersDev,'ASC_Partymode','off') eq 'on' and ReadingsVal($hash->{NAME},'partyMode','off') eq 'on')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and AttrVal($shuttersDev,'ASC_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'ASC_autoShuttersControlComfort','on') eq 'off')
         or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and (AttrVal($shuttersDev,'ASC_lock-out','soft') eq 'soft' or AttrVal($shuttersDev,'ASC_lock-out','hard') eq 'hard') and ReadingsVal($shuttersDev,'lockOut','off') eq 'on')
-        or (AttrVal($shuttersDev,'ASC_Antifreeze','off') eq 'on' and ReadingsVal(AttrVal($name,'ASC_temperatureSensor','none'),AttrVal($name,'ASC_temperatureReading','temperature'),100) <=  AttrVal($name,'ASC_antifreezeTemp',0)) ) {
+        or (AttrVal($shuttersDev,'ASC_Antifreeze','off') eq 'on' and ReadingsVal($tempSensor[0],$tempSensor[1],100) <=  AttrVal($name,'ASC_antifreezeTemp',0)) ) {
 
         ShuttersCommandDelaySet($shuttersDev,$posValue);
         readingsBulkUpdateIfChanged($hash,$shuttersDev.'_lastDelayPosValue',$posValue);
@@ -1289,7 +1294,7 @@ sub LastStateRoommates($) {
   <ul>
   Modul Device
     <ul>
-      <li>ASC_antifreezeTemp - Temperature limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
+      <li>ASC_antifreezeTemp - limit. Below this temperature, ASC will not issue positioning commands to prevent damages from frozen shutters. Last positioning command will be stored for later execution.</li>
       <li>ASC_autoAstroModeEvening - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
       <li>ASC_autoAstroModeEveningHorizon - Highth above horizon. Use this in combination with attribute ASC_autoAstroModeEvening set to HORIZON</li>
       <li>ASC_autoAstroModeMorning - can be set to REAL, CIVIL, NAUTIC, ASTRONOMIC</li>
