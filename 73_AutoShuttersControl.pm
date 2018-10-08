@@ -46,7 +46,7 @@ use warnings;
 
 
 
-my $version = "0.1.70";
+my $version = "0.1.73";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -105,12 +105,12 @@ use GPUtils qw(:all);  # wird für den Import der FHEM Funktionen aus der fhem.p
 use Data::Dumper;      #only for Debugging
 use Date::Parse;
 
+
 my $missingModul = "";
 eval "use JSON qw(decode_json encode_json);1" or $missingModul .= "JSON ";
 
 ## Import der FHEM Funktionen
 BEGIN {
-
     GP_Import(qw(
         devspec2array
         readingsSingleUpdate
@@ -399,6 +399,11 @@ sub Set($$@) {
         
         ShuttersDeviceScan($hash);
         
+    } elsif( lc $cmd eq 'createnewnotifydev' ) {
+        return "usage: $cmd" if( @args != 0 );
+
+        CreateNewNotifyDev($hash);
+        
     } elsif( lc $cmd eq 'partymode' ) {
         return "usage: $cmd" if( @args > 1 );
         
@@ -417,8 +422,8 @@ sub Set($$@) {
     
     } else {
         my $list = "scanForShutters:noArg";
-        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
-        
+        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off createNewNotifyDev:noArg" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
+
         return "Unknown argument $cmd, choose one of $list";
     }
     
@@ -437,10 +442,16 @@ sub Get($$@) {
 
         my $ret = GetShuttersInformation($hash);
         return $ret;
+    
+    } elsif( lc $cmd eq 'shownotifydevsinformations' ) {
+        return "usage: $cmd" if( @args != 0 );
+
+        my $ret = GetMonitoredDevs($hash);
+        return $ret;
 
     } else {
         my $list = "";
-        $list .= " showShuttersInformations:noArg" if( ReadingsVal($name,'userAttrList','none') eq 'rolled out' );
+        $list .= " showShuttersInformations:noArg showNotifyDevsInformations:noArg" if( ReadingsVal($name,'userAttrList','none') eq 'rolled out' );
 
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -627,7 +638,7 @@ sub WindowRecEventProcessing($@) {
         } elsif( ($1 eq 'tilted' or ($1 eq 'open' and AttrVal($shuttersDev,'ASC_WindowRec_subType','twostate') eq 'twostate')) and AttrVal($shuttersDev,'ASC_Ventilate_Window_Open','off') eq 'on' and $queryShuttersPosWinRecTilted ) {
             ShuttersCommandSet($hash,$shuttersDev,$closedPosWinRecTilted);
         
-        } elsif($1 eq 'open' and AttrVal($shuttersDev,'ASC_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'ASC_autoShuttersControlComfort','off') eq 'on') {
+        } elsif( $1 eq 'open' and AttrVal($shuttersDev,'ASC_WindowRec_subType','twostate') eq 'threestate' and AttrVal($name,'ASC_autoShuttersControlComfort','off') eq 'on' and $queryShuttersPosWinRecTilted ) {
             ShuttersCommandSet($hash,$shuttersDev,AttrVal($shuttersDev,'ASC_Pos_after_ComfortOpen',50));
         }
     }
@@ -651,8 +662,9 @@ sub RoommateEventProcessing($@) {
 
 
         ShuttersCommandSet($hash,$shuttersDev,$openPos)
-        if( ($1 eq 'home' or $1 eq 'awoken') and
-            (LastStateRoommates($shuttersDev) eq 'asleep' or LastStateRoommates($shuttersDev) eq 'awoken')
+        if( ($1 eq 'home' or $1 eq 'awoken')
+                and (LastStateRoommates($shuttersDev) eq 'asleep' or LastStateRoommates($shuttersDev) eq 'awoken')
+                and (StateRoommates($shuttersDev) eq 'home' or StateRoommates($shuttersDev) eq 'awoken')
                 and AttrVal($name,'ASC_autoShuttersControlMorning','off') eq 'on'
                 and IsDay($hash,$shuttersDev)
                 and AttrVal($shuttersDev,'ASC_Mode_Up','off') eq 'always' );
@@ -845,11 +857,25 @@ sub SunRiseShuttersAfterTimerFn($) {
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
 }
 
+sub CreateNewNotifyDev($) {
+
+    my $hash            = shift;
+    my $name            = $hash->{NAME};
+
+
+    $hash->{NOTIFYDEV}  = "global,".$name;
+    delete $hash->{monitoredDevs};
+    CommandDeleteReading(undef,$name.' .monitoredDevs');
+    
+    foreach (@{$hash->{helper}{shuttersList}}) {
+        AddNotifyDev($hash,AttrVal($_,'ASC_Roommate_Device','none'),$_,'ASC_Roommate_Device') if( AttrVal($_,'ASC_Roommate_Device','none') ne 'none' );
+        AddNotifyDev($hash,AttrVal($_,'ASC_WindowRec','none'),$_,'ASC_WindowRec') if( AttrVal($_,'ASC_WindowRec','none') ne 'none' );
+    }
+}
+
 sub GetShuttersInformation($) {
 
     my $hash    = shift;
-    
-    my $name    = $hash->{NAME};
     
     
     my $shuttersInformations    = ShuttersInformation($hash);
@@ -912,6 +938,70 @@ sub ShuttersInformation($) {
     }
 
     return \%shuttersInformations;
+}
+
+sub GetMonitoredDevs($) {
+
+    my $hash        = shift;
+
+
+    my $notifydevs = eval{decode_json(ReadingsVal($hash->{NAME},'.monitoredDevs','none'))};
+    
+    my $ret = '<html><table><tr><td>';
+    $ret .= '<table class="block wide">';
+    $ret .= '<tr class="even">';
+    $ret .= "<td><b>NOTIFYDEV</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Shutters</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Attribut</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= '</tr>';
+
+    if( ref($notifydevs) eq "HASH" ) {
+        my $linecount = 1;
+        foreach my $notifydev (keys (%{$notifydevs}) ) {
+            if( ref($notifydevs->{$notifydev}) eq "HASH" ) {
+                foreach my $shutters (keys (%{$notifydevs->{$notifydev}}) ) {
+                
+                    if ( $linecount % 2 == 0 ) {
+                        $ret .= '<tr class="even">';
+                    } else {
+                        $ret .= '<tr class="odd">';
+                    }
+
+                    $ret .= "<td>$notifydev</td>";
+                    $ret .= "<td> </td>";
+                    $ret .= "<td>$shutters</td>";
+                    $ret .= "<td> </td>";
+                    $ret .= "<td>$notifydevs->{$notifydev}{$shutters}</td>";
+                    $ret .= "<td> </td>";
+                    $ret .= '</tr>';
+                    $linecount++;
+                }
+            }
+        }
+    }
+
+    ###### create Links
+    my $aHref;
+
+    # create define Link
+#     $aHref="<a href=\"".$::FW_httpheader->{host}."/fhem?cmd=set".$::FW_CSRF."\">Create new NOTIFYDEV structure</a>";
+#     $aHref="<a href=\"/fhem?cmd=set+\">Create new NOTIFYDEV structure</a>";
+#     $aHref="<a href=\"".$headerHost[0]."/fhem?cmd=define+".makeDeviceName($dataset->{station}{name})."+Aqicn+".$dataset->{uid}.$FW_CSRF."\">Create Station Device</a>";
+    
+#     $ret .= '<tr class="odd"> </tr>';
+#     $ret .= '<tr class="even"> </tr>';
+#     $ret .= "<td> </td>";
+#     $ret .= "<td> </td>";
+#     $ret .= "<td> </td>";
+#     $ret .= "<td> </td>";
+#     $ret .= "<td>".$aHref."</td>";
+    $ret .= '</table></td></tr>';
+    $ret .= '</table></html>';
+
+    return $ret;
 }
 
 
@@ -1011,13 +1101,13 @@ sub ShuttersSunrise($$$) {
                     if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,AttrVal($shuttersDev,'ASC_Time_Up_Early','04:30:00'),AttrVal($shuttersDev,'ASC_Time_Up_Late','09:00:00'))) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
                             #if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
-                            if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) and $oldFuncHash->{sunrisetime} < gettimeofday() );
+                            if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 180) and $oldFuncHash->{sunrisetime} < gettimeofday() );
                     }
                 }
             } elsif( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
                     #if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
-                    if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) and $oldFuncHash->{sunrisetime} < gettimeofday() );
+                    if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 180) and $oldFuncHash->{sunrisetime} < gettimeofday() );
             }
         } elsif( AttrVal($shuttersDev,'ASC_Up','astro') eq 'time' ) {
         
@@ -1060,7 +1150,7 @@ sub ShuttersSunset($$$) {
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
                     #if( ($shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 900) or $shuttersSunsetUnixtime != $oldFuncHash->{sunsettime}) and $oldFuncHash->{sunsettime} < gettimeofday() );
-                    if( $shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 900) and $oldFuncHash->{sunsettime} < gettimeofday() );
+                    if( $shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 180) and $oldFuncHash->{sunsettime} < gettimeofday() );
             }
         } elsif( AttrVal($shuttersDev,'ASC_Down','astro') eq 'time' ) {
         
@@ -1181,7 +1271,7 @@ sub StateRoommates($) {
     }
 
     my %revStatePrio    = reverse %statePrio;
-    Log3 $shuttersDev, 1, "AutoShuttersControl ($shuttersDev) - StateRoommates: " . $revStatePrio{$minPrio};
+    Log3 $shuttersDev, 4, "AutoShuttersControl ($shuttersDev) - StateRoommates: " . $revStatePrio{$minPrio};
     return $revStatePrio{$minPrio};
 }
 
@@ -1201,7 +1291,7 @@ sub LastStateRoommates($) {
     }
 
     my %revStatePrio    = reverse %statePrio;
-    Log3 $shuttersDev, 1, "AutoShuttersControl ($shuttersDev) - LastStateRoommates: " . $revStatePrio{$minPrio};
+    Log3 $shuttersDev, 4, "AutoShuttersControl ($shuttersDev) - LastStateRoommates: " . $revStatePrio{$minPrio};
     return $revStatePrio{$minPrio};
 }
 
@@ -1395,12 +1485,14 @@ sub LastStateRoommates($) {
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
     <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes ASC_Time_Up_WE_Holiday</li>
+    >li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlGet"></a>
   <b>Get</b>
   <ul>
-    <li></li>
+    <li>showShuttersInformations - zeigt eine &Uuml;bersicht der Autofahrzeiten</li>
+    <li>showNotifyDevsInformations - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Diehnt zur Kontrolle</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlAttributes"></a>
