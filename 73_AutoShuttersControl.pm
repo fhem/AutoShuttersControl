@@ -44,7 +44,7 @@ use warnings;
 
 
 
-my $version = "0.1.75";
+my $version = "0.1.76";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -321,6 +321,7 @@ sub Notify($$) {
             readingsSingleUpdate($hash,'partyMode','off',0) if($ascDev->partyModeStatus($name) eq 'none');
             readingsSingleUpdate($hash,'lockOut','off',0) if($ascDev->lockOut($name) eq 'none');
             readingsSingleUpdate($hash,'sunriseTimeWeHoliday','off',0) if($ascDev->sunriseTimeWeHoliday($name) eq 'none');
+            readingsSingleUpdate($hash,'selfDefence','off',0) if($ascDev->selfDefence($name) eq 'none');
             
             ## Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
             ShuttersDeviceScan($hash)
@@ -346,7 +347,7 @@ sub Notify($$) {
         }
 
     } elsif( $devname eq "global" ) {           # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
-        if( grep /^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec)(\s.*|$)/,@{$events}) {
+        if( grep /^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice)(\s.*|$)/,@{$events}) {
             GeneralEventProcessing($hash,undef,join(' ',@{$events}));
         
         } elsif(grep /^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday)(\s.*|$)/,@{$events}) {
@@ -363,22 +364,22 @@ sub Notify($$) {
 
 sub GeneralEventProcessing($$$) {
 
-    my ($hash,$devname,$events)  = @_;
-    my $name            = $hash->{NAME};
+    my ($hash,$devname,$events) = @_;
+    my $name                    = $hash->{NAME};
 
 
     if( defined($devname) and ($devname) ) {                # es wird lediglich der Devicename der Funktion mitgegeben wenn es sich nicht um global handelt daher hier die Unterschiedung
-    
-        while( my ($shuttersDev,$shuttersAttr) = each %{$hash->{monitoredDevs}{$devname}} ) {
-            WindowRecEventProcessing($hash,$shuttersDev,$events) if( $shuttersAttr eq 'ASC_WindowRec' );     # ist es ein Fensterdevice wird die Funktion gestartet
-            RoommateEventProcessing($hash,$shuttersDev,$events) if( $shuttersAttr eq 'ASC_Roommate_Device' );    # ist es ein Bewohner Device wird diese Funktion gestartet
+        while( my ($device,$deviceAttr) = each %{$hash->{monitoredDevs}{$devname}} ) {
+            WindowRecEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_WindowRec' );     # ist es ein Fensterdevice wird die Funktion gestartet
+            RoommateEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_Roommate_Device' );    # ist es ein Bewohner Device wird diese Funktion gestartet
+            ResidentsEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_residentsDevice' );
         }
     } else {        # alles was kein Devicenamen mit übergeben hat landet hier
 
-        if( $events =~ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec)\s(.*)$# ) {       # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
+        if( $events =~ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice)\s(.*)$# ) {       # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev($hash,$3,$1,$2);
             Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: ATTR";
-        } elsif($events =~ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec)$# ) {      # wurde das Attribut unserer Rolläden gelöscht ?
+        } elsif($events =~ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice)$# ) {      # wurde das Attribut unserer Rolläden gelöscht ?
             Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: DELETEATTR";
             DeleteNotifyDev($hash,$1,$2);
         }
@@ -409,22 +410,27 @@ sub Set($$@) {
     } elsif( lc $cmd eq 'partymode' ) {
         return "usage: $cmd" if( @args > 1 );
         
-        readingsSingleUpdate($hash, "partyMode", join(' ',@args), 1);
+        readingsSingleUpdate($hash, $cmd, join(' ',@args), 1);
         
     } elsif( lc $cmd eq 'lockout' ) {
         return "usage: $cmd" if( @args > 1 );
         
-        readingsSingleUpdate($hash, "lockOut", join(' ',@args), 1);
+        readingsSingleUpdate($hash, $cmd, join(' ',@args), 1);
         SetHardewareBlockForShutters($hash,join(' ',@args));
         
     } elsif( lc $cmd eq 'sunrisetimeweholiday' ) {
         return "usage: $cmd" if( @args > 1 );
         
-        readingsSingleUpdate($hash, "sunriseTimeWeHoliday", join(' ',@args), 1);
+        readingsSingleUpdate($hash, $cmd, join(' ',@args), 1);
+    
+    } elsif( lc $cmd eq 'selfdefence' ) {
+        return "usage: $cmd" if( @args > 1 );
+        
+        readingsSingleUpdate($hash, $cmd, join(' ',@args), 1);
     
     } else {
         my $list = "scanForShutters:noArg";
-        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off createNewNotifyDev:noArg" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
+        $list .= " renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefence:on,off createNewNotifyDev:noArg" if( ReadingsVal($name,'userAttrList',0) eq 'rolled out');
 
         return "Unknown argument $cmd, choose one of $list";
     }
@@ -681,6 +687,22 @@ sub RoommateEventProcessing($@) {
     }
 }
 
+sub ResidentsEventProcessing($@) {
+
+    my ($hash,$device,$events)  = @_;
+    
+    
+    my $name                    = $device;
+    my $reading                 = $ascDev->residentsReading($name);
+    
+    if( $events =~ m#$reading:\s(absent)# and $ascDev->selfDefence($name) eq 'on' ) {
+        foreach my $shuttersDev (@{$hash->{helper}{shuttersList}}) {
+            CommandSet(undef,$shuttersDev . ':FILTER=' . $shutters->posCmd($shuttersDev) . '!=' . $shutters->closedPos . ' ' . $shutters->posCmd($shuttersDev) . ' ' . $shutters->closedPos)
+            if( CheckIfShuttersWindowRecOpen($shuttersDev) != 0 );
+        }
+    }
+}
+
 sub PartyModeEventProcessing($) {
 
     my ($hash)  = @_;
@@ -842,7 +864,7 @@ sub SunRiseShuttersAfterTimerFn($) {
     if( $shutters->modeUp($shuttersDev) eq $shutters->roommatesStatus($shuttersDev) or $shutters->modeUp($shuttersDev) eq 'always' ) {
     
         ShuttersCommandSet($hash,$shuttersDev,$shutters->openPos($shuttersDev))
-            if( $shutters->roommatesStatus($shuttersDev) eq 'home' or $shutters->roommatesStatus($shuttersDev) eq 'awoken' or $shutters->roommatesStatus($shuttersDev) eq 'absent' or $shutters->roommatesStatus($shuttersDev) eq 'gone' );
+            if( ($shutters->roommatesStatus($shuttersDev) eq 'home' or $shutters->roommatesStatus($shuttersDev) eq 'awoken' or $shutters->roommatesStatus($shuttersDev) eq 'absent' or $shutters->roommatesStatus($shuttersDev) eq 'gone') and ($ascDev->selfDefence($hash->{NAME}) eq 'off' or ($ascDev->selfDefence($hash->{NAME}) eq 'on' and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )) );
     }
     
     CreateSunRiseSetShuttersTimer($hash,$shuttersDev);
@@ -862,6 +884,8 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev($hash,AttrVal($_,'ASC_Roommate_Device','none'),$_,'ASC_Roommate_Device') if( AttrVal($_,'ASC_Roommate_Device','none') ne 'none' );
         AddNotifyDev($hash,AttrVal($_,'ASC_WindowRec','none'),$_,'ASC_WindowRec') if( AttrVal($_,'ASC_WindowRec','none') ne 'none' );
     }
+    
+    AddNotifyDev($hash,AttrVal($name,'ASC_residentsDevice','none'),$name,'ASC_residentsDevice') if( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
 }
 
 sub GetShuttersInformation($) {
@@ -874,7 +898,7 @@ sub GetShuttersInformation($) {
     my $ret = '<html><table><tr><td>';
     $ret .= '<table class="block wide">';
     $ret .= '<tr class="even">';
-    $ret .= "<td><b>Shuttername</b></td>";
+    $ret .= "<td><b>Shutters</b></td>";
     $ret .= "<td> </td>";
     $ret .= "<td><b>Next DriveUp</b></td>";
     $ret .= "<td> </td>";
@@ -887,7 +911,7 @@ sub GetShuttersInformation($) {
 
     if( ref($shuttersInformations) eq "HASH" ) {
         my $linecount = 1;
-        foreach my $shutter (keys (%{$shuttersInformations}) ) {
+        foreach my $shutter (sort keys (%{$shuttersInformations}) ) {
             if ( $linecount % 2 == 0 ) {
                 $ret .= '<tr class="even">';
             } else {
@@ -941,9 +965,9 @@ sub GetMonitoredDevs($) {
     my $ret = '<html><table><tr><td>';
     $ret .= '<table class="block wide">';
     $ret .= '<tr class="even">';
-    $ret .= "<td><b>NOTIFYDEV</b></td>";
+    $ret .= "<td><b>Shutters/ASC-Device</b></td>";
     $ret .= "<td> </td>";
-    $ret .= "<td><b>Shutters</b></td>";
+    $ret .= "<td><b>NOTIFYDEV</b></td>";
     $ret .= "<td> </td>";
     $ret .= "<td><b>Attribut</b></td>";
     $ret .= "<td> </td>";
@@ -951,9 +975,9 @@ sub GetMonitoredDevs($) {
 
     if( ref($notifydevs) eq "HASH" ) {
         my $linecount = 1;
-        foreach my $notifydev (keys (%{$notifydevs}) ) {
+        foreach my $notifydev (sort keys (%{$notifydevs}) ) {
             if( ref($notifydevs->{$notifydev}) eq "HASH" ) {
-                foreach my $shutters (keys (%{$notifydevs->{$notifydev}}) ) {
+                foreach my $shutters (sort keys (%{$notifydevs->{$notifydev}}) ) {
                 
                     if ( $linecount % 2 == 0 ) {
                         $ret .= '<tr class="even">';
@@ -961,9 +985,9 @@ sub GetMonitoredDevs($) {
                         $ret .= '<tr class="odd">';
                     }
 
-                    $ret .= "<td>$notifydev</td>";
-                    $ret .= "<td> </td>";
                     $ret .= "<td>$shutters</td>";
+                    $ret .= "<td> </td>";
+                    $ret .= "<td>$notifydev</td>";
                     $ret .= "<td> </td>";
                     $ret .= "<td>$notifydevs->{$notifydev}{$shutters}</td>";
                     $ret .= "<td> </td>";
@@ -1235,10 +1259,13 @@ sub IsHoliday($) {
 }
 
 
+
+
+
 ########## Begin der Klassendeklarierungen für OOP (Objektorientiertes Programming) #########################
-## Klasse Fenster (Window) und die Subklassen Attr_Window und Readings_Window ##
+## Klasse Fenster (Window) und die Subklassen Attr und Readings ##
 package ASC_Window;
-our @ISA    = qw( ASC_Attr_Window ASC_Readings_Window );
+our @ISA    = qw( ASC_Window::Attr ASC_Window::Readings );
 
 use strict;
 use warnings;
@@ -1252,8 +1279,8 @@ sub new {
 }
 
 
-## Subklasse ASC_Attr_Window von Klasse ASC_Window ##
-package ASC_Attr_Window;
+## Subklasse Attr von Klasse ASC_Window ##
+package ASC_Window::Attr;
 
 use strict;
 use warnings;
@@ -1279,27 +1306,31 @@ sub new {
     return $self;
 }
 
-sub subTyp($) {
+sub subTyp {
 
     my $self        = shift;
     my $shuttersDev = shift;
+    my $default     = shift;
+    $default        = 'none' if( not defined($default) );
 
-    $self->{subTyp} = AttrVal($shuttersDev,'ASC_WindowRec_subType','none');
+    $self->{subTyp} = AttrVal($shuttersDev,'ASC_WindowRec_subType',$default);
     return $self->{subTyp};
 }
 
-sub winDev($) {
+sub winDev {
 
     my $self        = shift;
     my $shuttersDev = shift;
+    my $default     = shift;
+    $default        = 'none' if( not defined($default) );
 
-    $self->{winDev} = AttrVal($shuttersDev,'ASC_WindowRec','none');
+    $self->{winDev} = AttrVal($shuttersDev,'ASC_WindowRec',$default);
     return $self->{winDev};
 }
 
 
-## Subklasse ASC_Readings_Window von Klasse ASC_Window ##
-package ASC_Readings_Window;
+## Subklasse Readings von Klasse ASC_Window ##
+package ASC_Window::Readings;
 
 use strict;
 use warnings;
@@ -1324,20 +1355,22 @@ sub new {
     return $self;
 }
 
-sub status($) {
+sub status {
 
     my $self        = shift;
     my $shuttersDev = shift;
+    my $default     = shift;
+    $default        = 'closed' if( not defined($default) );
 
-    $self->{status} = ReadingsVal($window->winDev($shuttersDev),'state','none');
+    $self->{status} = ReadingsVal($window->winDev($shuttersDev),'state',$default);
     return $self->{status};
 }
 
 
-## Klasse Rolläden (Shutters) und die Subklassen ASC_Attr_Shutters und ASC_Readings_Shutters ##
+## Klasse Rolläden (Shutters) und die Subklassen Attr und Readings ##
 ## desweiteren wird noch die Klasse ASC_Roommate mit eingebunden
 package ASC_Shutters;
-our @ISA    = qw( ASC_Roommate ASC_Attr_Shutters ASC_Readings_Shutters );
+our @ISA    = qw( ASC_Shutters::Readings ASC_Shutters::Attr ASC_Roommate );
 
 use strict;
 use warnings;
@@ -1354,7 +1387,7 @@ sub new {
     return $self;
 }
 
-sub roommatesStatus($) {
+sub roommatesStatus {
 
     my $self                    = shift;
     my $shuttersDev             = shift;
@@ -1374,32 +1407,29 @@ sub roommatesStatus($) {
     return $self->{roommatesStatus};
 }
 
-sub roommatesLastStatus($) {
+sub roommatesLastStatus {
 
-    my $self                    = shift;
-    my $shuttersDev             = shift;
+    my $self                        = shift;
+    my $shuttersDev                 = shift;
 
-    
-    
-    
-    my $loop                = 0;
+    my $loop                        = 0;
     my @roState;
-    my %statePrio           = ('asleep' => 1, 'gotosleep' => 2, 'awoken' => 3, 'home' => 4, 'absent' => 5, 'gone' => 6, 'none' => 7);
-    my $minPrio             = 10;
+    my %statePrio                   = ('asleep' => 1, 'gotosleep' => 2, 'awoken' => 3, 'home' => 4, 'absent' => 5, 'gone' => 6, 'none' => 7);
+    my $minPrio                     = 10;
     
     foreach my $ro (split(",", $shutters->roommates($shuttersDev))) {
         my $currentPrio = $statePrio{$shutters->roommateLastStatus($ro)};
         $minPrio = $currentPrio if($minPrio > $currentPrio);
     }
 
-    my %revStatePrio            = reverse %statePrio;
-    $self->{roommatesStatus}    = $revStatePrio{$minPrio};
-    return $self->{roommatesStatus};
+    my %revStatePrio                = reverse %statePrio;
+    $self->{roommatesLastStatus}    = $revStatePrio{$minPrio};
+    return $self->{roommatesLastStatus};
 }
 
 
-## Subklasse ASC_Attr_Shutters ##
-package ASC_Attr_Shutters;
+## Subklasse Attr von ASC_Shutters##
+package ASC_Shutters::Attr;
 
 use strict;
 use warnings;
@@ -1449,7 +1479,7 @@ sub new {
     return $self;
 }
 
-sub posCmd($) {
+sub posCmd {
 
     my $self        = shift;
     my $shuttersDev = shift;
@@ -1459,7 +1489,7 @@ sub posCmd($) {
 
 }
 
-sub openPos($) {
+sub openPos {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1469,7 +1499,7 @@ sub openPos($) {
 
 }
 
-sub ventilatePos($) {
+sub ventilatePos {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1479,7 +1509,7 @@ sub ventilatePos($) {
 
 }
 
-sub closedPos($) {
+sub closedPos {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1489,7 +1519,7 @@ sub closedPos($) {
 
 }
 
-sub ventilateOpen($) {
+sub ventilateOpen {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1498,7 +1528,7 @@ sub ventilateOpen($) {
     return $self->{ventilateOpen};
 }
 
-sub posAfterComfortOpen($) {
+sub posAfterComfortOpen {
 
     my $self                        = shift;
     my $shuttersDev                 = shift;
@@ -1507,7 +1537,7 @@ sub posAfterComfortOpen($) {
     return $self->{posAfterComfortOpen};
 }
 
-sub partyMode($) {
+sub partyMode {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1516,16 +1546,18 @@ sub partyMode($) {
     return $self->{partyMode};
 }
 
-sub roommates($) {
+sub roommates {
 
     my $self            = shift;
     my $shuttersDev     = shift;
+    my $default         = shift;
+    $default            = '' if( not defined($default) );
 
-    $self->{roommates}  = AttrVal($shuttersDev,'ASC_Roommate_Device','');
+    $self->{roommates}  = AttrVal($shuttersDev,'ASC_Roommate_Device',$default);
     return $self->{roommates};
 }
 
-sub roommatesReading($) {
+sub roommatesReading {
 
     my $self                    = shift;
     my $shuttersDev             = shift;
@@ -1534,7 +1566,7 @@ sub roommatesReading($) {
     return $self->{roommatesReading};
 }
 
-sub modeUp($) {
+sub modeUp {
 
     my $self        = shift;
     my $shuttersDev = shift;
@@ -1543,7 +1575,7 @@ sub modeUp($) {
     return $self->{modeUp};
 }
 
-sub modeDown($) {
+sub modeDown {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1552,7 +1584,7 @@ sub modeDown($) {
     return $self->{modeDown};
 }
 
-sub lockOut($) {
+sub lockOut {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1561,7 +1593,7 @@ sub lockOut($) {
     return $self->{lockOut};
 }
 
-sub antiFreeze($) {
+sub antiFreeze {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1570,7 +1602,7 @@ sub antiFreeze($) {
     return $self->{antiFreeze};
 }
 
-sub offsetMorning($) {
+sub offsetMorning {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1579,7 +1611,7 @@ sub offsetMorning($) {
     return $self->{offsetMorning};
 }
 
-sub offsetEvening($) {
+sub offsetEvening {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1588,25 +1620,29 @@ sub offsetEvening($) {
     return $self->{offsetEvening};
 }
 
-sub autoAstroModeMorning($) {
+sub autoAstroModeMorning {
 
     my $self                        = shift;
     my $shuttersDev                 = shift;
+    my $default                     = shift;
+    $default                        = 'none' if( not defined($default) );
 
-    $self->{autoAstroModeMorning}   = AttrVal($shuttersDev,'ASC_AutoAstroModeMorning','none');
+    $self->{autoAstroModeMorning}   = AttrVal($shuttersDev,'ASC_AutoAstroModeMorning',$default);
     return $self->{autoAstroModeMorning};
 }
 
-sub autoAstroModeEvening($) {
+sub autoAstroModeEvening {
 
     my $self                        = shift;
     my $shuttersDev                 = shift;
+    my $default                     = shift;
+    $default                        = 'none' if( not defined($default) );
 
-    $self->{autoAstroModeEvening}   = AttrVal($shuttersDev,'ASC_AutoAstroModeEvening','none');
+    $self->{autoAstroModeEvening}   = AttrVal($shuttersDev,'ASC_AutoAstroModeEvening',$default);
     return $self->{autoAstroModeEvening};
 }
 
-sub autoAstroModeMorningHorizon() {
+sub autoAstroModeMorningHorizon {
 
     my $self                                = shift;
     my $shuttersDev                         = shift;
@@ -1615,7 +1651,7 @@ sub autoAstroModeMorningHorizon() {
     return $self->{autoAstroModeMorningHorizon};
 }
 
-sub autoAstroModeEveningHorizon() {
+sub autoAstroModeEveningHorizon {
 
     my $self                                = shift;
     my $shuttersDev                         = shift;
@@ -1624,7 +1660,7 @@ sub autoAstroModeEveningHorizon() {
     return $self->{autoAstroModeEveningHorizon};
 }
 
-sub upMode($) {
+sub upMode {
 
     my $self        = shift;
     my $shuttersDev = shift;
@@ -1633,7 +1669,7 @@ sub upMode($) {
     return $self->{upMode};
 }
 
-sub downMode($) {
+sub downMode {
 
     my $self        = shift;
     my $shuttersDev = shift;
@@ -1642,7 +1678,7 @@ sub downMode($) {
     return $self->{downMode};
 }
 
-sub timeUpEarly($) {
+sub timeUpEarly {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1651,7 +1687,7 @@ sub timeUpEarly($) {
     return $self->{timeUpEarly};
 }
 
-sub timeUpLate($) {
+sub timeUpLate {
 
     my $self            = shift;
     my $shuttersDev     = shift;
@@ -1660,7 +1696,7 @@ sub timeUpLate($) {
     return $self->{timeUpLate};
 }
 
-sub timeDownEarly($) {
+sub timeDownEarly {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1669,7 +1705,7 @@ sub timeDownEarly($) {
     return $self->{timeDownEarly};
 }
 
-sub timeDownLate($) {
+sub timeDownLate {
 
     my $self                = shift;
     my $shuttersDev         = shift;
@@ -1678,7 +1714,7 @@ sub timeDownLate($) {
     return $self->{timeDownLate};
 }
 
-sub timeUpWeHoliday($) {
+sub timeUpWeHoliday {
 
     my $self                    = shift;
     my $shuttersDev             = shift;
@@ -1688,8 +1724,8 @@ sub timeUpWeHoliday($) {
 }
 
 
-## Subklasse ASC_Readings_Shutters ##
-package ASC_Readings_Shutters;
+## Subklasse Readings von ASC_Shutters ##
+package ASC_Shutters::Readings;
 
 use strict;
 use warnings;
@@ -1716,7 +1752,7 @@ sub new {
     return $self;
 }
 
-sub status($) {
+sub status {
 
     my $self        = shift;
     my $shuttersDev = shift;
@@ -1725,16 +1761,18 @@ sub status($) {
     return $self->{status};
 }
 
-sub delayCmd($) {
+sub delayCmd {
 
     my $self            = shift;
     my $shuttersDev     = shift;
+    my $default         = shift;
+    $default            = 'none' if( not defined($default) );
 
-    $self->{delayCmd}   = ReadingsVal($shuttersDev,'.ASC_DelayCmd','none');
+    $self->{delayCmd}   = ReadingsVal($shuttersDev,'.ASC_DelayCmd',$default);
     return $self->{delayCmd};
 }
 
-sub inTimerFuncHash($) {
+sub inTimerFuncHash {
 
     my $self                    = shift;
     my $shuttersDev             = shift;
@@ -1770,28 +1808,32 @@ sub new {
     return $self;
 }
 
-sub roommateStatus($) {
+sub roommateStatus {
 
     my $self                = shift;
     my $roommate            = shift;
+    my $default             = shift;
+    $default                = 'home' if( not defined($default) );
     
-    $self->{roommateStatus} = ReadingsVal($roommate,$shutters->roommatesReading($shutters),'none');
+    $self->{roommateStatus} = ReadingsVal($roommate,$shutters->roommatesReading($shutters),$default);
     return $self->{roommateStatus};
 }
 
-sub roommateLastStatus($) {
+sub roommateLastStatus {
 
     my $self                    = shift;
     my $roommate                = shift;
+    my $default                 = shift;
+    $default                    = 'home' if( not defined($default) );
     
-    $self->{roommateLastStatus} = ReadingsVal($roommate,'lastState','none');
+    $self->{roommateLastStatus} = ReadingsVal($roommate,'lastState',$default);
     return $self->{roommateLastStatus};
 }
 
 
 ## Klasse ASC_Dev plus Subklassen ASC_Attr_Dev und ASC_Readings_Dev##
 package ASC_Dev;
-our @ISA    = qw( ASC_Readings_Dev ASC_Attr_Dev );
+our @ISA    = qw( ASC_Dev::Readings ASC_Dev::Attr );
 
 use strict;
 use warnings;
@@ -1806,8 +1848,8 @@ sub new {
 }
 
 
-## Subklasse ASC_Readings_Dev ##
-package ASC_Readings_Dev;
+## Subklasse Readings ##
+package ASC_Dev::Readings;
 
 use strict;
 use warnings;
@@ -1830,49 +1872,60 @@ sub new {
         lockOut                 => undef,
         sunriseTimeWeHoliday    => undef,
         monitoredDevs           => undef,
+        selfDefence             => undef,
+        residentsStatus         => undef,
+        outTemp                 => undef,
     };
     
     bless $self, $class;
     return $self;
 }
 
-sub partyModeStatus($) {
+sub partyModeStatus {
 
     my $self                    = shift;
     my $name                    = shift;
+    my $default                 = shift;
+    $default                    = 'none' if( not defined($default) );
     
-    $self->{partyModeStatus}    = ReadingsVal($name,'partyMode','none');
+    $self->{partyModeStatus}    = ReadingsVal($name,'partyMode',$default);
     return $self->{partyModeStatus};
 }
 
-sub lockOut($) {
+sub lockOut {
 
     my $self            = shift;
     my $name            = shift;
+    my $default         = shift;
+    $default            = 'none' if( not defined($default) );
     
-    $self->{lockOut}    = ReadingsVal($name,'lockOut','none');
+    $self->{lockOut}    = ReadingsVal($name,'lockOut',$default);
     return $self->{lockOut};
 }
 
-sub sunriseTimeWeHoliday($) {
+sub sunriseTimeWeHoliday {
 
     my $self                        = shift;
     my $name                        = shift;
+    my $default                     = shift;
+    $default                        = 'none' if( not defined($default) );
     
-    $self->{sunriseTimeWeHoliday}   = ReadingsVal($name,'sunriseTimeWeHoliday','none');
+    $self->{sunriseTimeWeHoliday}   = ReadingsVal($name,'sunriseTimeWeHoliday',$default);
     return $self->{sunriseTimeWeHoliday};
 }
 
-sub monitoredDevs($) {
+sub monitoredDevs {
 
     my $self                = shift;
     my $name                = shift;
+    my $default             = shift;
+    $default                = 'none' if( not defined($default) );
     
-    $self->{monitoredDevs}  = ReadingsVal($name,'.monitoredDevs','none');
+    $self->{monitoredDevs}  = ReadingsVal($name,'.monitoredDevs',$default);
     return $self->{monitoredDevs};
 }
 
-sub outTemp($) {
+sub outTemp {
 
     my $self                = shift;
     my $name                = shift;
@@ -1881,9 +1934,29 @@ sub outTemp($) {
     return $self->{outTemp};
 }
 
+sub residentsStatus {
 
-## Subklasse ASC_Attr_Dev ##
-package ASC_Attr_Dev;
+    my $self                    = shift;
+    my $name                    = shift;
+    
+    $self->{residentsStatus}    = ReadingsVal($ascDev->residentsDev($name),$ascDev->residentsReading($name),'state');
+    return $self->{residentsStatus};
+}
+
+sub selfDefence {
+
+    my $self                = shift;
+    my $name                = shift;
+    my $default             = shift;
+    $default                = 'none' if( not defined($default) );
+    
+    $self->{selfDefence}    = ReadingsVal($name,'selfDefence',$default);
+    return $self->{selfDefence};
+}
+
+
+## Subklasse Attr ##
+package ASC_Dev::Attr;
 
 use strict;
 use warnings;
@@ -1910,22 +1983,26 @@ sub new {
         antifreezeTemp              => undef,
         tempSensor                  => undef,
         tempReading                 => undef,
+        residentsDev                => undef,
+        residentsReading            => undef,
     };
     
     bless $self, $class;
     return $self;
 }
 
-sub autoAstroModeEvening($) {
+sub autoAstroModeEvening {
 
     my $self                        = shift;
     my $name                        = shift;
+    my $default                     = shift;
+    $default                        = 'none' if( not defined($default) );
     
-    $self->{autoAstroModeEvening}   = AttrVal($name,'ASC_autoAstroModeEvening','none');
+    $self->{autoAstroModeEvening}   = AttrVal($name,'ASC_autoAstroModeEvening',$default);
     return $self->{autoAstroModeEvening};
 }
 
-sub autoAstroModeEveningHorizon($) {
+sub autoAstroModeEveningHorizon {
 
     my $self                                = shift;
     my $name                                = shift;
@@ -1934,16 +2011,18 @@ sub autoAstroModeEveningHorizon($) {
     return $self->{autoAstroModeEveningHorizon};
 }
 
-sub autoAstroModeMorning($) {
+sub autoAstroModeMorning {
 
     my $self                        = shift;
     my $name                        = shift;
+    my $default                     = shift;
+    $default                        = 'none' if( not defined($default) );
     
-    $self->{autoAstroModeMorning}   = AttrVal($name,'ASC_autoAstroModeMorning','none');
+    $self->{autoAstroModeMorning}   = AttrVal($name,'ASC_autoAstroModeMorning',$default);
     return $self->{autoAstroModeMorning};
 }
 
-sub autoAstroModeMorningHorizon($) {
+sub autoAstroModeMorningHorizon {
 
     my $self                                = shift;
     my $name                                = shift;
@@ -1952,25 +2031,29 @@ sub autoAstroModeMorningHorizon($) {
     return $self->{autoAstroModeMorningHorizon};
 }
 
-sub autoShuttersControlMorning($) {
+sub autoShuttersControlMorning {
 
     my $self                            = shift;
     my $name                            = shift;
+    my $default                         = shift;
+    $default                            = 'none' if( not defined($default) );
     
-    $self->{autoShuttersControlMorning} = AttrVal($name,'ASC_autoShuttersControlMorning','none');
+    $self->{autoShuttersControlMorning} = AttrVal($name,'ASC_autoShuttersControlMorning',$default);
     return $self->{autoShuttersControlMorning};
 }
 
-sub autoShuttersControlEvening($) {
+sub autoShuttersControlEvening {
 
     my $self                            = shift;
     my $name                            = shift;
+    my $default                         = shift;
+    $default                            = 'none' if( not defined($default) );
     
-    $self->{autoShuttersControlEvening} = AttrVal($name,'ASC_autoShuttersControlEvening','none');
+    $self->{autoShuttersControlEvening} = AttrVal($name,'ASC_autoShuttersControlEvening',$default);
     return $self->{autoShuttersControlEvening};
 }
 
-sub autoShuttersControlComfort($) {
+sub autoShuttersControlComfort {
 
     my $self                            = shift;
     my $name                            = shift;
@@ -1979,31 +2062,57 @@ sub autoShuttersControlComfort($) {
     return $self->{autoShuttersControlComfort};
 }
 
-sub antifreezeTemp($) {
+sub antifreezeTemp {
 
     my $self                = shift;
     my $name                = shift;
+    my $default             = shift;
+    $default                = 'none' if( not defined($default) );
     
-    $self->{antifreezeTemp} = AttrVal($name,'ASC_antifreezeTemp','none');
+    $self->{antifreezeTemp} = AttrVal($name,'ASC_antifreezeTemp',$default);
     return $self->{antifreezeTemp};
 }
 
-sub tempSensor($) {
+sub tempSensor {
 
     my $self            = shift;
     my $name            = shift;
+    my $default         = shift;
+    $default            = 'none' if( not defined($default) );
     
-    $self->{tempSensor} = AttrVal($name,'ASC_temperatureSensor','none');
+    $self->{tempSensor} = AttrVal($name,'ASC_temperatureSensor',$default);
     return $self->{tempSensor};
 }
 
-sub tempReading($) {
+sub tempReading {
 
     my $self            = shift;
     my $name            = shift;
+    my $default         = shift;
+    $default            = 'none' if( not defined($default) );
     
-    $self->{tempReading} = AttrVal($name,'ASC_temperatureReading','none');
+    $self->{tempReading} = AttrVal($name,'ASC_temperatureReading',$default);
     return $self->{tempReading};
+}
+
+sub residentsDev {
+
+    my $self                = shift;
+    my $name                = shift;
+    my $default             = shift;
+    $default                = 'none' if( not defined($default) );
+    
+    $self->{residentsDev}   = AttrVal($name,'ASC_residentsDevice',$default);
+    return $self->{residentsDev};
+}
+
+sub residentsReading {
+
+    my $self                    = shift;
+    my $name                    = shift;
+    
+    $self->{residentsReading}   = AttrVal($name,'ASC_residentsDeviceReading','state');
+    return $self->{residentsReading};
 }
 
 
@@ -2125,7 +2234,7 @@ sub tempReading($) {
       <li>ASC_Time_Up_Early - Like ...Time_Down... for opening</li>
       <li>ASC_Time_Up_Late - Like ...Time_Down... for opening</li>
       <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub</li>
-      <li>ASC_Time_Up_HolidayDevice - Device zur Urlaubserkennung/muss 0 oder 1 im Reading state beinhalten.
+      <li>ASC_Time_Up_HolidayDevice - Device zur Urlaubserkennung/muss 0 oder 1 im Reading state beinhalten.</li>
       <li>ASC_Up - astro/time "Astro" will use sunrise calculation for opening times, "time" uses ASC_Time_Up_Early value.</li>
       <li>ASC_Ventilate_Pos -  in 10 steps from 0 to 100, defaults will be set dependent on AutoShuttersControl attribute value.</li>
       <li>ASC_Ventilate_Window_Open - Level to be set for ventilation in case of opening or tilted event (only if current shutter position is below this level</li>
@@ -2194,7 +2303,8 @@ sub tempReading($) {
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
     <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes ASC_Time_Up_WE_Holiday</li>
-    >li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an</li>
+    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an</li>
+    <li>selfDefence - on/off, aktiviert/deaktiviert den Selbstschutz, wenn das Residents Device absent meldet und selfDefence aktiv ist und ein Fenster im Haus steht noch offen, wird an diesem Fenster das Rollo runter gefahren</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlGet"></a>
@@ -2219,7 +2329,9 @@ sub tempReading($) {
       <li>ASC_autoShuttersControlMorning - on/off, ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>ASC_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
       <li>ASC_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
-      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.
+      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.</li>
+      <li>ASC_residentsDevice - Devicenamen vom Residents Device der obersten Ebene</li>
+      <li>ASC_residentsDeviceReading - Status Reading vom Residents Device der obersten Ebene</li>
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
