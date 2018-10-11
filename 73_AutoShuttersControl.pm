@@ -44,7 +44,7 @@ use warnings;
 
 
 
-my $version = "0.1.76";
+my $version = "0.1.78";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -841,8 +841,6 @@ sub SetHardewareBlockForShutters($$) {
     }
 }
 
-## Funktion zum hardwareseitigen setzen des lock-out oder blocking beim Rolladen selbst
-
 ## Funktion welche beim Ablaufen des Timers für Sunset aufgerufen werden soll
 sub SunSetShuttersAfterTimerFn($) {
 
@@ -1304,22 +1302,22 @@ sub new {
 
 sub setShuttersDev {
 
-    my $self                = shift;
-    $self->{shuttersDev}    = shift;
+    my ($self,$shuttersDev) = @_;
+    $self->{shuttersDev}    = $shuttersDev if( defined($shuttersDev) );
     return $self->{shuttersDev};
 }
 
 sub setDefault {
 
-    my $self            = shift;
-    $self->{defaultarg} = shift;
+    my ($self,$defaultarg) = @_;
+    $self->{defaultarg}     = $defaultarg if( defined($defaultarg) );
     return $self->{defaultarg};
 }
 
 sub setRoommate {
 
-    my $self            = shift;
-    $self->{roommate}   = shift;
+    my ($self,$roommate)    = @_;
+    $self->{roommate}       = $roommate if( defined($roommate) );
     return $self->{roommate};
 }
 
@@ -1452,9 +1450,9 @@ sub getRoommatesReading {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
+    $default        = 'state' if( not defined($default) );
 
-    return AttrVal($shuttersDev,'ASC_Roommate_Reading','state');
+    return AttrVal($shuttersDev,'ASC_Roommate_Reading',$default);
 }
 
 sub getModeUp {
@@ -1669,7 +1667,7 @@ sub getSubTyp {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
+    $default        = 'twostate' if( not defined($default) );
 
     return AttrVal($shuttersDev,'ASC_WindowRec_subType',$default);
 }
@@ -1735,7 +1733,7 @@ sub getRoommateStatus {
     my $self        = shift;
     my $roommate    = $self->{roommate};
     my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
+    $default        = 'home' if( not defined($default) );
     
     return ReadingsVal($roommate,$shutters->getRoommatesReading,$default);
 }
@@ -1745,7 +1743,7 @@ sub getRoommateLastStatus {
     my $self        = shift;
     my $roommate    = $self->{roommate};
     my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
+    $default        = 'home' if( not defined($default) );
     
     return ReadingsVal($roommate,'lastState',$default);
 }
@@ -1769,15 +1767,15 @@ sub new {
 
 sub setName {
 
-    my $self        = shift;
-    $self->{name}   = shift;
+    my ($self,$name)    = @_;
+    $self->{name}       = $name if( defined($name) );
     return $self->{name};
 }
 
 sub setDefault {
 
-    my $self            = shift;
-    $self->{defaultarg} = shift;
+    my ($self,$defaultarg)  = @_;
+    $self->{defaultarg}     = $defaultarg if( defined($defaultarg) );
     return $self->{defaultarg};
 }
 
@@ -1834,10 +1832,8 @@ sub getMonitoredDevs {
 
     my $self        = shift;
     my $name        = $self->{name};
-    my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
-    
-    $self->{monitoredDevs}  = ReadingsVal($name,'.monitoredDevs',$default);
+
+    $self->{monitoredDevs}  = ReadingsVal($name,'.monitoredDevs','none');
     return $self->{monitoredDevs};
 }
 
@@ -1854,17 +1850,15 @@ sub getResidentsStatus {
     my $self        = shift;
     my $name        = $self->{name};
     
-    return ReadingsVal($ascDev->getResidentsDev,$ascDev->getResidentsReading,'state');
+    return ReadingsVal($ascDev->getResidentsDev,$ascDev->getResidentsReading,'home');
 }
 
 sub getSelfDefence {
 
     my $self        = shift;
     my $name        = $self->{name};
-    my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
     
-    return ReadingsVal($name,'selfDefence',$default);
+    return ReadingsVal($name,'selfDefence','none');
 }
 
 
@@ -1995,9 +1989,9 @@ sub getResidentsReading {
     my $self        = shift;
     my $name        = $self->{name};
     my $default     = $self->{defaultarg};
-    $default        = 'none' if( not defined($default) );
+    $default        = 'state' if( not defined($default) );
     
-    return AttrVal($name,'ASC_residentsDeviceReading','state');
+    return AttrVal($name,'ASC_residentsDeviceReading',$default);
 }
 
 
