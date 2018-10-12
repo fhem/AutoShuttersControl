@@ -44,7 +44,7 @@ use warnings;
 
 
 
-my $version = "0.1.78";
+my $version = "0.1.79.2";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -64,6 +64,7 @@ sub AutoShuttersControl_Initialize($) {
                             "ASC_temperatureSensor ".
                             "ASC_temperatureReading ".
                             "ASC_brightnessMinVal ".
+                            "ASC_brightnessMaxVal ".
                             "ASC_autoShuttersControlMorning:on,off ".
                             "ASC_autoShuttersControlEvening:on,off ".
                             "ASC_autoShuttersControl_Shading:on,off ".
@@ -149,8 +150,8 @@ BEGIN {
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 my %userAttrList =  (   'ASC_Mode_Up:absent,always,off'                                                     =>  'always',
                         'ASC_Mode_Down:absent,always,off'                                                   =>  'always',
-                        'ASC_Up:time,astro'                                                                 =>  'astro',
-                        'ASC_Down:time,astro'                                                               =>  'astro',
+                        'ASC_Up:time,astro,brightness'                                                      =>  'astro',
+                        'ASC_Down:time,astro,brightness'                                                    =>  'astro',
                         'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON'                     =>  'none',
                         'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'    =>  'none',
                         'ASC_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON'                     =>  'none',
@@ -349,7 +350,7 @@ sub Notify($$) {
         }
 
     } elsif( $devname eq "global" ) {           # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
-        if( grep /^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice)(\s.*|$)/,@{$events}) {
+        if( grep /^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_Shading_Brightness_Sensor)(\s.*|$)/,@{$events}) {
             GeneralEventProcessing($hash,undef,join(' ',@{$events}));
         
         } elsif(grep /^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday)(\s.*|$)/,@{$events}) {
@@ -375,10 +376,13 @@ sub GeneralEventProcessing($$$) {
             WindowRecEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_WindowRec' );     # ist es ein Fensterdevice wird die Funktion gestartet
             RoommateEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_Roommate_Device' );    # ist es ein Bewohner Device wird diese Funktion gestartet
             ResidentsEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_residentsDevice' );
+            
+            $shutters->setShuttersDev($device) if( $deviceAttr eq 'ASC_Shading_Brightness_Sensor');
+            BrightnessEventProcessing($hash,$device,$events) if( $deviceAttr eq 'ASC_Shading_Brightness_Sensor' and $shutters->getDownMode eq 'brightness' and $shutters->getUpMode eq 'brightness' );
         }
     } else {        # alles was kein Devicenamen mit übergeben hat landet hier
 
-        if( $events =~ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice)\s(.*)$# ) {       # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
+        if( $events =~ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_Shading_Brightness_Sensor)\s(.*)$# ) {       # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev($hash,$3,$1,$2);
             Log3 $name, 4, "AutoShuttersControl ($name) - EventProcessing: ATTR";
         } elsif($events =~ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice)$# ) {      # wurde das Attribut unserer Rolläden gelöscht ?
@@ -555,7 +559,7 @@ sub UserAttributs_Readings_ForShutters($$) {
             ## Oder das Attribut wird wieder gelöscht.
             } elsif( $cmd eq 'del' ) {
                 RemoveInternalTimer(ReadingsVal($_,'.AutoShuttersControl_InternalTimerFuncHash',0));
-                CommandDeleteReading(undef,$_ . ' .?AutoShuttersControl_.*' );
+                CommandDeleteReading(undef,$_ . ' .?(AutoShuttersControl|ASC)_.*' );
                 CommandDeleteAttr(undef,$_ . ' ASC');
                 delFromDevAttrList($_,$attrib);
             }
@@ -709,6 +713,46 @@ sub ResidentsEventProcessing($@) {
             if( CheckIfShuttersWindowRecOpen($shuttersDev) != 0 );
         }
     }
+}
+
+sub BrightnessEventProcessing($@) {
+
+    my ($hash,$shuttersDev,$events) = @_;
+    
+    my $name                        = $hash->{NAME};
+    $ascDev->setName($name);
+    $shutters->setShuttersDev($shuttersDev);
+    Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing";
+    Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing - aktuell: " . gettimeofday() . " frühsteDown: " . computeAlignTime('24:00',$shutters->getTimeDownEarly);
+    Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing - aktuell: " . gettimeofday() . " frühsteUp: " . computeAlignTime('24:00',$shutters->getTimeUpEarly);
+    
+    
+    return
+    unless( gettimeofday() < computeAlignTime('24:00',$shutters->getTimeDownEarly) and gettimeofday() < computeAlignTime('24:00',$shutters->getTimeUpEarly) );
+
+    Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing early vorbei";
+    my $reading                     = $shutters->getShadingBrightnessReading;
+
+    if($events =~ m#$reading:\s(\d+)# ) {
+        Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing: in der Bedingung Dollar1 ist:" . $1;
+        return
+        unless( $1 < $ascDev->getBrightnessMinVal );
+
+        Log3 $name, 2, "AutoShuttersControl ($shuttersDev) - BrightnessEventProcessing: bridghtnes kleiner ";
+
+
+#         ShuttersCommandSet($hash,$shuttersDev,$shutters->getOpenPos)
+#         if( ($1 < $ascDev->getBrightnessMinVal ) {
+#             Log3 $name, 2, "AutoShuttersControl ($name) - BrightnessEventProcessing: brightness kleiner brightnessMinVal";
+#             
+#             my $shuttersSunriseUnixtime = ShuttersSunrise($hash,$shuttersDev,'unix') + int(rand(TimeMin2Sec($shutters->getOffsetMorning)));
+#             my $shuttersSunsetUnixtime  = ShuttersSunset($hash,$shuttersDev,'unix') + int(rand(TimeMin2Sec($shutters->getOffsetEvening)));
+#             
+#             $shutters->getInTimerFuncHash
+#         }
+    }
+    
+    
 }
 
 sub PartyModeEventProcessing($) {
@@ -897,6 +941,7 @@ sub CreateNewNotifyDev($) {
     foreach (@{$hash->{helper}{shuttersList}}) {
         AddNotifyDev($hash,AttrVal($_,'ASC_Roommate_Device','none'),$_,'ASC_Roommate_Device') if( AttrVal($_,'ASC_Roommate_Device','none') ne 'none' );
         AddNotifyDev($hash,AttrVal($_,'ASC_WindowRec','none'),$_,'ASC_WindowRec') if( AttrVal($_,'ASC_WindowRec','none') ne 'none' );
+        AddNotifyDev($hash,AttrVal($_,'ASC_Shading_Brightness_Sensor','none'),$_,'ASC_Shading_Brightness_Sensor') if( AttrVal($_,'ASC_Shading_Brightness_Sensor','none') ne 'none' );
     }
     
     AddNotifyDev($hash,AttrVal($name,'ASC_residentsDevice','none'),$name,'ASC_residentsDevice') if( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
@@ -1101,7 +1146,7 @@ sub ShuttersSunrise($$$) {
 
     if( $tm eq 'unix' ) {
         if( $shutters->getUpMode eq 'astro') {
-            if( (IsWe() or IsWeTomorrow()) and ascDev->sunriseTimeWeHoliday($name) eq 'on' ) {
+            if( (IsWe() or IsWeTomorrow()) and ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
                 if( not IsWeTomorrow() ) {
                     if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpWeHoliday)) + 1);
@@ -1115,22 +1160,24 @@ sub ShuttersSunrise($$$) {
                 $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1);
             }
 
-            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and ascDev->sunriseTimeWeHoliday($name) eq 'on' ) {
+            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
                 if( not IsWeTomorrow() ) {
                     if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-                            #if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 1440) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
                             if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 180) and $oldFuncHash->{sunrisetime} < gettimeofday() );
                     }
                 }
             } elsif( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
-                    #if( ($shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 900) or $shuttersSunriseUnixtime != $oldFuncHash->{sunrisetime}) and $oldFuncHash->{sunrisetime} < gettimeofday() );
                     if( $shuttersSunriseUnixtime < ($oldFuncHash->{sunrisetime} + 180) and $oldFuncHash->{sunrisetime} < gettimeofday() );
             }
         } elsif( $shutters->getUpMode eq 'time' ) {
         
             $shuttersSunriseUnixtime    = computeAlignTime('24:00',$shutters->getTimeUpEarly);
+        
+        } elsif( $shutters->getUpMode eq 'brightness' ) {
+        
+            $shuttersSunriseUnixtime    = computeAlignTime('24:00',$shutters->getTimeUpLate);
         }
         
         return $shuttersSunriseUnixtime;
@@ -1170,12 +1217,15 @@ sub ShuttersSunset($$$) {
             
             if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH') {
                 $shuttersSunsetUnixtime = ($shuttersSunsetUnixtime + 86400)
-                    #if( ($shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 900) or $shuttersSunsetUnixtime != $oldFuncHash->{sunsettime}) and $oldFuncHash->{sunsettime} < gettimeofday() );
                     if( $shuttersSunsetUnixtime < ($oldFuncHash->{sunsettime} + 180) and $oldFuncHash->{sunsettime} < gettimeofday() );
             }
         } elsif( $shutters->getDownMode eq 'time' ) {
         
             $shuttersSunsetUnixtime     = computeAlignTime('24:00',$shutters->getTimeDownEarly);
+        
+        } elsif( $shutters->getDownMode eq 'brightness' ) {
+        
+            $shuttersSunsetUnixtime     = computeAlignTime('24:00',$shutters->getTimeDownLate);
         }
         
         return $shuttersSunsetUnixtime;
@@ -1378,6 +1428,26 @@ BEGIN {
     ))
 };
 
+
+sub getShadingBrightnessSensor {
+
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+    my $default     = $self->{defaultarg};
+    $default        = 'none' if( not defined($default) );
+
+    return AttrVal($shuttersDev,'ASC_Shading_Brightness_Sensor',$default);
+}
+
+sub getShadingBrightnessReading {
+
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+    my $default     = $self->{defaultarg};
+    $default        = 'brightness' if( not defined($default) );
+
+    return AttrVal($shuttersDev,'ASC_Shading_Brightness_Reading',$default);
+}
 
 sub getPosCmd {
 
@@ -1612,6 +1682,14 @@ BEGIN {
     ))
 };
 
+
+sub getBrightness {
+
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return ReadingsVal($shutters->getShadingBrightnessSensor,$shutters->getShadingBrightnessReading,0);
+}
 
 sub getStatus {
 
@@ -1879,6 +1957,26 @@ BEGIN {
     ))
 };
 
+
+sub getBrightnessMinVal {
+
+    my $self        = shift;
+    my $name        = $self->{name};
+    my $default     = $self->{defaultarg};
+    $default        = 8000 if( not defined($default) );
+    
+    return AttrVal($name,'ASC_brightnessMinVal',$default);
+}
+
+sub getBrightnessMaxVal {
+
+    my $self        = shift;
+    my $name        = $self->{name};
+    my $default     = $self->{defaultarg};
+    $default        = 20000 if( not defined($default) );
+    
+    return AttrVal($name,'ASC_brightnessMaxVal',$default);
+}
 
 sub getAutoAstroModeEvening {
 
