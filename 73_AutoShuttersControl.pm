@@ -44,7 +44,7 @@ use warnings;
 
 
 
-my $version = "0.1.78";
+my $version = "0.1.79";
 
 
 sub AutoShuttersControl_Initialize($) {
@@ -1101,7 +1101,7 @@ sub ShuttersSunrise($$$) {
 
     if( $tm eq 'unix' ) {
         if( $shutters->getUpMode eq 'astro') {
-            if( (IsWe() or IsWeTomorrow()) and ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
+            if( (IsWe() or IsWeTomorrow()) and $ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
                 if( not IsWeTomorrow() ) {
                     if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpWeHoliday)) + 1);
@@ -1115,7 +1115,7 @@ sub ShuttersSunrise($$$) {
                 $shuttersSunriseUnixtime    = (computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1);
             }
 
-            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
+            if( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' and (IsWe() or IsWeTomorrow()) and $ascDev->getSunriseTimeWeHoliday($name) eq 'on' ) {
                 if( not IsWeTomorrow() ) {
                     if( int(gettimeofday() / 86400) == int((computeAlignTime('24:00',sunrise_abs($autoAstroMode,0,$shutters->getTimeUpEarly,$shutters->getTimeUpLate)) + 1) / 86400) ) {
                         $shuttersSunriseUnixtime = ($shuttersSunriseUnixtime + 86400)
