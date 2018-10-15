@@ -85,7 +85,7 @@ sub AutoShuttersControl_Initialize($) {
     }
 }
 
-## unserer packagename der Funktion
+## unserer packagename
 package AutoShuttersControl;
 
 use strict;
