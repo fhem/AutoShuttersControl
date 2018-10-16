@@ -38,8 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.79.12";
-
+my $version = "0.1.80";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -193,6 +192,8 @@ my %userAttrList = (
     'ASC_Roommate_Device'             => 'none',
     'ASC_Roommate_Reading'            => 'state',
     'ASC_Self_Defense_Exclude:on,off' => 'off',
+    'ASC_BrightnessMinVal'            => -1,
+    'ASC_BrightnessMaxVal'            => -1,
 );
 
 my $shutters = new ASC_Shutters();
@@ -700,10 +701,11 @@ sub WindowRecEventProcessing($@) {
 
     if ( $events =~ m#state:\s(open|closed|tilted)# ) {
         $shutters->setShuttersDev($shuttersDev);
-        my $queryShuttersPosWinRecTilted =
-          ( ShuttersPosCmdValueNegieren($shuttersDev)
+        my $queryShuttersPosWinRecTilted = (
+            ShuttersPosCmdValueNegieren($shuttersDev)
             ? $shutters->getStatus > $shutters->getVentilatePos
-            : $shutters->getStatus < $shutters->getVentilatePos );
+            : $shutters->getStatus < $shutters->getVentilatePos
+        );
 
         if ( $shutters->getDelayCmd ne 'none' )
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
@@ -850,6 +852,14 @@ sub BrightnessEventProcessing($@) {
 
     my $reading = $shutters->getShadingBrightnessReading;
     if ( $events =~ m#$reading:\s(\d+)# ) {
+        my $brightnessMinVal;
+        if ( $shutters->getBrightnessMinVal > -1 ) {
+            $brightnessMinVal = $shutters->getBrightnessMinVal;
+        }
+        else {
+            $brightnessMinVal = $ascDev->getBrightnessMinVal;
+        }
+
         if (
             int( gettimeofday() / 86400 ) != int(
                 computeAlignTime( '24:00', $shutters->getTimeUpEarly ) / 86400
@@ -857,7 +867,7 @@ sub BrightnessEventProcessing($@) {
             and int( gettimeofday() / 86400 ) == int(
                 computeAlignTime( '24:00', $shutters->getTimeUpLate ) / 86400
             )
-            and $1 > $ascDev->getBrightnessMinVal
+            and $1 > $brightnessMinVal
           )
         {
             Log3( $name, 4,
@@ -872,7 +882,7 @@ sub BrightnessEventProcessing($@) {
             and int( gettimeofday() / 86400 ) == int(
                 computeAlignTime( '24:00', $shutters->getTimeDownLate ) / 86400
             )
-            and $1 < $ascDev->getBrightnessMinVal
+            and $1 < $brightnessMinVal
           )
         {
             Log3( $name, 4,
@@ -1610,10 +1620,11 @@ sub IsWe() {
 sub IsWeTomorrow() {
     my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
       localtime( gettimeofday() );
-    my $we =
-      ( ( ( ( $wday + 1 == 7 ? 0 : $wday + 1 ) ) == 0 || ( $wday + 1 ) == 6 )
+    my $we = (
+        ( ( ( $wday + 1 == 7 ? 0 : $wday + 1 ) ) == 0 || ( $wday + 1 ) == 6 )
         ? 1
-        : 0 );
+        : 0
+    );
 
     if ( !$we ) {
         foreach my $h2we ( split( ",", AttrVal( "global", "holiday2we", "" ) ) )
@@ -2006,6 +2017,20 @@ sub getTimeUpWeHoliday {
     my $shuttersDev = $self->{shuttersDev};
 
     return AttrVal( $shuttersDev, 'ASC_Time_Up_WE_Holiday', '04:00:00' );
+}
+
+sub getBrightnessMinVal {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return AttrVal( $shuttersDev, 'ASC_BrightnessMinVal', -1 );
+}
+
+sub getBrightnessMaxVal {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return AttrVal( $shuttersDev, 'ASC_BrightnessMaxVal', -1 );
 }
 
 ## Subklasse Readings von ASC_Shutters ##
