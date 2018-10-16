@@ -2666,6 +2666,8 @@ sub getResidentsReading {
       <li>ASC_lock-out - soft/hard stellt entsprechend den Aussperrschutz ein. Bei global aktiven Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rolladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard,wird bei entsprechender M&ouml;glichkeit versucht den Rolladen Hardwareseitig zu blockieren. Dann ist auch ein fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
       <li>ASC_lock-outCmd - inhibit/blocked set Befehl für das Rolladen-Device zum Hardware sperren. Zum gesetzt werden wenn man "ASC_lock-out" auf hard setzt</li>
       <li>ASC_Self_Defense_Exclude - on/off bei on Wert wird dieser Rolladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren wenn Residents absent ist.</li>
+      <li>ASC_BrightnessMinVal - minimaler Lichtwert ab welchen Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
+      <li>ASC_BrightnessMaxVal - maximaler Lichtwert ab welchen Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
     </ul>
   </ul>
 </ul>
