@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.80";
+my $version = "0.1.80.25";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -505,10 +505,20 @@ sub Get($$@) {
         my $ret = GetMonitoredDevs($hash);
         return $ret;
     }
+    elsif ( lc $cmd eq 'test' ) {
+        return "usage: $cmd" if ( @args != 0 );
+        $shutters->setShuttersDev('RolloKinZimSteven_F1');
+        my $ret =
+          'LastPos: ' . $shutters->getLastPos
+          . ' InTimerFuncHash: ' . $shutters->getInTimerFuncHash
+          . ' Sunrise: ' . $shutters->getInTimerFuncHash->{sunrisetime}
+          . ' LastPosTimestamp: ' . $shutters->getLastPosTimestamp;
+        return $ret;
+    }
     else {
         my $list = "";
         $list .=
-          " showShuttersInformations:noArg showNotifyDevsInformations:noArg"
+" showShuttersInformations:noArg showNotifyDevsInformations:noArg test:noArg"
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -545,6 +555,12 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
         delFromDevAttrList( $_, 'ASC_Self_Defence_Exclude:on,off' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
+        CommandDeleteReading( undef,
+            $_ . ' .AutoShuttersControl_InternalTimerFuncHash' )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
+        CommandDeleteReading( undef,
+            $_ . ' .AutoShuttersControl_LastPosition' )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
     }
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
         $hash->{monitoredDevs} =
@@ -626,11 +642,9 @@ sub UserAttributs_Readings_ForShutters($$) {
                 ## Oder das Attribut wird wieder gelöscht.
             }
             elsif ( $cmd eq 'del' ) {
-                RemoveInternalTimer(
-                    ReadingsVal(
-                        $_, '.AutoShuttersControl_InternalTimerFuncHash', 0
-                    )
-                );
+                $shutters->setShuttersDev($_);
+
+                RemoveInternalTimer( $shutters->getInTimerFuncHash );
                 CommandDeleteReading( undef,
                     $_ . ' .?(AutoShuttersControl|ASC)_.*' );
                 CommandDeleteAttr( undef, $_ . ' ASC' );
@@ -957,7 +971,6 @@ sub ShuttersCommandSet($$$) {
             $shuttersDev . '_lastDelayPosValue', $posValue );
     }
     else {
-        $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDriveCmd($posValue);
         readingsSingleUpdate( $defs{$shuttersDev},
             '.AutoShuttersControl_DelayCmd',
@@ -1053,8 +1066,11 @@ sub CreateSunRiseSetShuttersTimer($$) {
         ReadingsVal( $shuttersDev, 'AutoShuttersControl_Time_DriveUp', 'none' )
         ne 'none' );    # temporär
 
+    #     RemoveInternalTimer( $shutters->getInTimerFuncHash )
+    #       unless ( $shutters->getInTimerFuncHash eq 'none' );
+
     RemoveInternalTimer( $shutters->getInTimerFuncHash )
-      unless ( $shutters->getInTimerFuncHash eq 'none' );
+      if ( defined( $shutters->getInTimerFuncHash ) );
 
     ## kleine Hilfe für InternalTimer damit ich alle benötigten Variablen an die Funktion übergeben kann welche von Internal Timer aufgerufen wird.
     my %funcHash = (
@@ -1065,9 +1081,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     );
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
-    readingsSingleUpdate( $shuttersDevHash,
-        '.AutoShuttersControl_InternalTimerFuncHash',
-        \%funcHash, 0 );
+    $shutters->setInTimerFuncHash( \%funcHash );
+
     InternalTimer( $shuttersSunsetUnixtime,
         'AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
       if ( $ascDev->getAutoShuttersControlEvening eq 'on' );
@@ -1081,13 +1096,10 @@ sub RenewSunRiseSetShuttersTimer($) {
     my $hash = shift;
 
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
-        RemoveInternalTimer(
-            ReadingsVal(
-                $_, '.AutoShuttersControl_InternalTimerFuncHash', 'none'
-            )
-        );
-        CommandDeleteReading( undef,
-            $_ . ' .AutoShuttersControl_InternalTimerFuncHash' );
+        $shutters->setShuttersDev($_);
+
+        RemoveInternalTimer( $shutters->getInTimerFuncHash );
+        $shutters->setInTimerFuncHash(undef);
         CreateSunRiseSetShuttersTimer( $hash, $_ );
     }
 }
@@ -1666,7 +1678,8 @@ BEGIN {
           defs
           ReadingsVal
           readingsSingleUpdate
-          CommandSet)
+          CommandSet
+          gettimeofday)
     );
 }
 
@@ -1685,6 +1698,7 @@ sub new {
 
 sub setShuttersDev {
     my ( $self, $shuttersDev ) = @_;
+
     $self->{shuttersDev} = $shuttersDev if ( defined($shuttersDev) );
     return $self->{shuttersDev};
 }
@@ -1692,6 +1706,8 @@ sub setShuttersDev {
 sub setDriveCmd {
     my ( $self, $posValue ) = @_;
     my $shuttersDev = $self->{shuttersDev};
+
+    $shutters->setLastPos( $shutters->getStatus );
     CommandSet( undef,
             $shuttersDev
           . ':FILTER='
@@ -1712,29 +1728,60 @@ sub setDelayDriveCmd {
 
 sub setLastPos {
     my ( $self, $position ) = @_;
-    my $shuttersDevHash = $defs{ $self->{shuttersDev} };
-    readingsSingleUpdate( $shuttersDevHash, '.AutoShuttersControl_LastPosition',
-        $position, 0 )
-      if ( defined($shuttersDevHash) and defined($position) );
+
+    $self->{ $self->{shuttersDev} }{lastPos}{VAL}   = $position
+      if ( defined($position) );
+    $self->{ $self->{shuttersDev} }{lastPos}{TIME}  = int(gettimeofday())
+      if (  defined( $self->{ $self->{shuttersDev} }{lastPos} ) );
     return 0;
 }
 
 sub setDefault {
     my ( $self, $defaultarg ) = @_;
+
     $self->{defaultarg} = $defaultarg if ( defined($defaultarg) );
     return $self->{defaultarg};
 }
 
 sub setRoommate {
     my ( $self, $roommate ) = @_;
+
     $self->{roommate} = $roommate if ( defined($roommate) );
     return $self->{roommate};
+}
+
+sub setInTimerFuncHash {
+    my ( $self, $inTimerFuncHash ) = @_;
+
+    $self->{ $self->{shuttersDev} }{inTimerFuncHash} = $inTimerFuncHash
+      if ( defined($inTimerFuncHash) );
+    return 0;
 }
 
 sub getLastPos {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
-    return ReadingsVal( $shuttersDev, '.AutoShuttersControl_LastPosition', 50 );
+
+    return $self->{ $self->{shuttersDev} }{lastPos}{VAL}
+      if (  defined( $self->{ $self->{shuttersDev} }{lastPos} )
+        and defined( $self->{ $self->{shuttersDev} }{lastPos}{VAL} ) );
+}
+
+sub getLastPosTimestamp {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return $self->{ $self->{shuttersDev} }{lastPos}{TIME}
+      if (  defined( $self->{ $self->{shuttersDev} } )
+        and defined( $self->{ $self->{shuttersDev} }{lastPos} )
+        and defined( $self->{ $self->{shuttersDev} }{lastPos}{TIME} ) );
+}
+
+sub getInTimerFuncHash {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return $self->{ $self->{shuttersDev} }{inTimerFuncHash};
 }
 
 sub getRoommatesStatus {
@@ -1758,6 +1805,7 @@ sub getRoommatesStatus {
         my $currentPrio = $statePrio{ $shutters->getRoommateStatus };
         $minPrio = $currentPrio if ( $minPrio > $currentPrio );
     }
+
     my %revStatePrio = reverse %statePrio;
     return $revStatePrio{$minPrio};
 }
@@ -1815,8 +1863,8 @@ sub getShadingBrightnessSensor {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_Shading_Brightness_Sensor', $default );
 }
 
@@ -1824,8 +1872,8 @@ sub getShadingBrightnessReading {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'brightness' if ( not defined($default) );
 
+    $default = 'brightness' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_Shading_Brightness_Reading', $default );
 }
 
@@ -1882,8 +1930,8 @@ sub getRoommates {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_Roommate_Device', $default );
 }
 
@@ -1891,8 +1939,8 @@ sub getRoommatesReading {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'state' if ( not defined($default) );
 
+    $default = 'state' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_Roommate_Reading', $default );
 }
 
@@ -1942,8 +1990,8 @@ sub getAutoAstroModeMorning {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_AutoAstroModeMorning', $default );
 }
 
@@ -1951,8 +1999,8 @@ sub getAutoAstroModeEvening {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_AutoAstroModeEvening', $default );
 }
 
@@ -2068,18 +2116,11 @@ sub getDelayCmd {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return ReadingsVal( $shuttersDev, '.ASC_DelayCmd', $default );
 }
 
-sub getInTimerFuncHash {
-    my $self        = shift;
-    my $shuttersDev = $self->{shuttersDev};
-
-    return ReadingsVal( $shuttersDev,
-        '.AutoShuttersControl_InternalTimerFuncHash', 0 );
-}
 
 ## Klasse Fenster (Window) und die Subklassen Attr und Readings ##
 package ASC_Window;
@@ -2105,8 +2146,8 @@ sub getSubTyp {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'twostate' if ( not defined($default) );
 
+    $default = 'twostate' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_WindowRec_subType', $default );
 }
 
@@ -2114,8 +2155,8 @@ sub getWinDev {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $shuttersDev, 'ASC_WindowRec', $default );
 }
 
@@ -2139,8 +2180,8 @@ sub getWinStatus {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
     my $default     = $self->{defaultarg};
-    $default = 'closed' if ( not defined($default) );
 
+    $default = 'closed' if ( not defined($default) );
     return ReadingsVal( $shutters->getWinDev, 'state', $default );
 }
 
@@ -2164,8 +2205,8 @@ sub getRoommateStatus {
     my $self     = shift;
     my $roommate = $self->{roommate};
     my $default  = $self->{defaultarg};
-    $default = 'home' if ( not defined($default) );
 
+    $default = 'home' if ( not defined($default) );
     return ReadingsVal( $roommate, $shutters->getRoommatesReading, $default );
 }
 
@@ -2173,8 +2214,8 @@ sub getRoommateLastStatus {
     my $self     = shift;
     my $roommate = $self->{roommate};
     my $default  = $self->{defaultarg};
-    $default = 'home' if ( not defined($default) );
 
+    $default = 'home' if ( not defined($default) );
     return ReadingsVal( $roommate, 'lastState', $default );
 }
 
@@ -2195,12 +2236,14 @@ sub new {
 
 sub setName {
     my ( $self, $name ) = @_;
+
     $self->{name} = $name if ( defined($name) );
     return $self->{name};
 }
 
 sub setDefault {
     my ( $self, $defaultarg ) = @_;
+
     $self->{defaultarg} = $defaultarg if ( defined($defaultarg) );
     return $self->{defaultarg};
 }
@@ -2225,8 +2268,8 @@ sub getPartyModeStatus {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return ReadingsVal( $name, 'partyMode', $default );
 }
 
@@ -2234,8 +2277,8 @@ sub getLockOut {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return ReadingsVal( $name, 'lockOut', $default );
 }
 
@@ -2243,8 +2286,8 @@ sub getSunriseTimeWeHoliday {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return ReadingsVal( $name, 'sunriseTimeWeHoliday', $default );
 }
 
@@ -2305,8 +2348,8 @@ sub getBrightnessMinVal {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 8000 if ( not defined($default) );
 
+    $default = 8000 if ( not defined($default) );
     return AttrVal( $name, 'ASC_brightnessMinVal', $default );
 }
 
@@ -2314,8 +2357,8 @@ sub getBrightnessMaxVal {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 20000 if ( not defined($default) );
 
+    $default = 20000 if ( not defined($default) );
     return AttrVal( $name, 'ASC_brightnessMaxVal', $default );
 }
 
@@ -2323,8 +2366,8 @@ sub getAutoAstroModeEvening {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_autoAstroModeEvening', $default );
 }
 
@@ -2339,8 +2382,8 @@ sub getAutoAstroModeMorning {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_autoAstroModeMorning', $default );
 }
 
@@ -2355,8 +2398,8 @@ sub getAutoShuttersControlMorning {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_autoShuttersControlMorning', $default );
 }
 
@@ -2364,8 +2407,8 @@ sub getAutoShuttersControlEvening {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_autoShuttersControlEvening', $default );
 }
 
@@ -2380,8 +2423,8 @@ sub getAntifreezeTemp {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_antifreezeTemp', $default );
 }
 
@@ -2389,8 +2432,8 @@ sub getTempSensor {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_temperatureSensor', $default );
 }
 
@@ -2398,8 +2441,8 @@ sub getTempReading {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_temperatureReading', $default );
 }
 
@@ -2407,8 +2450,8 @@ sub getResidentsDev {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'none' if ( not defined($default) );
 
+    $default = 'none' if ( not defined($default) );
     return AttrVal( $name, 'ASC_residentsDevice', $default );
 }
 
@@ -2416,8 +2459,8 @@ sub getResidentsReading {
     my $self    = shift;
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
-    $default = 'state' if ( not defined($default) );
 
+    $default = 'state' if ( not defined($default) );
     return AttrVal( $name, 'ASC_residentsDeviceReading', $default );
 }
 1;
