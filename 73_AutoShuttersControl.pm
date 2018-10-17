@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.80.25";
+my $version = "0.1.80.31";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -315,7 +315,7 @@ sub Notify($$) {
     my $events  = deviceEvents( $dev, 1 );
     return if ( !$events );
 
-    Log3( $name, 5,
+    Log3( $name, 4,
             "AutoShuttersControl ($name) - Devname: "
           . $devname
           . " Name: "
@@ -356,6 +356,8 @@ sub Notify($$) {
     return
       unless ( ref( $hash->{helper}{shuttersList} ) eq 'ARRAY'
         and scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
+        
+    my $posReading = $shutters->getPosCmd;
 
     if ( $devname eq $name ) {
         if ( grep /^userAttrList:.rolled.out$/, @{$events} ) {
@@ -391,6 +393,11 @@ sub Notify($$) {
               unless ( $ascDev->getSunriseTimeWeHoliday eq 'off' );
         }
     }
+    elsif ( grep /^($posReading):\s\d+$/,
+            @{$events} )
+        {
+            ShuttersEventProcessing( $hash, $devname, join( ' ', @{$events} ) );
+        }
     else {
         GeneralEventProcessing( $hash, $devname, join( ' ', @{$events} ) )
           ; # bei allen anderen Events wird die entsprechende Funktion zur Verarbeitung aufgerufen
@@ -505,20 +512,10 @@ sub Get($$@) {
         my $ret = GetMonitoredDevs($hash);
         return $ret;
     }
-    elsif ( lc $cmd eq 'test' ) {
-        return "usage: $cmd" if ( @args != 0 );
-        $shutters->setShuttersDev('RolloKinZimSteven_F1');
-        my $ret =
-          'LastPos: ' . $shutters->getLastPos
-          . ' InTimerFuncHash: ' . $shutters->getInTimerFuncHash
-          . ' Sunrise: ' . $shutters->getInTimerFuncHash->{sunrisetime}
-          . ' LastPosTimestamp: ' . $shutters->getLastPosTimestamp;
-        return $ret;
-    }
     else {
         my $list = "";
         $list .=
-" showShuttersInformations:noArg showNotifyDevsInformations:noArg test:noArg"
+" showShuttersInformations:noArg showNotifyDevsInformations:noArg"
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -545,10 +542,10 @@ sub ShuttersDeviceScan($) {
         readingsEndUpdate( $hash, 1 );
         return;
     }
+    my $shuttersList = '';
     foreach (@list) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
-            #AddNotifyDev($hash,$_);        # Vorerst keine Shutters in NOTIFYDEV
         delFromDevAttrList( $_, 'ASC_Up:time,astro' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
         delFromDevAttrList( $_, 'ASC_Down:time,astro' )
@@ -561,13 +558,18 @@ sub ShuttersDeviceScan($) {
         CommandDeleteReading( undef,
             $_ . ' .AutoShuttersControl_LastPosition' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.81
+        $shuttersList = $shuttersList . ',' . $_;
+        $shutters->setShuttersDev($_);
+        $shutters->setLastPos( $shutters->getStatus );
     }
+    $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
+    
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
         $hash->{monitoredDevs} =
           eval { decode_json( $ascDev->getMonitoredDevs ) };
         my $notifyDevString = $hash->{NOTIFYDEV};
         while ( each %{ $hash->{monitoredDevs} } ) {
-            $notifyDevString .= ',' . $_;
+            $notifyDevString .= ',' . $_ ;
         }
         $hash->{NOTIFYDEV} = $notifyDevString;
     }
@@ -941,6 +943,16 @@ sub PartyModeEventProcessing($) {
     }
 }
 
+sub ShuttersEventProcessing($@) {
+    my ( $hash, $shuttersDev, $events ) = @_;
+    my $name                            = $hash->{NAME};
+
+    if ( $events =~ m#.*:\s(\d+)# ) {
+        $shutters->setShuttersDev($ShuttersDev);
+        $shutters->setLastPos($1);
+    }
+}
+
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
 sub ShuttersCommandSet($$$) {
     my ( $hash, $shuttersDev, $posValue ) = @_;
@@ -1176,6 +1188,7 @@ sub CreateNewNotifyDev($) {
     delete $hash->{monitoredDevs};
 
     CommandDeleteReading( undef, $name . ' .monitoredDevs' );
+    my $shuttersList = '';
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_Roommate_Device', 'none' ),
             $_, 'ASC_Roommate_Device' )
@@ -1188,10 +1201,12 @@ sub CreateNewNotifyDev($) {
             $_, 'ASC_Shading_Brightness_Sensor' )
           if (
             AttrVal( $_, 'ASC_Shading_Brightness_Sensor', 'none' ) ne 'none' );
+        $shuttersList = $shuttersList . ',' . $_ ;
     }
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDevice', 'none' ),
         $name, 'ASC_residentsDevice' )
       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
+    $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
 }
 
 sub GetShuttersInformation($) {
@@ -1209,11 +1224,21 @@ sub GetShuttersInformation($) {
     $ret .= "<td><b>Partymode</b></td>";
     $ret .= "<td> </td>";
     $ret .= "<td><b>Lock-Out</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Sunrise</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Sunset</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>LastPos</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>LastPosTimestamp</b></td>";
     $ret .= '</tr>';
 
     if ( ref($shuttersInformations) eq "HASH" ) {
         my $linecount = 1;
         foreach my $shutter ( sort keys( %{$shuttersInformations} ) ) {
+            $shutters->setShuttersDev($shutter);
+
             if   ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
             else                         { $ret .= '<tr class="odd">'; }
             $ret .= "<td>$shutter</td>";
@@ -1226,6 +1251,18 @@ sub GetShuttersInformation($) {
             $ret .= "<td>$shuttersInformations->{$shutter}{Partymode}</td>";
             $ret .= "<td> </td>";
             $ret .= "<td>$shuttersInformations->{$shutter}{'Lock-Out'}</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>".$shutters->getInTimerFuncHash->{sunrisetime}."</td>"
+              if(   defined( $shutters->getInTimerFuncHash )
+                and defined( $shutters->getInTimerFuncHash->{sunrisetime} ) ) ;
+            $ret .= "<td> </td>";
+            $ret .= "<td>".$shutters->getInTimerFuncHash->{sunsettime}."</td>"
+              if(   defined( $shutters->getInTimerFuncHash )
+                and defined( $shutters->getInTimerFuncHash->{sunsettime} ) ) ;
+            $ret .= "<td> </td>";
+            $ret .= "<td>".$shutters->getLastPos."</td>";
+            $ret .= "<td> </td>";
+            $ret .= "<td>".$shutters->getLastPosTimestamp."</td>";
             $ret .= '</tr>';
             $linecount++;
         }
@@ -1729,10 +1766,10 @@ sub setDelayDriveCmd {
 sub setLastPos {
     my ( $self, $position ) = @_;
 
-    $self->{ $self->{shuttersDev} }{lastPos}{VAL}   = $position
+    $self->{ $self->{shuttersDev} }{lastPos}{VAL} = $position
       if ( defined($position) );
-    $self->{ $self->{shuttersDev} }{lastPos}{TIME}  = int(gettimeofday())
-      if (  defined( $self->{ $self->{shuttersDev} }{lastPos} ) );
+    $self->{ $self->{shuttersDev} }{lastPos}{TIME} = int( gettimeofday() )
+      if ( defined( $self->{ $self->{shuttersDev} }{lastPos} ) );
     return 0;
 }
 
@@ -2120,7 +2157,6 @@ sub getDelayCmd {
     $default = 'none' if ( not defined($default) );
     return ReadingsVal( $shuttersDev, '.ASC_DelayCmd', $default );
 }
-
 
 ## Klasse Fenster (Window) und die Subklassen Attr und Readings ##
 package ASC_Window;
