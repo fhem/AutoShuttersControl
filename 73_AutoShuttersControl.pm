@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.80.31";
+my $version = "0.1.80.34";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -138,8 +138,8 @@ BEGIN {
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 my %userAttrList = (
-    'ASC_Mode_Up:absent,always,off'                                 => 'always',
-    'ASC_Mode_Down:absent,always,off'                               => 'always',
+    'ASC_Mode_Up:absent,always,off,home'                            => 'always',
+    'ASC_Mode_Down:absent,always,off,home'                          => 'always',
     'ASC_Up:time,astro,brightness'                                  => 'astro',
     'ASC_Down:time,astro,brightness'                                => 'astro',
     'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => 'none',
@@ -356,7 +356,7 @@ sub Notify($$) {
     return
       unless ( ref( $hash->{helper}{shuttersList} ) eq 'ARRAY'
         and scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
-        
+
     my $posReading = $shutters->getPosCmd;
 
     if ( $devname eq $name ) {
@@ -393,11 +393,9 @@ sub Notify($$) {
               unless ( $ascDev->getSunriseTimeWeHoliday eq 'off' );
         }
     }
-    elsif ( grep /^($posReading):\s\d+$/,
-            @{$events} )
-        {
-            ShuttersEventProcessing( $hash, $devname, join( ' ', @{$events} ) );
-        }
+    elsif ( grep /^($posReading):\s\d+$/, @{$events} ) {
+        ShuttersEventProcessing( $hash, $devname, join( ' ', @{$events} ) );
+    }
     else {
         GeneralEventProcessing( $hash, $devname, join( ' ', @{$events} ) )
           ; # bei allen anderen Events wird die entsprechende Funktion zur Verarbeitung aufgerufen
@@ -443,7 +441,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_Shadin
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_Shading_Brightness_Sensor)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -515,7 +513,7 @@ sub Get($$@) {
     else {
         my $list = "";
         $list .=
-" showShuttersInformations:noArg showNotifyDevsInformations:noArg"
+          " showShuttersInformations:noArg showNotifyDevsInformations:noArg"
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -547,9 +545,21 @@ sub ShuttersDeviceScan($) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
         delFromDevAttrList( $_, 'ASC_Up:time,astro' )
+          if (
+            AttrVal( $_, 'userattr', 'none' ) =~ /\sASC_Up:time,astro\sASC_/ )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
         delFromDevAttrList( $_, 'ASC_Down:time,astro' )
+          if (
+            AttrVal( $_, 'userattr', 'none' ) =~ /\sASC_Down:time,astro\sASC_/ )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
+        delFromDevAttrList( $_, 'ASC_Mode_Up:absent,always,off' )
+          if ( AttrVal( $_, 'userattr', 'none' ) =~
+            /\sASC_Mode_Up:absent,always,off\sASC_/ )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
+        delFromDevAttrList( $_, 'ASC_Mode_Down:absent,always,off' )
+          if ( AttrVal( $_, 'userattr', 'none' ) =~
+            /\sASC_Mode_Down:absent,always,off\sASC_/ )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
         delFromDevAttrList( $_, 'ASC_Self_Defence_Exclude:on,off' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
         CommandDeleteReading( undef,
@@ -560,16 +570,16 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.1.81
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
-        $shutters->setLastPos( $shutters->getStatus );
+        $shutters->setLastManPos( $shutters->getStatus );
     }
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
-    
+
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
         $hash->{monitoredDevs} =
           eval { decode_json( $ascDev->getMonitoredDevs ) };
         my $notifyDevString = $hash->{NOTIFYDEV};
         while ( each %{ $hash->{monitoredDevs} } ) {
-            $notifyDevString .= ',' . $_ ;
+            $notifyDevString .= ',' . $_;
         }
         $hash->{NOTIFYDEV} = $notifyDevString;
     }
@@ -945,11 +955,12 @@ sub PartyModeEventProcessing($) {
 
 sub ShuttersEventProcessing($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
-    my $name                            = $hash->{NAME};
+    my $name = $hash->{NAME};
 
     if ( $events =~ m#.*:\s(\d+)# ) {
-        $shutters->setShuttersDev($ShuttersDev);
-        $shutters->setLastPos($1);
+        $shutters->setShuttersDev($shuttersDev);
+        $shutters->setLastManPos($1)
+          if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) > 5 );
     }
 }
 
@@ -1201,7 +1212,7 @@ sub CreateNewNotifyDev($) {
             $_, 'ASC_Shading_Brightness_Sensor' )
           if (
             AttrVal( $_, 'ASC_Shading_Brightness_Sensor', 'none' ) ne 'none' );
-        $shuttersList = $shuttersList . ',' . $_ ;
+        $shuttersList = $shuttersList . ',' . $_;
     }
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDevice', 'none' ),
         $name, 'ASC_residentsDevice' )
@@ -1229,9 +1240,9 @@ sub GetShuttersInformation($) {
     $ret .= "<td> </td>";
     $ret .= "<td><b>Sunset</b></td>";
     $ret .= "<td> </td>";
-    $ret .= "<td><b>LastPos</b></td>";
+    $ret .= "<td><b>Last manual Position</b></td>";
     $ret .= "<td> </td>";
-    $ret .= "<td><b>LastPosTimestamp</b></td>";
+    $ret .= "<td><b>Last manual Position Timestamp</b></td>";
     $ret .= '</tr>';
 
     if ( ref($shuttersInformations) eq "HASH" ) {
@@ -1252,17 +1263,19 @@ sub GetShuttersInformation($) {
             $ret .= "<td> </td>";
             $ret .= "<td>$shuttersInformations->{$shutter}{'Lock-Out'}</td>";
             $ret .= "<td> </td>";
-            $ret .= "<td>".$shutters->getInTimerFuncHash->{sunrisetime}."</td>"
-              if(   defined( $shutters->getInTimerFuncHash )
-                and defined( $shutters->getInTimerFuncHash->{sunrisetime} ) ) ;
+            $ret .=
+              "<td>" . $shutters->getInTimerFuncHash->{sunrisetime} . "</td>"
+              if (  defined( $shutters->getInTimerFuncHash )
+                and defined( $shutters->getInTimerFuncHash->{sunrisetime} ) );
             $ret .= "<td> </td>";
-            $ret .= "<td>".$shutters->getInTimerFuncHash->{sunsettime}."</td>"
-              if(   defined( $shutters->getInTimerFuncHash )
-                and defined( $shutters->getInTimerFuncHash->{sunsettime} ) ) ;
+            $ret .=
+              "<td>" . $shutters->getInTimerFuncHash->{sunsettime} . "</td>"
+              if (  defined( $shutters->getInTimerFuncHash )
+                and defined( $shutters->getInTimerFuncHash->{sunsettime} ) );
             $ret .= "<td> </td>";
-            $ret .= "<td>".$shutters->getLastPos."</td>";
+            $ret .= "<td>" . $shutters->getLastManPos . "</td>";
             $ret .= "<td> </td>";
-            $ret .= "<td>".$shutters->getLastPosTimestamp."</td>";
+            $ret .= "<td>" . $shutters->getLastManPosTimestamp . "</td>";
             $ret .= '</tr>';
             $linecount++;
         }
@@ -1726,7 +1739,6 @@ sub new {
         shuttersDev => undef,
         defaultarg  => undef,
         roommate    => undef,
-        lastPos     => undef,
     };
 
     bless $self, $class;
@@ -1763,13 +1775,25 @@ sub setDelayDriveCmd {
     return 0;
 }
 
-sub setLastPos {
+sub setLastPos
+{ # letzte ermittelte Position bevor die Position des Rolladen über ASC geändert wurde
     my ( $self, $position ) = @_;
 
     $self->{ $self->{shuttersDev} }{lastPos}{VAL} = $position
       if ( defined($position) );
     $self->{ $self->{shuttersDev} }{lastPos}{TIME} = int( gettimeofday() )
       if ( defined( $self->{ $self->{shuttersDev} }{lastPos} ) );
+    return 0;
+}
+
+sub setLastManPos
+{ # letzte ermittelte Position bevor die Position des Rolladen manuell (nicht über ASC) geändert wurde
+    my ( $self, $position ) = @_;
+
+    $self->{ $self->{shuttersDev} }{lastManPos}{VAL} = $position
+      if ( defined($position) );
+    $self->{ $self->{shuttersDev} }{lastManPos}{TIME} = int( gettimeofday() )
+      if ( defined( $self->{ $self->{shuttersDev} }{lastManPos} ) );
     return 0;
 }
 
@@ -1795,7 +1819,8 @@ sub setInTimerFuncHash {
     return 0;
 }
 
-sub getLastPos {
+sub getLastPos
+{ # letzte ermittelte Position bevor die Position des Rolladen über ASC geändert wurde
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
 
@@ -1812,6 +1837,26 @@ sub getLastPosTimestamp {
       if (  defined( $self->{ $self->{shuttersDev} } )
         and defined( $self->{ $self->{shuttersDev} }{lastPos} )
         and defined( $self->{ $self->{shuttersDev} }{lastPos}{TIME} ) );
+}
+
+sub getLastManPos
+{ # letzte ermittelte Position bevor die Position des Rolladen manuell (nicht über ASC) geändert wurde
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return $self->{ $self->{shuttersDev} }{lastManPos}{VAL}
+      if (  defined( $self->{ $self->{shuttersDev} }{lastManPos} )
+        and defined( $self->{ $self->{shuttersDev} }{lastManPos}{VAL} ) );
+}
+
+sub getLastManPosTimestamp {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return $self->{ $self->{shuttersDev} }{lastManPos}{TIME}
+      if (  defined( $self->{ $self->{shuttersDev} } )
+        and defined( $self->{ $self->{shuttersDev} }{lastManPos} )
+        and defined( $self->{ $self->{shuttersDev} }{lastManPos}{TIME} ) );
 }
 
 sub getInTimerFuncHash {
