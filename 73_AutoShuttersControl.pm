@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.80.34";
+my $version = "0.1.80.35";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -183,6 +183,7 @@ my %userAttrList = (
     'ASC_Offset_Minutes_Morning'                       => 1,
     'ASC_Offset_Minutes_Evening'                       => 1,
     'ASC_WindowRec_subType:twostate,threestate'        => 'twostate',
+    'ASC_ShuttersPlace:window,terrace'                 => 'window',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70, 30 ],
     'ASC_Pos_after_ComfortOpen:0,10,20,30,40,50,60,70,80,90,100' =>
       [ '', 20, 80 ],
@@ -845,12 +846,22 @@ sub ResidentsEventProcessing($@) {
                 and $shutters->getSelfDefenseExclude eq 'off' );
         }
     }
-    elsif ( $events =~ m#$reading:\s(home)#
-        and $ascDev->getSelfDefense eq 'on'
-        and $ascDev->getResidentsLastStatus eq 'absent'
-        or $ascDev->getResidentsLastStatus eq 'gone' )
+    elsif ( $events =~ m#$reading:\s(gone)#
+        and $ascDev->getSelfDefense eq 'on' )
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+            $shutters->setShuttersDev($shuttersDev);
+            $shutters->setDriveCmd( $shutters->getClosedPos )
+              if ( $shutters->getShuttersPlace eq 'terrace' );
+        }
+    }
+    elsif ( $events =~ m#$reading:\s(home)#
+        and $ascDev->getSelfDefense eq 'on'
+        and ($ascDev->getResidentsLastStatus eq 'absent'
+        or $ascDev->getResidentsLastStatus eq 'gone') )
+    {
+        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+            $shutters->setShuttersDev($shuttersDev);
             $shutters->setDriveCmd( $shutters->getLastPos )
               if ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $shutters->getSelfDefenseExclude eq 'off' );
@@ -1934,6 +1945,13 @@ BEGIN {
     );
 }
 
+sub getShuttersPlace {
+    my $self        = shift;
+    my $shuttersDev = $self->{shuttersDev};
+
+    return AttrVal( $shuttersDev, 'ASC_ShuttersPlace', 'window' );
+}
+
 sub getSelfDefenseExclude {
     my $self        = shift;
     my $shuttersDev = $self->{shuttersDev};
@@ -2792,6 +2810,7 @@ sub getResidentsReading {
       <li>ASC_Self_Defense_Exclude - on/off bei on Wert wird dieser Rolladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren wenn Residents absent ist.</li>
       <li>ASC_BrightnessMinVal - minimaler Lichtwert ab welchen Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
       <li>ASC_BrightnessMaxVal - maximaler Lichtwert ab welchen Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
+      <li>ASC_ShuttersPlace - window/terrace, wenn dieses Attribut auf terrace gesetzt ist und das Residence Device in den Status "done" geht und SelfDefence aktiv ist wird das Rollo geschlossen</li>
     </ul>
   </ul>
 </ul>
