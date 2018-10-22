@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.80.35";
+my $version = "0.1.81";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
