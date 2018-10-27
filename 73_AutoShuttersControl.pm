@@ -506,8 +506,11 @@ sub Set($$@) {
     else {
         my $list = "scanForShutters:noArg";
         $list .=
-" renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off createNewNotifyDev:noArg"
-          if ( ReadingsVal( $name, 'userAttrList', 0 ) eq 'rolled out' );
+" renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off"
+          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
+        $list .= "  createNewNotifyDev:noArg"
+          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
+            and AttrVal( $name, 'verbose', 3 ) > 3 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -532,11 +535,12 @@ sub Get($$@) {
     else {
         my $list = "";
         $list .=
-          " showShuttersInformations:noArg showNotifyDevsInformations:noArg"
+          " showShuttersInformations:noArg"
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
-        " showNotifyDevsInformations:noArg"
+        $list .= " showNotifyDevsInformations:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
             and AttrVal( $name, 'verbose', 3 ) > 3 );
+            
         return "Unknown argument $cmd,choose one of $list";
     }
 }
@@ -2842,7 +2846,7 @@ sub getRainSensorShuttersClosedPos {
   <ul>
     Im Modul Device
     <ul>
-      <li>..._nextAstroTimeEvent - Uhrzeit des nächsten Astro Events,Sonnenauf,Sonnenuntergang oder feste Zeit pro Rollonamen</li>
+      <li>..._nextAstroTimeEvent - Uhrzeit des n&auml;chsten Astro Events,Sonnenauf,Sonnenuntergang oder feste Zeit pro Rollonamen</li>
       <li>..._lastPosValue - letzter abgesetzter Fahrbefehl pro Rollanamen</li>
       <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li>partyMode - on/off aktiviert den globalen Partymodus,alle Roll&auml;den welche das Attribut ASC_Partymode bei sich auf on gestellt haben werden nicht mehr gesteuert. Der letzte Schaltbefehle welcher durch ein Fensterevent oder Bewohnerstatus an die Roll&auml;den gesendet wurde,wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
@@ -2868,7 +2872,7 @@ sub getRainSensorShuttersClosedPos {
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
     <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes ASC_Time_Up_WE_Holiday</li>
-    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an</li>
+    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an - Attribut verbose muss gr&ouml;$szlig;er 3 sein.</li>
     <li>selfDefense - on/off,aktiviert/deaktiviert den Selbstschutz,wenn das Residents Device absent meldet und selfDefense aktiv ist und ein Fenster im Haus steht noch offen,wird an diesem Fenster das Rollo runter gefahren</li>
   </ul>
   <br><br>
