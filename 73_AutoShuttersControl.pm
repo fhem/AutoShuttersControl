@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.83";
+my $version = "0.1.84";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -849,19 +849,25 @@ sub RoommateEventProcessing($@) {
                  or $shutters->getRoommatesLastStatus eq 'gone'
                  or $shutters->getRoommatesLastStatus eq 'home')
               and   $shutters->getModeUp eq 'home'
-              and   $shutters->getRoommatesStatus eq 'home'
-              and   not IsDay( $hash, $shuttersDev ) )
+              and   $shutters->getRoommatesStatus eq 'home' )
             {
-                my $position;
-                if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                    or $shutters->getVentilateOpen eq 'off' )
-                {
-                    $position = $shutters->getClosedPos;
+                if ( not IsDay( $hash, $shuttersDev ) ) {
+                    my $position;
+                    if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                        or $shutters->getVentilateOpen eq 'off' )
+                    {
+                        $position = $shutters->getClosedPos;
+                    }
+                    else { $position = $shutters->getVentilatePos; }
+
+                    $shutters->setLastDrive('roommate home');
+                    ShuttersCommandSet( $hash, $shuttersDev, $position );
                 }
-                else { $position = $shutters->getVentilatePos; }
-                
-                $shutters->setLastDrive('roommate home');
-                ShuttersCommandSet( $hash, $shuttersDev, $position );
+                elsif ( IsDay( $hash, $shuttersDev )
+                  and $shutters->getStatus == $shutters->getClosedPos) {
+                    $shutters->setLastDrive('roommate home');
+                    ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos );
+                }
             }
         }  
         elsif (    ($shutters->getModeDown eq 'always'
@@ -900,14 +906,15 @@ sub ResidentsEventProcessing($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setLastDrive('selfeDefense active');
 
-            $shutters->setDriveCmd( $shutters->getClosedPos )
-              if ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                and $shutters->getSelfDefenseExclude eq 'off'
-                or ($shutters->getUpMode eq 'absent'
-                    and not IsDay( $hash, $shuttersDev ))
-                );
+            if ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+            and $shutters->getSelfDefenseExclude eq 'off'
+            or ($shutters->getUpMode eq 'absent'
+                and not IsDay( $hash, $shuttersDev )) )
+            {
+                $shutters->setLastDrive('selfeDefense active');
+                $shutters->setDriveCmd( $shutters->getClosedPos );
+            }
         }
     }
     elsif ( $events =~ m#$reading:\s(gone)#
@@ -915,9 +922,11 @@ sub ResidentsEventProcessing($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setLastDrive('selfeDefense terrace');
-            $shutters->setDriveCmd( $shutters->getClosedPos )
-              if ( $shutters->getShuttersPlace eq 'terrace' );
+            
+            if ( $shutters->getShuttersPlace eq 'terrace' ) {
+                $shutters->setLastDrive('selfeDefense terrace');
+                $shutters->setDriveCmd( $shutters->getClosedPos );
+            }
         }
     }
     elsif (
