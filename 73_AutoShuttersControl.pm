@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.82";
+my $version = "0.1.83";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -78,6 +78,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 "
       . "ASC_antifreezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 "
       . "ASC_timeUpHolidayDevice "
+      . "ASC_shuttersDriveOffset "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
 
@@ -184,8 +185,7 @@ my %userAttrList = (
     'ASC_Shading_BlockingTime_Twilight'                => 45,
     'ASC_Shading_Fast_Open:on,off'                     => 'none',
     'ASC_Shading_Fast_Close:on,off'                    => 'none',
-    'ASC_Offset_Minutes_Morning'                       => 1,
-    'ASC_Offset_Minutes_Evening'                       => 1,
+    'ASC_Drive_Offset'                                 => -1,
     'ASC_WindowRec_subType:twostate,threestate'        => 'twostate',
     'ASC_ShuttersPlace:window,terrace'                 => 'window',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70, 30 ],
@@ -279,10 +279,6 @@ sub Attr(@) {
 
     if ( $attrName eq "disable" ) {
         if ( $cmd eq "set" and $attrVal eq "1" ) {
-
-            #RemoveInternalTimer($hash);
-
-            #readingsSingleUpdate ($hash,"state","disabled",1);
             Log3( $name, 3, "AutoShuttersControl ($name) - disabled" );
         }
         elsif ( $cmd eq "del" ) {
@@ -585,6 +581,10 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.1.81
         delFromDevAttrList( $_, 'ASC_Self_Defence_Exclude:on,off' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.80
+        delFromDevAttrList( $_, 'ASC_Offset_Minutes_Morning' )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
+        delFromDevAttrList( $_, 'ASC_Offset_Minutes_Evening' )
+          ;    # temporär muss später gelöscht werden ab Version 0.1.81
         CommandDeleteReading( undef,
             $_ . ' .AutoShuttersControl_InternalTimerFuncHash' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.81
@@ -817,30 +817,57 @@ sub RoommateEventProcessing($@) {
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getRoommatesReading;
 
-    if ( $events =~ m#$reading:\s(gotosleep|asleep|awoken|home)# ) {
+    if ( $events =~ m#$reading:\s(absent|gotosleep|asleep|awoken|home)# ) {
         Log3( $name, 4,
 "AutoShuttersControl ($name) - RoommateEventProcessing: $shutters->getRoommatesReading"
         );
         Log3( $name, 4,
 "AutoShuttersControl ($name) - RoommateEventProcessing: $shuttersDev und Events $events"
         );
+ 
+        if (
+         ( $1 eq 'home' or $1 eq 'awoken' )
+          and (  $shutters->getRoommatesStatus eq 'home'
+            or $shutters->getRoommatesStatus eq 'awoken')
+          and $ascDev->getAutoShuttersControlMorning eq 'on'
 
-        $shutters->setLastDrive('roommate awoken');
-        ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos )
-          if (
-            ( $1 eq 'home' or $1 eq 'awoken' )
-            and (  $shutters->getRoommatesLastStatus eq 'asleep'
-                or $shutters->getRoommatesLastStatus eq 'awoken' )
-            and (  $shutters->getRoommatesStatus eq 'home'
-                or $shutters->getRoommatesStatus eq 'awoken' )
-            and $ascDev->getAutoShuttersControlMorning eq 'on'
-            and IsDay( $hash, $shuttersDev )
-            and $shutters->getModeUp eq 'always'
-          );
-
-        if (    $shutters->getModeDown eq 'always'
-            and ( $1 eq 'gotosleep' or $1 eq 'asleep' )
-            and $ascDev->getAutoShuttersControlEvening eq 'on' )
+          and ($shutters->getModeUp eq 'always'
+            or $shutters->getModeUp eq 'home' )
+         )
+        {
+            
+            if (   ($shutters->getRoommatesLastStatus eq 'asleep'
+                 or $shutters->getRoommatesLastStatus eq 'awoken')
+              and   $shutters->getModeUp eq 'home'
+              and   IsDay( $hash, $shuttersDev ) )
+            {
+                $shutters->setLastDrive('roommate awoken');
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos );
+            }
+            
+            if (   ($shutters->getRoommatesLastStatus eq 'absent'
+                 or $shutters->getRoommatesLastStatus eq 'gone'
+                 or $shutters->getRoommatesLastStatus eq 'home')
+              and   $shutters->getModeUp eq 'home'
+              and   $shutters->getRoommatesStatus eq 'home'
+              and   not IsDay( $hash, $shuttersDev ) )
+            {
+                my $position;
+                if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                    or $shutters->getVentilateOpen eq 'off' )
+                {
+                    $position = $shutters->getClosedPos;
+                }
+                else { $position = $shutters->getVentilatePos; }
+                
+                $shutters->setLastDrive('roommate home');
+                ShuttersCommandSet( $hash, $shuttersDev, $position );
+            }
+        }  
+        elsif (    ($shutters->getModeDown eq 'always'
+                 or $shutters->getModeUp eq 'home' )
+              and ( $1 eq 'gotosleep' or $1 eq 'asleep' )
+              and $ascDev->getAutoShuttersControlEvening eq 'on' )
         {
             my $position;
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
@@ -852,6 +879,12 @@ sub RoommateEventProcessing($@) {
 
             $shutters->setLastDrive('roommate asleep');
             ShuttersCommandSet( $hash, $shuttersDev, $position );
+        }
+        elsif ($shutters->getModeDown eq 'absent'
+               and $1 eq 'absent' )
+        {
+            $shutters->setLastDrive('roommate absent');
+            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
         }
     }
 }
@@ -871,7 +904,10 @@ sub ResidentsEventProcessing($@) {
 
             $shutters->setDriveCmd( $shutters->getClosedPos )
               if ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                and $shutters->getSelfDefenseExclude eq 'off' );
+                and $shutters->getSelfDefenseExclude eq 'off'
+                or ($shutters->getUpMode eq 'absent'
+                    and not IsDay( $hash, $shuttersDev ))
+                );
         }
     }
     elsif ( $events =~ m#$reading:\s(gone)#
@@ -886,21 +922,37 @@ sub ResidentsEventProcessing($@) {
     }
     elsif (
             $events =~ m#$reading:\s(home)#
-        and $ascDev->getSelfDefense eq 'on'
         and (  $ascDev->getResidentsLastStatus eq 'absent'
             or $ascDev->getResidentsLastStatus eq 'gone' )
       )
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setLastDrive('selfeDefense inactive');
-            $shutters->setDriveCmd( $shutters->getLastPos )
-              if (
-                CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+            
+            if ( $shutters->getStatus != $shutters->getClosedPos
+                and not IsDay( $hash, $shuttersDev )
+                and $shutters->getRoommatesStatus eq 'none')
+            {
+                $shutters->setLastDrive('residents home');
+                $shutters->setDriveCmd( $shutters->getClosedPos );
+            }
+            elsif ( $shutters->getStatus == $shutters->getClosedPos
+                and IsDay( $hash, $shuttersDev )
+                and $shutters->getRoommatesStatus eq 'none')
+            {
+                $shutters->setLastDrive('residents home');
+                $shutters->setDriveCmd( $shutters->getOpenPos );
+            }
+            elsif ( $ascDev->getSelfDefense eq 'on'
+                and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $shutters->getSelfDefenseExclude eq 'off'
                 or (    $ascDev->getResidentsLastStatus eq 'gone'
                     and $shutters->getShuttersPlace eq 'terrace' )
-              );
+              )
+            { 
+                $shutters->setLastDrive('selfeDefense inactive');
+                $shutters->setDriveCmd( $shutters->getLastPos );
+            }
         }
     }
 }
@@ -1078,6 +1130,7 @@ sub PartyModeEventProcessing($) {
 sub ShuttersEventProcessing($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
+    $ascDev->setName($name);
 
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
@@ -1096,7 +1149,7 @@ sub ShuttersCommandSet($$$) {
     $ascDev->setName($name);
 
     $shutters->setShuttersDev($shuttersDev);
-    readingsBeginUpdate($hash);
+#     readingsBeginUpdate($hash);
 
     if (
         ( $shutters->getPartyMode eq 'on' and $ascDev->getPartyMode eq 'on' )
@@ -1121,10 +1174,10 @@ sub ShuttersCommandSet($$$) {
         $shutters->setDriveCmd($posValue);
         $shutters->setDelayCmd('none')
           if ( $shutters->getDelayCmd ne 'none' )
-          ; # setzt den Wert des Readings auf none da der Rolladen nun gesteuert werden kann. Dieses Reading setzt die Delay Funktion ShuttersCommandDelaySet
+          ; # setzt den Wert auf none da der Rolladen nun gesteuert werden kann.
         $ascDev->setLastPosReading;
     }
-    readingsEndUpdate( $hash, 1 );
+#     readingsEndUpdate( $hash, 1 );
 }
 
 ## Sub welche die InternalTimer nach entsprechenden Sunset oder Sunrise zusammen stellt
@@ -1136,11 +1189,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     $ascDev->setName($name);
     return if ( IsDisabled($name) );
 
-    my $shuttersSunriseUnixtime =
-      ShuttersSunrise( $hash, $shuttersDev, 'unix' ) +
-      int( rand( TimeMin2Sec( $shutters->getOffsetMorning ) ) );
-    my $shuttersSunsetUnixtime = ShuttersSunset( $hash, $shuttersDev, 'unix' ) +
-      int( rand( TimeMin2Sec( $shutters->getOffsetEvening ) ) );
+    my $shuttersSunriseUnixtime = ShuttersSunrise( $hash, $shuttersDev, 'unix' );
+    my $shuttersSunsetUnixtime = ShuttersSunset( $hash, $shuttersDev, 'unix' );
 
     $shutters->setSunriseUnixTime($shuttersSunriseUnixtime);
     $shutters->setSunsetUnixTime($shuttersSunsetUnixtime);
@@ -1838,6 +1888,25 @@ sub IsHoliday($) {
     );
 }
 
+sub SetCmdFn($) {
+    my $h = shift;
+    my $shuttersDev = $h->{shuttersDev};
+    my $posValue    = $h->{posValue};
+    
+    $shutters->setShuttersDev($shuttersDev);
+    $shutters->setLastPos( $shutters->getStatus );
+    CommandSet( undef,
+            $shuttersDev
+          . ':FILTER='
+          . $shutters->getPosCmd . '!='
+          . $posValue . ' '
+          . $shutters->getPosCmd . ' '
+          . $posValue );
+
+    $shutters->setLastDriveReading if ( $shutters->getLastPos != $posValue );
+    $shutters->setLastDrive(ReadingsVal($shuttersDev,'ASC_ShuttersLastDrive','none')) if ( $shutters->getLastPos == $posValue );
+}
+
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
 ## Klasse Rolläden (Shutters) und die Subklassen Attr und Readings ##
 ## desweiteren wird noch die Klasse ASC_Roommate mit eingebunden
@@ -1857,8 +1926,8 @@ BEGIN {
           defs
           ReadingsVal
           readingsSingleUpdate
-          CommandSet
-          gettimeofday)
+          gettimeofday
+          InternalTimer)
     );
 }
 
@@ -1889,19 +1958,19 @@ sub getShuttersDev {
 
 sub setDriveCmd {
     my ( $self, $posValue ) = @_;
-    my $shuttersDev = $self->{shuttersDev};
+    my $offSet = 0;
+    my %h = (shuttersDev     => $self->{shuttersDev},
+             posValue        => $posValue,);
+    $offSet = $shutters->getOffset if ( $shutters->getOffset > 0 );
+    $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset == -1 );
 
-    $shutters->setLastPos( $shutters->getStatus );
-    CommandSet( undef,
-            $shuttersDev
-          . ':FILTER='
-          . $shutters->getPosCmd . '!='
-          . $posValue . ' '
-          . $shutters->getPosCmd . ' '
-          . $posValue );
-
-    $shutters->setLastDriveReading if ( $shutters->getLastPos != $posValue );
-    return 0;
+    InternalTimer( gettimeofday() + int( rand( $offSet ) ),
+                'AutoShuttersControl::SetCmdFn',
+                \%h )
+        if ( $offSet > 0 );
+    AutoShuttersControl::SetCmdFn(\%h) if ( $offSet == 0 );
+    
+    return 0
 }
 
 sub setSunsetUnixTime {
@@ -2145,6 +2214,12 @@ sub getShadingBrightnessReading {
         $default );
 }
 
+sub getOffset {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', 0 );
+}
+
 sub getPosCmd {
     my $self = shift;
 
@@ -2225,18 +2300,6 @@ sub getAntiFreeze {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Antifreeze', 'off' );
-}
-
-sub getOffsetMorning {
-    my $self = shift;
-
-    return AttrVal( $self->{shuttersDev}, 'ASC_Offset_Minutes_Morning', 0 );
-}
-
-sub getOffsetEvening {
-    my $self = shift;
-
-    return AttrVal( $self->{shuttersDev}, 'ASC_Offset_Minutes_Evening', 0 );
 }
 
 sub getAutoAstroModeMorning {
@@ -2604,6 +2667,13 @@ BEGIN {
     );
 }
 
+sub getShuttersOffset {
+    my $self    = shift;
+    my $name    = $self->{name};
+    
+    return AttrVal( $name, 'ASC_shuttersDriveOffset', 0 );
+}
+
 sub getBrightnessMinVal {
     my $self    = shift;
     my $name    = $self->{name};
@@ -2964,6 +3034,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_rainSensorDevice - Device welches bei Regen getriggert werden soll</li>
       <li>ASC_rainSensorReading - das ensprechende Reading zum Regendevice</li>
       <li>ASC_rainSensorShuttersClosedPos - Position n welche der Rolladen fahren soll wenn es Regnet</li>
+      <li>ASC_shuttersDriveOffset - maximale zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet sofort</li>
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
@@ -2977,18 +3048,17 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Down - astro/time/brightness bei Astro wird Sonnenuntergang berechnet,bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit,es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde,wenn ja wird der Rolladen runter gefahren</li>
       <li>ASC_Mode_Down - always/home/absent/off wann darf die Automatik steuern. immer,niemals,bei abwesenheit des Roommate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
       <li>ASC_Mode_Up - always/home/absent/off wann darf die Automatik steuern. immer,niemals,bei abwesenheit des Roommate (ist kein Roommate und absent eingestellt wird gar nicht gesteuert)</li>
-      <li>ASC_Offset_Minutes_Evening - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Abends</li>
-      <li>ASC_Offset_Minutes_Morning - maximale zufällige Verzögerung in Minuten (minimal 1) bei der Berechnung der Fahrzeiten für Morgens</li>
+      <li>ASC_Drive_Offset - maximale zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet sofort, -1 bedeutet das das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll.</li>
       <li>ASC_Open_Pos -  in 10 Schritten von 0 bis 100,default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>ASC_Partymode -  on/off  schaltet den Partymodus an oder aus,Wird dann am ASC Device set ASC-DEVICE partyMode on geschalten,werden alle Fahrbefehle an den Roll&auml;den welche das Attribut auf on haben zwischen gespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
       <li>ASC_Pos_Cmd - der set Befehl um den Rolladen in Prozent Angaben zu fahren,muss der selbe sein wie das Reading welches die Position des Rolladen in Prozent an gibt</li>
       <li>ASC_Pos_after_ComfortOpen - in 10 Schritten von 0 bis 100,default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
       <li>ASC_Roommate_Reading - das Reading zum Roommate Device welches den Status wieder gibt</li>
       <li>ASC_Roommate_Device - mit Komma getrennte Namen des/der Roommate Device/s welche den/die Bewohner des Raumes vom Rolladen wieder gibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern</li>
-      <li>ASC_Time_Down_Early - Sunset frühste Zeit zum runter fahren</li>
-      <li>ASC_Time_Down_Late - Sunset späteste Zeit zum runter fahren</li>
-      <li>ASC_Time_Up_Early - Sunrise frühste Zeit zum hoch fahren</li>
-      <li>ASC_Time_Up_Late - Sunrise späteste Zeit zum hoch fahren</li>
+      <li>ASC_Time_Down_Early - Sunset fr&uuml;hste Zeit zum runter fahren</li>
+      <li>ASC_Time_Down_Late - Sunset sp&auml;teste Zeit zum runter fahren</li>
+      <li>ASC_Time_Up_Early - Sunrise fr&uuml;hste Zeit zum hoch fahren</li>
+      <li>ASC_Time_Up_Late - Sunrise sp&auml;teste Zeit zum hoch fahren</li>
       <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum hochfahren am Wochenende und/oder Urlaub (we2holiday wird beachtet),Achtung sollte nicht gr&ouml;&szlig;er sein wie ASC_Time_Up_Late sonst wird ASC_Time_Up_Late verwendet</li>
       <li>ASC_Up - astro/time/brightness bei Astro wird Sonnenaufgang berechnet,bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit,es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde,wenn ja wird der Rolladen runter gefahren</li>
       <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100,default Vorgabe ist abh&auml;ngig vom Attribut AutoShuttersControl</li>
