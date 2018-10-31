@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.85";
+my $version = "0.1.86";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1639,10 +1639,35 @@ sub ShuttersSunrise($$$) {
     if ( $tm eq 'unix' ) {
         if ( $shutters->getUpMode eq 'astro' ) {
             if ( ( IsWe() or IsWeTomorrow() )
-                and $ascDev->getSunriseTimeWeHoliday($name) eq 'on' )
+                and $ascDev->getSunriseTimeWeHoliday eq 'on' )
             {
                 if ( not IsWeTomorrow() ) {
-                    if (
+                    if (    IsWe()
+                        and int( gettimeofday() / 86400 ) == int(
+                            (
+                                computeAlignTime(
+                                    '24:00',
+                                    sunrise_abs(
+                                        $autoAstroMode,
+                                        0,
+                                        $shutters->getTimeUpWeHoliday
+                                    )
+                                ) + 1
+                            ) / 86400
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime = (
+                            computeAlignTime(
+                                '24:00',
+                                sunrise_abs(
+                                    $autoAstroMode, 0,
+                                    $shutters->getTimeUpWeHoliday
+                                )
+                            ) + 1
+                        );
+                    }
+                    elsif (
                         int( gettimeofday() / 86400 ) == int(
                             (
                                 computeAlignTime(
@@ -1710,7 +1735,7 @@ sub ShuttersSunrise($$$) {
             if (    defined($oldFuncHash)
                 and ref($oldFuncHash) eq 'HASH'
                 and ( IsWe() or IsWeTomorrow() )
-                and $ascDev->getSunriseTimeWeHoliday($name) eq 'on' )
+                and $ascDev->getSunriseTimeWeHoliday eq 'on' )
             {
                 if ( not IsWeTomorrow() ) {
                     if (
