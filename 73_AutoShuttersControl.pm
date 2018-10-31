@@ -1363,9 +1363,10 @@ sub SunSetShuttersAfterTimerFn($) {
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
-    if ( $shutters->getModeDown eq $homemode
-      or $homemode eq 'none'
-      or $shutters->getModeDown eq 'always' ) {
+    if (   $shutters->getModeDown eq $homemode
+        or $homemode eq 'none'
+        or $shutters->getModeDown eq 'always' )
+    {
         $shutters->setLastDrive('night close');
         ShuttersCommandSet( $hash, $shuttersDev, $posValue );
     }
@@ -1389,16 +1390,16 @@ sub SunRiseShuttersAfterTimerFn($) {
         or $shutters->getModeUp eq 'always' )
     {
         if (
-        (
-             $shutters->getRoommatesStatus eq 'home'
-          or $shutters->getRoommatesStatus eq 'awoken'
-          or $shutters->getRoommatesStatus eq 'absent'
-          or $shutters->getRoommatesStatus eq 'gone'
-          or $shutters->getRoommatesStatus eq 'none'
-        )
-          and $ascDev->getSelfDefense eq 'off'
-          or ( $ascDev->getSelfDefense eq 'on'
-            and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
+            (
+                   $shutters->getRoommatesStatus eq 'home'
+                or $shutters->getRoommatesStatus eq 'awoken'
+                or $shutters->getRoommatesStatus eq 'absent'
+                or $shutters->getRoommatesStatus eq 'gone'
+                or $shutters->getRoommatesStatus eq 'none'
+            )
+            and $ascDev->getSelfDefense eq 'off'
+            or ( $ascDev->getSelfDefense eq 'on'
+                and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
           )
         {
             $shutters->setLastDrive('day open');
@@ -1642,14 +1643,14 @@ sub ShuttersSunrise($$$) {
                 and $ascDev->getSunriseTimeWeHoliday eq 'on' )
             {
                 if ( not IsWeTomorrow() ) {
-                    if (    IsWe()
+                    if (
+                        IsWe()
                         and int( gettimeofday() / 86400 ) == int(
                             (
                                 computeAlignTime(
                                     '24:00',
                                     sunrise_abs(
-                                        $autoAstroMode,
-                                        0,
+                                        $autoAstroMode, 0,
                                         $shutters->getTimeUpWeHoliday
                                     )
                                 ) + 1
