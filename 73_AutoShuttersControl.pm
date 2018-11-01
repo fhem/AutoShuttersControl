@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.86";
+my $version = "0.1.87";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -841,7 +841,6 @@ sub RoommateEventProcessing($@) {
                        $shutters->getRoommatesLastStatus eq 'asleep'
                     or $shutters->getRoommatesLastStatus eq 'awoken'
                 )
-                and $shutters->getModeUp eq 'home'
                 and IsDay( $hash, $shuttersDev )
               )
             {
