@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.87";
+my $version = "0.1.88";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1218,8 +1218,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
     return if ( IsDisabled($name) );
 
     my $shuttersSunriseUnixtime =
-      ShuttersSunrise( $hash, $shuttersDev, 'unix' );
-    my $shuttersSunsetUnixtime = ShuttersSunset( $hash, $shuttersDev, 'unix' );
+      ShuttersSunrise( $hash, $shuttersDev, 'unix' ) + 1;
+    my $shuttersSunsetUnixtime = ShuttersSunset( $hash, $shuttersDev, 'unix' ) + 1;
 
     $shutters->setSunriseUnixTime($shuttersSunriseUnixtime);
     $shutters->setSunsetUnixTime($shuttersSunsetUnixtime);
