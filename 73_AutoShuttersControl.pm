@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.90";
+my $version = "0.1.91";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -896,7 +896,10 @@ sub RoommateEventProcessing($@) {
                     or $shutters->getRoommatesLastStatus eq 'gone'
                     or $shutters->getRoommatesLastStatus eq 'home'
                 )
-                and $shutters->getModeUp eq 'home'
+                and ($shutters->getModeUp eq 'home'
+                  or $shutters->getModeUp eq 'always'
+                  or $shutters->getModeDown eq 'home'
+                  or $shutters->getModeDown eq 'always')
                 and $shutters->getRoommatesStatus eq 'home'
               )
             {
@@ -1231,7 +1234,7 @@ sub ShuttersEventProcessing($@) {
 
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
-
+        $ascDev->setPosReading;
         if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) > 60
             and $shutters->getLastPos != $shutters->getStatus )
         {
@@ -2710,6 +2713,16 @@ sub setDelayCmdReading {
     readingsSingleUpdate( $hash,
         $shutters->getShuttersDev . '_lastDelayPosValue',
         $shutters->getDelayCmd, 1 );
+    return 0;
+}
+
+sub setPosReading {
+    my $self = shift;
+    my $name = $self->{name};
+    my $hash = $defs{$name};
+
+    readingsSingleUpdate( $hash, $shutters->getShuttersDev . '_PosValue',
+        $shutters->getStatus, 1 );
     return 0;
 }
 
