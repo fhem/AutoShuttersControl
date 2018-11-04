@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.91";
+my $version = "0.1.92";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -896,10 +896,10 @@ sub RoommateEventProcessing($@) {
                     or $shutters->getRoommatesLastStatus eq 'gone'
                     or $shutters->getRoommatesLastStatus eq 'home'
                 )
-                and ($shutters->getModeUp eq 'home'
-                  or $shutters->getModeUp eq 'always'
-                  or $shutters->getModeDown eq 'home'
-                  or $shutters->getModeDown eq 'always')
+                and (  $shutters->getModeUp eq 'home'
+                    or $shutters->getModeUp eq 'always'
+                    or $shutters->getModeDown eq 'home'
+                    or $shutters->getModeDown eq 'always' )
                 and $shutters->getRoommatesStatus eq 'home'
               )
             {
@@ -2031,6 +2031,8 @@ sub SetCmdFn($) {
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setLastDriveReading;
+    }
+    else {
         $shutters->setLastDrive(
             ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' ) );
     }
@@ -3228,4 +3230,3 @@ sub getRainSensorShuttersClosedPos {
 =end html_DE
 
 =cut
-
