@@ -2025,8 +2025,13 @@ sub SetCmdFn($) {
     my $posValue    = $h->{posValue};
 
     $shutters->setShuttersDev($shuttersDev);
-    $shutters->setLastPos( $shutters->getStatus )
-      if ( $shutters->getStatus != $posValue );
+    if ( $shutters->getStatus != $posValue ) {
+        $shutters->setLastPos( $shutters->getStatus );
+        $shutters->setLastDriveReading;
+        $shutters->setLastDrive(
+            ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' ) );
+    }
+
     CommandSet( undef,
             $shuttersDev
           . ':FILTER='
@@ -2034,11 +2039,6 @@ sub SetCmdFn($) {
           . $posValue . ' '
           . $shutters->getPosCmd . ' '
           . $posValue );
-
-    $shutters->setLastDriveReading if ( $shutters->getStatus != $posValue );
-    $shutters->setLastDrive(
-        ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' ) )
-      if ( $shutters->getLastPos == $posValue );
 }
 
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -2097,6 +2097,7 @@ sub setDriveCmd {
         shuttersDev => $self->{shuttersDev},
         posValue    => $posValue,
     );
+
     $offSet = $shutters->getOffset       if ( $shutters->getOffset > 0 );
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset == -1 );
 
@@ -3214,3 +3215,4 @@ sub getRainSensorShuttersClosedPos {
 =end html_DE
 
 =cut
+
