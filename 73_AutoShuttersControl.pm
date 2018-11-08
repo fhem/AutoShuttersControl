@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.92.18";
+my $version = "0.1.93";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -76,8 +76,9 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 "
       . "ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON "
       . "ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 "
-      . "ASC_antifreezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 "
+      . "ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 "
       . "ASC_timeUpHolidayDevice "
+      . "ASC_timeUpHolidayReading "
       . "ASC_shuttersDriveOffset "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
@@ -203,11 +204,14 @@ my %userAttrList = (
 );
 
 my %posSetCmds = (
-    ZWave   => 'dim',
-    Siro    => 'position',
-    CUL_HM  => 'pct',
-    ROLLO   => 'pct',
-    SOMFY   => 'position',
+    ZWave      => 'dim',
+    Siro       => 'position',
+    CUL_HM     => 'pct',
+    ROLLO      => 'pct',
+    SOMFY      => 'position',
+    tahoma     => 'dim',
+    KLF200Node => 'pct',
+    DUOFERN    => 'position',
 );
 
 my $shutters = new ASC_Shutters();
@@ -238,7 +242,7 @@ sub Define($$) {
     readingsSingleUpdate(
         $hash,
         "state",
-"please set attribut 'ACS' with value 1 or 2 to all your auto controlled shutters and then do 'set DEVICENAME scanForShutters",
+"please set attribute ASC with value 1 or 2 in all auto controlled shutter devices and then execute 'set DEVICENAME scanForShutters'",
         1
     );
     CommandAttr( undef, $name . ' room ASC' )
@@ -255,10 +259,12 @@ sub Define($$) {
       if ( $ascDev->getAutoShuttersControlEvening eq 'none' );
     CommandAttr( undef, $name . ' ASC_temperatureReading temperature' )
       if ( $ascDev->getTempReading eq 'none' );
-    CommandAttr( undef, $name . ' ASC_antifreezeTemp 3' )
+    CommandAttr( undef, $name . ' ASC_freezeTemp 3' )
       if ( $ascDev->getAntifreezeTemp eq 'none' );
-    CommandAttr( undef, $name . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night close:scene_night' )
-      if ( AttrVal($name,'devStateIcon','none') eq 'none' );
+    CommandAttr( undef,
+        $name
+          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night close:scene_night'
+    ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
 
@@ -517,13 +523,14 @@ sub Set($$@) {
     }
     elsif ( lc $cmd eq 'wiggle' ) {
         return "usage: $cmd" if ( @args > 1 );
-        
-        ($args[0] eq 'all' ? wiggleAll($hash) : wiggle($hash,$args[0]));
+
+        ( $args[0] eq 'all' ? wiggleAll($hash) : wiggle( $hash, $args[0] ) );
     }
     else {
         my $list = "scanForShutters:noArg";
         $list .=
-" renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off wiggle:all," . join(',',@{$hash->{helper}{shuttersList}})
+" renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off wiggle:all,"
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " createNewNotifyDev:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
@@ -661,7 +668,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
         $shutters->setNoOffset(0);
-        $shutters->setPosSetCmd($posSetCmds{$hash->{TYPE}});
+        $shutters->setPosSetCmd( $posSetCmds{ $hash->{TYPE} } );
     }
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
 
@@ -820,7 +827,7 @@ sub WindowRecEventProcessing($@) {
         $shutters->setNoOffset(1);
 
         my $queryShuttersPosWinRecTilted = (
-            $shutters->getShuttersPosCmdValueNegate
+              $shutters->getShuttersPosCmdValueNegate
             ? $shutters->getStatus > $shutters->getVentilatePos
             : $shutters->getStatus < $shutters->getVentilatePos
         );
@@ -980,7 +987,7 @@ sub RoommateEventProcessing($@) {
 sub ResidentsEventProcessing($@) {
     my ( $hash, $device, $events ) = @_;
 
-    my $name = $device;
+    my $name    = $device;
     my $reading = $ascDev->getResidentsReading;
 
     if ( $events =~ m#$reading:\s(absent)# ) {
@@ -1081,7 +1088,7 @@ sub ResidentsEventProcessing($@) {
 
 sub RainEventProcessing($@) {
     my ( $hash, $device, $events ) = @_;
-    my $name = $device;
+    my $name    = $device;
     my $reading = $ascDev->getRainSensorReading;
     my $val;
 
@@ -1406,7 +1413,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
     InternalTimer( $shuttersSunriseUnixtime,
         'AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash )
       if ( $ascDev->getAutoShuttersControlMorning eq 'on' );
-    
+
     $ascDev->setStateReading('created new drive timer');
 }
 
@@ -1444,7 +1451,7 @@ sub wiggleAll($) {
     my $hash = shift;
 
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
-        wiggle($hash,$_);
+        wiggle( $hash, $_ );
     }
 }
 
@@ -1453,7 +1460,7 @@ sub wiggle($$) {
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setNoOffset(1);
 
-    my %h      = (
+    my %h = (
         shuttersDev => $shutters->getShuttersDev,
         posValue    => $shutters->getStatus,
     );
@@ -1471,8 +1478,7 @@ sub wiggle($$) {
         else { $shutters->setDriveCmd( $shutters->getStatus + 5 ); }
     }
 
-    InternalTimer( gettimeofday() + 60,
-        'AutoShuttersControl::SetCmdFn', \%h );
+    InternalTimer( gettimeofday() + 60, 'AutoShuttersControl::SetCmdFn', \%h );
 }
 ####
 
@@ -1686,7 +1692,7 @@ sub GetMonitoredDevs($) {
     my $aHref;
 
 # create define Link
-#     $aHref="<a href=\"".$::FW_httpheader->{host}."/fhem?cmd=set".$::FW_CSRF."\">Create new NOTIFYDEV structure</a>";
+#     $aHref="<a href=\"".$::FW_httpheader->{host}."/fhem?cmd=set+".$::FW_CSRF."\">Create new NOTIFYDEV structure</a>";
 #     $aHref="<a href=\"/fhem?cmd=set+\">Create new NOTIFYDEV structure</a>";
 #     $aHref="<a href=\"".$headerHost[0]."/fhem?cmd=define+".makeDeviceName($dataset->{station}{name})."+Aqicn+".$dataset->{uid}.$FW_CSRF."\">Create Station Device</a>";
 
@@ -2063,7 +2069,7 @@ sub IsHoliday($) {
 
     return (
         ReadingsVal( AttrVal( $name, 'ASC_timeUpHolidayDevice', 'none' ),
-            'state', 0 ) == 1 ? 1 : 0
+            AttrVal( $name, 'ASC_timeUpHolidayReading', 'state' ), 0 ) == 1 ? 1 : 0
     );
 }
 
@@ -2161,8 +2167,9 @@ sub setDriveCmd {
 
     InternalTimer( gettimeofday() + int( rand($offSet) ),
         'AutoShuttersControl::SetCmdFn', \%h )
-      if ( $offSet > 0 and not $shutters->getNoOffset);
-    AutoShuttersControl::SetCmdFn( \%h ) if ( $offSet == 0 or $shutters->getNoOffset );
+      if ( $offSet > 0 and not $shutters->getNoOffset );
+    AutoShuttersControl::SetCmdFn( \%h )
+      if ( $offSet == 0 or $shutters->getNoOffset );
     $shutters->setNoOffset(0);
 
     return 0;
@@ -2198,7 +2205,7 @@ sub setLastDrive {
 
 sub setPosSetCmd {
     my ( $self, $posSetCmd ) = @_;
-    
+
     $self->{ $self->{shuttersDev} }{posSetCmd} = $posSetCmd;
     return 0;
 }
@@ -2258,14 +2265,17 @@ sub setInTimerFuncHash {
 
 sub getShuttersPosCmdValueNegate {
     my $self = shift;
-    
+
     return ( $shutters->getOpenPos < $shutters->getClosedPos ? 1 : 0 );
 }
 
 sub getPosSetCmd {
     my $self = shift;
-    
-    return (defined($self->{ $self->{shuttersDev} }{posSetCmd}) ? $self->{ $self->{shuttersDev} }{posSetCmd} : $shutters->getPosCmd);
+
+    return (
+        defined( $self->{ $self->{shuttersDev} }{posSetCmd} )
+        ? $self->{ $self->{shuttersDev} }{posSetCmd}
+        : $shutters->getPosCmd );
 }
 
 sub getNoOffset {
@@ -2798,12 +2808,13 @@ sub setDelayCmdReading {
 }
 
 sub setStateReading {
-    my $self    = shift;
-    my $value   = shift;
-    my $name    = $self->{name};
-    my $hash    = $defs{$name};
+    my $self  = shift;
+    my $value = shift;
+    my $name  = $self->{name};
+    my $hash  = $defs{$name};
 
-    readingsSingleUpdate( $hash, 'state', (defined($value) ? $value : $shutters->getLastDrive), 1 );
+    readingsSingleUpdate( $hash, 'state',
+        ( defined($value) ? $value : $shutters->getLastDrive ), 1 );
     return 0;
 }
 
@@ -3269,7 +3280,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_autoShuttersControlMorning - on/off,ob Morgens die Roll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>ASC_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
       <li>ASC_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
-      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading state beinhalten.</li>
+      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading beinhalten.</li>
+      <li>ASC_timeUpHolidayReading - passendes Reading zum ASC_timeUpHolidayDevice zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 beinhalten.</li>
       <li>ASC_residentsDevice - Devicenamen vom Residents Device der obersten Ebene</li>
       <li>ASC_residentsDeviceReading - Status Reading vom Residents Device der obersten Ebene</li>
       <li>ASC_brightnessMinVal - minimaler Lichtwert ab welchen Schaltbedingungen gepr&uuml;ft werden sollen</li>
