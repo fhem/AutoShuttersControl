@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.1.93";
+my $version = "0.1.93.2";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -80,6 +80,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_timeUpHolidayDevice "
       . "ASC_timeUpHolidayReading "
       . "ASC_shuttersDriveOffset "
+      . "ASC_twilightDevice "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
 
@@ -92,7 +93,8 @@ sub AutoShuttersControl_Initialize($) {
 
 ## unserer packagename
 package AutoShuttersControl;
-
+no warnings "experimental::declared_refs";
+use feature "declared_refs";
 use strict;
 use warnings;
 use POSIX;
@@ -364,6 +366,7 @@ sub Notify($$) {
         CommandDeleteReading( undef, $name . ' selfDefence' )
           if ( ReadingsVal( $name, 'selfDefence', 'none' ) ne 'none' )
           ;    # temporär kann später entfernt werden.
+        CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] ) if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
         ShuttersDeviceScan($hash)
