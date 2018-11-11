@@ -8,6 +8,7 @@
 #   Special thanks goes to:
 #       - Bernd (Cluni) this module is based on the logic of his script "Rollladensteuerung für HM/ROLLO inkl. Abschattung und Komfortfunktionen in Perl" (https://forum.fhem.de/index.php/topic,73964.0.html)
 #       - Beta-User for many tests and ideas
+#       - pc1246 write english commandref
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -38,7 +39,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.1";
+my $version = "0.2.1dev7";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -63,10 +64,6 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_autoShuttersControlEvening:on,off "
       . "ASC_autoShuttersControl_Shading:on,off "
       . "ASC_autoShuttersControlComfort:on,off "
-      . "ASC_sunPosDevice "
-      . "ASC_sunPosReading "
-      . "ASC_sunElevationDevice "
-      . "ASC_sunElevationReading "
       . "ASC_residentsDevice "
       . "ASC_residentsDeviceReading "
       . "ASC_rainSensorDevice "
@@ -81,6 +78,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_timeUpHolidayReading "
       . "ASC_shuttersDriveOffset "
       . "ASC_twilightDevice "
+      . "ASC_expert:1 "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
 
@@ -365,7 +363,9 @@ sub Notify($$) {
         CommandDeleteReading( undef, $name . ' selfDefence' )
           if ( ReadingsVal( $name, 'selfDefence', 'none' ) ne 'none' )
           ;    # temporär kann später entfernt werden.
-        CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] ) if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
+        if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
+            CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] ) if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
+        }
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
         ShuttersDeviceScan($hash)
@@ -398,7 +398,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_Shading_Brightness_Sensor)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_Shading_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -455,7 +455,7 @@ sub GeneralEventProcessing($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Shading_Brightness_Sensor)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Shading_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -463,7 +463,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSe
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Shading_Brightness_Sensor)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Shading_Brightness_Sensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -536,7 +536,7 @@ sub Set($$@) {
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " createNewNotifyDev:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-            and AttrVal( $name, 'verbose', 3 ) > 3 );
+            and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -564,7 +564,7 @@ sub Get($$@) {
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " showNotifyDevsInformations:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-            and AttrVal( $name, 'verbose', 3 ) > 3 );
+            and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -3135,7 +3135,7 @@ sub getRainSensorShuttersClosedPos {
     <li>renewSetSunriseSunsetTimer - refreshes the timer for sunset, sunrise and the internal timers.</li>
     <li>scanForShutters - searches all FHEM devices with attribute "AutoShuttersControl" 1/2</li>
     <li>sunriseTimeWeHoliday - on/off activates/deactivates respecting attribute ASC_Time_Up_WE_Holiday</li>
-    <li>createNewNotifyDev - recreates the internal structure for NOTIFYDEV - attribute verbose has to be greater than 3.</li>
+    <li>createNewNotifyDev - recreates the internal structure for NOTIFYDEV - attribute ASC_expert has value 1.</li>
     <li>selfDefense - on/off,activates/deactivates the mode self defense. If the resident device says absent and selfDefense is active, each shutter for open windows will be closed.</li>
     <li>wiggle - moves any shutter (for deterrence purposes) by 5% up, and after 1 minute down again to last position.</li> 
   </ul>
@@ -3144,7 +3144,7 @@ sub getRainSensorShuttersClosedPos {
   <b>Get</b>
   <ul>
     <li>showShuttersInformations - shows an overview of all times/timers</li>
-    <li>showNotifyDevsInformations - shows an overview of all notify devices. Is used for control</li>
+    <li>showNotifyDevsInformations - shows an overview of all notify devices. Is used for control - attribute ASC_expert has value 1</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlAttributes"></a>
@@ -3172,6 +3172,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_rainSensorReading - reading of rain sensor device</li>
       <li>ASC_rainSensorShuttersClosedPos - position to be reached if it is raining.</li>
       <li>ASC_shuttersDriveOffset - maximum delay time in seconds for drivetimes, 0 means no delay</li>
+      <li>ASC_twilightDevice - Device which provides information about the position of the sun, is used for shading, among other things. After the first automatic find, the device is not yet in the NOTIFYDEV, for this you have to click once under the attributes on the attribute name and then on the 'attr ASC_twilightDevice...'</li>
     </ul><br>
     In the shutter devices
     <ul>
@@ -3272,7 +3273,7 @@ sub getRainSensorShuttersClosedPos {
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Roll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "AutoShuttersControl" 1/2</li>
     <li>sunriseTimeWeHoliday - on/off aktiviert/deaktiviert die Beachtung des Rolladen Device Attributes ASC_Time_Up_WE_Holiday</li>
-    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an - Attribut verbose muss gr&ouml;$szlig;er 3 sein.</li>
+    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an - das Attribut ASC_expert muss 1 sein.</li>
     <li>selfDefense - on/off,aktiviert/deaktiviert den Selbstschutz,wenn das Residents Device absent meldet und selfDefense aktiv ist und ein Fenster im Haus steht noch offen,wird an diesem Fenster das Rollo runter gefahren</li>
     <li>wiggle - bewegt einen Rollladen oder alle Rolll&auml;den (f&uuml;r Abschreckungszwecke bei der Alarmierung) um 5%, und nach 1 Minute wieder zur&uuml;ck zur Ursprungsposition</li>
   </ul>
@@ -3281,7 +3282,7 @@ sub getRainSensorShuttersClosedPos {
   <b>Get</b>
   <ul>
     <li>showShuttersInformations - zeigt eine &Uuml;bersicht der Autofahrzeiten</li>
-    <li>showNotifyDevsInformations - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Diehnt zur Kontrolle</li>
+    <li>showNotifyDevsInformations - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Diehnt zur Kontrolle - das Attribut ASC_expert muss 1 sein.</li>
   </ul>
   <br><br>
   <a name="AutoShuttersControlAttributes"></a>
@@ -3309,6 +3310,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_rainSensorReading - das ensprechende Reading zum Regendevice</li>
       <li>ASC_rainSensorShuttersClosedPos - Position n welche der Rolladen fahren soll wenn es Regnet</li>
       <li>ASC_shuttersDriveOffset - maximale zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet sofort</li>
+      <li>ASC_twilightDevice - Device welches Informationen zum Sonnenstand liefert, wird unter anderem f&uuml;r die Beschattung verwendet. Nach dem ersten automatischen finden steht das Device noch nicht in der NOTIFYDEV, hierf&uuml;r muss einmalig unter den Attributen auf den Attributsnamen geklickt werden und dann auf das 'attr ASC_twilightDevice ...'</li>
+      <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
     </ul><br>
     In den Roll&auml;den Devices
     <ul>
