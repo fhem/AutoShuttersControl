@@ -365,9 +365,9 @@ sub Notify($$) {
         CommandDeleteReading( undef, $name . ' selfDefence' )
           if ( ReadingsVal( $name, 'selfDefence', 'none' ) ne 'none' )
           ;    # temporär kann später entfernt werden.
-
         if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
-            CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] ) if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
+            CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] )
+                if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
         }
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
