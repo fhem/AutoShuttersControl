@@ -39,7 +39,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev8";
+my $version = "0.2.1dev9";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -674,7 +674,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
         $shutters->setNoOffset(0);
-        $shutters->setPosSetCmd( $posSetCmds{ $hash->{TYPE} } );
+        $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
     }
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
 
