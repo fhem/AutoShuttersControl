@@ -39,7 +39,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev7";
+my $version = "0.2.1dev8";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -364,7 +364,11 @@ sub Notify($$) {
           if ( ReadingsVal( $name, 'selfDefence', 'none' ) ne 'none' )
           ;    # temporär kann später entfernt werden.
         if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
-            CommandAttr( undef, $name . ' ASC_twilightDevice ' . ( devspec2array('TYPE=(Astro|Twilight)'))[0] ) if ( AttrVal($name,'ASC_twilightDevice','none') eq 'none' );
+            CommandAttr( undef,
+                    $name
+                  . ' ASC_twilightDevice '
+                  . ( devspec2array('TYPE=(Astro|Twilight)') )[0] )
+              if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) eq 'none' );
         }
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
@@ -2070,8 +2074,11 @@ sub IsHoliday($) {
     my $name = $hash->{NAME};
 
     return (
-        ReadingsVal( AttrVal( $name, 'ASC_timeUpHolidayDevice', 'none' ),
-            AttrVal( $name, 'ASC_timeUpHolidayReading', 'state' ), 0 ) == 1 ? 1 : 0
+        ReadingsVal(
+            AttrVal( $name, 'ASC_timeUpHolidayDevice',  'none' ),
+            AttrVal( $name, 'ASC_timeUpHolidayReading', 'state' ),
+            0
+        ) == 1 ? 1 : 0
     );
 }
 
@@ -2277,7 +2284,8 @@ sub getPosSetCmd {
     return (
         defined( $self->{ $self->{shuttersDev} }{posSetCmd} )
         ? $self->{ $self->{shuttersDev} }{posSetCmd}
-        : $shutters->getPosCmd );
+        : $shutters->getPosCmd
+    );
 }
 
 sub getNoOffset {
