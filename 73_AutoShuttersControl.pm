@@ -852,6 +852,7 @@ sub EventProcessingWindowRec($@) {
         if ( $shutters->getDelayCmd ne 'none' )
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
             if ( $1 eq 'closed' ) {
+                $shutters->setLastDrive('delayed closed');
                 ShuttersCommandSet( $hash, $shuttersDev,
                     $shutters->getClosedPos );
             }
@@ -864,6 +865,7 @@ sub EventProcessingWindowRec($@) {
                 and $queryShuttersPosWinRecTilted
               )
             {
+                $shutters->setLastDrive('delayed ventilate open');
                 ShuttersCommandSet( $hash, $shuttersDev,
                     $shutters->getVentilatePos );
             }
@@ -884,6 +886,7 @@ sub EventProcessingWindowRec($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
+            $shutters->setLastDrive('ventilate open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
         }
@@ -892,6 +895,7 @@ sub EventProcessingWindowRec($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecTilted )
         {
+            $shutters->setLastDrive('comfort open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getPosAfterComfortOpen );
         }
@@ -1320,6 +1324,7 @@ sub EventProcessingPartyMode($) {
                 Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingPartyMode Fenster nicht offen"
                 );
+                $shutters->setLastDrive('drive after party mode');
                 ShuttersCommandSet(
                     $hash,
                     $shuttersDev,
