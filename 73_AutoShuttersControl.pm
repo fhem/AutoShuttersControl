@@ -81,7 +81,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_timeUpHolidayReading "
       . "ASC_shuttersDriveOffset "
       . "ASC_twilightDevice "
-      . "ASC_expert "
+      . "ASC_expert:1 "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
 
@@ -842,6 +842,7 @@ sub WindowRecEventProcessing($@) {
         if ( $shutters->getDelayCmd ne 'none' )
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
             if ( $1 eq 'closed' ) {
+                $shutters->setLastDrive('delayed closed');
                 ShuttersCommandSet( $hash, $shuttersDev,
                     $shutters->getClosedPos );
             }
@@ -854,6 +855,7 @@ sub WindowRecEventProcessing($@) {
                 and $queryShuttersPosWinRecTilted
               )
             {
+                $shutters->setLastDrive('delayed ventilate open');
                 ShuttersCommandSet( $hash, $shuttersDev,
                     $shutters->getVentilatePos );
             }
@@ -874,6 +876,7 @@ sub WindowRecEventProcessing($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
+            $shutters->setLastDrive('ventilate open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
         }
@@ -882,6 +885,7 @@ sub WindowRecEventProcessing($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecTilted )
         {
+            $shutters->setLastDrive('comfort open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getPosAfterComfortOpen );
         }
