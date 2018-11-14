@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev11";
+my $version = "0.2.1dev22";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -168,14 +168,13 @@ my %userAttrList = (
     'ASC_lock-out:soft,hard'           => 'soft',
     'ASC_lock-outCmd:inhibit,blocked'  => 'none',
 
-#     'ASC_Shading_Direction'            => 178,
-#     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => 30,
-#     'ASC_Shading:on,off,delayed,present,absent'      => 'off',
-#     'ASC_Shading_Pos_after_Shading:-1,0,10,20,30,40,50,60,70,80,90,100' => -1,
-#     'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
-#     'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
+    'ASC_Shading_Direction'            => 178,
+    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
+    'ASC_Shading_Mode:on,off,home,absent'      => 'off',
+    'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
+    'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
     'ASC_Shading_Brightness_Sensor'  => 'none',
     'ASC_Shading_Brightness_Reading' => 'brightness',
 
@@ -214,6 +213,7 @@ my %posSetCmds = (
     tahoma     => 'dim',
     KLF200Node => 'pct',
     DUOFERN    => 'position',
+    UNIRoll    => 'pos',
 );
 
 my $shutters = new ASC_Shutters();
@@ -449,15 +449,22 @@ sub EventProcessingGeneral($$$) {
               if ( $deviceAttr eq 'ASC_residentsDevice' );
             EventProcessingRain( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_rainSensorDevice' );
+            EventProcessingTwilightDevice( $hash, $device, $events )
+              if ( $deviceAttr eq 'ASC_twilightDevice' );
 
             $shutters->setShuttersDev($device)
               if ( $deviceAttr eq 'ASC_Shading_Brightness_Sensor' );
-            EventProcessingBrightness( $hash, $device, $events )
-              if (
-                $deviceAttr eq 'ASC_Shading_Brightness_Sensor'
-                and (  $shutters->getDown eq 'brightness'
-                    or $shutters->getUp eq 'brightness' )
-              );
+
+            if (
+              $deviceAttr eq 'ASC_Shading_Brightness_Sensor'
+              and (  $shutters->getDown eq 'brightness'
+                or $shutters->getUp eq 'brightness' )
+            ) {
+                EventProcessingBrightness( $hash, $device, $events );
+            }
+            elsif ( $deviceAttr eq 'ASC_Shading_Brightness_Sensor' ) {
+                EventProcessingShadingBrightness( $hash, $device, $events );
+            }
         }
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
@@ -679,7 +686,9 @@ sub ShuttersDeviceScan($) {
         $shutters->setNoOffset(0);
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
     }
-    $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
+#     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
+    $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
+
 
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
         $hash->{monitoredDevs} =
@@ -1132,17 +1141,17 @@ sub EventProcessingBrightness($@) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
-    return
-      unless (
-        int( gettimeofday() / 86400 ) !=
-        int( computeAlignTime( '24:00', $shutters->getTimeUpEarly ) / 86400 )
-        and int( gettimeofday() / 86400 ) ==
-        int( computeAlignTime( '24:00', $shutters->getTimeUpLate ) / 86400 )
-        or int( gettimeofday() / 86400 ) !=
-        int( computeAlignTime( '24:00', $shutters->getTimeDownEarly ) / 86400 )
-        and int( gettimeofday() / 86400 ) ==
-        int( computeAlignTime( '24:00', $shutters->getTimeDownLate ) / 86400 )
-      );
+    return EventProcessingShadingBrightness($hash, $shuttersDev, $events)
+    unless (
+      int( gettimeofday() / 86400 ) !=
+      int( computeAlignTime( '24:00', $shutters->getTimeUpEarly ) / 86400 )
+      and int( gettimeofday() / 86400 ) ==
+      int( computeAlignTime( '24:00', $shutters->getTimeUpLate ) / 86400 )
+      or int( gettimeofday() / 86400 ) !=
+      int( computeAlignTime( '24:00', $shutters->getTimeDownEarly ) / 86400 )
+      and int( gettimeofday() / 86400 ) ==
+      int( computeAlignTime( '24:00', $shutters->getTimeDownLate ) / 86400 )
+    );
 
     my $reading = $shutters->getShadingBrightnessReading;
     if ( $events =~ m#$reading:\s(\d+)# ) {
@@ -1177,8 +1186,7 @@ sub EventProcessingBrightness($@) {
                 or $homemode eq 'none'
                 or $shutters->getModeUp eq 'always' )
             {
-                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos )
-                  if (
+                if (
                     (
                            $shutters->getRoommatesStatus eq 'home'
                         or $shutters->getRoommatesStatus eq 'awoken'
@@ -1189,7 +1197,9 @@ sub EventProcessingBrightness($@) {
                     and $ascDev->getSelfDefense eq 'off'
                     or ( $ascDev->getSelfDefense eq 'on'
                         and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
-                  );
+                  ) {
+                    ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos );
+                } else { EventProcessingShadingBrightness($hash, $shuttersDev, $events); }
             }
         }
         elsif (
@@ -1220,12 +1230,73 @@ sub EventProcessingBrightness($@) {
               if ( $homemode eq 'none' );
             $shutters->setLastDrive('minimum brightness threshold fell below');
 
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos )
-              if ( $shutters->getModeDown eq $homemode
-                or $homemode eq 'none'
-                or $shutters->getModeDown eq 'always' );
+            if ( $shutters->getModeDown eq $homemode
+                 or $homemode eq 'none'
+                 or $shutters->getModeDown eq 'always'
+               ) {
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
+            } else { EventProcessingShadingBrightness($hash, $shuttersDev, $events); }
         }
+    } else { EventProcessingShadingBrightness($hash, $shuttersDev, $events); }
+}
+
+sub EventProcessingShadingBrightness($@) {
+    my ( $hash, $shuttersDev, $events ) = @_;
+    my $name = $hash->{NAME};
+    $shutters->setShuttersDev($shuttersDev);
+    my $reading = $shutters->getShadingBrightnessReading;
+    
+    if ( $events =~ m#$reading:\s(\d+)# ) {
+        ShadingProcessing($hash,$shuttersDev,$ascDev->getAzimuth,$ascDev->getElevation,$1,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
+            if ( $shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus );
     }
+}
+
+sub EventProcessingTwilightDevice($@) {
+    my ( $hash, $device, $events ) = @_;
+    my $name    = $device;
+    my ($azimuth,$elevation, $outTemp, $brightness);
+
+# Twilight
+# azimuth = azimuth = Sonnenwinkel
+# elevation = elevation = Sonnenhöhe
+# 
+# Astro
+# SunAz = azimuth = Sonnenwinkel
+# SunAlt = evaluation = Sonnenhöhe
+    
+    if ( $events =~ m#([a-zA-Z]+):\s(\d+.\d+)# ) {
+        $azimuth    = $2 if ( $1 eq 'azimuth' );
+        $azimuth    = $2 if ( $1 eq 'SunAz' );
+        $elevation  = $2 if ( $1 eq 'evaluation' );
+        $elevation  = $2 if ( $1 eq 'SunAlt' );
+    }
+
+    $azimuth    = $ascDev->getAzimuth if (not defined($azimuth) and not $azimuth );
+    $elevation  = $ascDev->getElevation if (not defined($elevation) and not $elevation );
+    
+    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
+        ShadingProcessing($hash,$shuttersDev,$azimuth,$elevation,$shutters->getBrightness,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
+            if ( $shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus );
+    }
+}
+
+sub ShadingProcessing($@) {
+    my ($hash,$shuttersDev,$azimuth,$elevation,$brightness,$outTemp,$shuttersDirection,$shuttersShadingAngleLeft,$shuttersShadingAngleRight) = @_;
+    my $name = $hash->{NAME};
+    Log3( $name, 3,
+"AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev
+            );
+
+#     ShuttersDev
+#     Aussentemperatur
+#     azimuth
+#     elevation
+#     Himmelsrichtung des Fensters
+#     Eintrittswinkel
+#     Ausstrittswinkel
+#     Brightness
 }
 
 sub EventProcessingPartyMode($) {
@@ -1581,6 +1652,9 @@ sub CreateNewNotifyDev($) {
         $name, 'ASC_residentsDevice' )
       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_rainSensorDevice', 'none' ),
+        $name, 'ASC_rainSensorDevice' )
+      if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+    AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
         $name, 'ASC_rainSensorDevice' )
       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
@@ -2110,10 +2184,6 @@ sub SetCmdFn($) {
           . $posValue );
 }
 
-sub EventProcessingTwilightDevice() {
-
-}
-
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
 ## Klasse Rolläden (Shutters) und die Subklassen Attr und Readings ##
 ## desweiteren wird noch die Klasse ASC_Roommate mit eingebunden
@@ -2449,7 +2519,23 @@ sub getWiggleValue {
     return AttrVal( $self->{shuttersDev}, 'ASC_WiggleValue', 5 );
 }
 
-sub getShadingBrightnessSensor {
+sub getShadingPos {
+    my $self = shift;
+    my $default = $self->{defaultarg};
+
+    $default = 10 if ( not defined($default) );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Pos', $default );
+}
+
+sub getShadingMode {
+    my $self = shift;
+    my $default = $self->{defaultarg};
+
+    $default = 'off' if ( not defined($default) );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', $default );
+}
+
+sub _getShadingBrightnessSensor {
     my $self    = shift;
     my $default = $self->{defaultarg};
 
@@ -2679,7 +2765,7 @@ BEGIN {
 sub getBrightness {
     my $self = shift;
 
-    return ReadingsVal( $shutters->getShadingBrightnessSensor,
+    return ReadingsVal( $shutters->_getShadingBrightnessSensor,
         $shutters->getShadingBrightnessReading, 0 );
 }
 
@@ -2916,14 +3002,12 @@ sub getMonitoredDevs {
 
 sub getOutTemp {
     my $self = shift;
-    my $name = $self->{name};
 
     return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempReading, 100 );
 }
 
 sub getResidentsStatus {
     my $self = shift;
-    my $name = $self->{name};
 
     return ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
         'none' );
@@ -2931,7 +3015,6 @@ sub getResidentsStatus {
 
 sub getResidentsLastStatus {
     my $self = shift;
-    my $name = $self->{name};
 
     return ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
 }
@@ -2941,6 +3024,34 @@ sub getSelfDefense {
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'selfDefense', 'none' );
+}
+
+sub getAzimuth {
+    my $self = shift;
+    my $name = $self->{name};
+    my $hash = $defs{$name};
+
+    
+    
+    ReadingsVal( $ascDev->_getTwilightDevice, , -1 );
+    
+    
+    
+    return 
+}
+
+sub getElevation {
+    my $self = shift;
+    my $name = $self->{name};
+    my $hash = $defs{$name};
+
+    
+    
+    
+    ReadingsVal( $ascDev->_getTwilightDevice, , -1 );
+    
+    
+    return 
 }
 
 ## Subklasse Attr ##
@@ -2982,6 +3093,13 @@ sub getBrightnessMaxVal {
 
     $default = 20000 if ( not defined($default) );
     return AttrVal( $name, 'ASC_brightnessMaxVal', $default );
+}
+
+sub _getTwilightDevice {
+    my $self    = shift;
+    my $name    = $self->{name};
+
+    return AttrVal( $name, 'ASC_twilightDevice', 'none' );
 }
 
 sub getAutoAstroModeEvening {
