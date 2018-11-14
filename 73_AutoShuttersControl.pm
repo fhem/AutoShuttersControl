@@ -213,7 +213,6 @@ my %posSetCmds = (
     tahoma     => 'dim',
     KLF200Node => 'pct',
     DUOFERN    => 'position',
-    UNIRoll    => 'pos',
 );
 
 my $shutters = new ASC_Shutters();
