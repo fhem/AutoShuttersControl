@@ -38,7 +38,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.4";
+my $version = "0.2.0.5";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -675,7 +675,8 @@ sub ShuttersDeviceScan($) {
         $shutters->setNoOffset(0);
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
     }
-    $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
+#     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
+    $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
 
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
         $hash->{monitoredDevs} =
