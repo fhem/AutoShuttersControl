@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev22";
+my $version = "0.2.1dev25";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -64,7 +64,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_brightnessMaxVal "
       . "ASC_autoShuttersControlMorning:on,off "
       . "ASC_autoShuttersControlEvening:on,off "
-      . "ASC_autoShuttersControl_Shading:on,off "
+      . "ASC_autoShuttersControlShading:on,off "
       . "ASC_autoShuttersControlComfort:on,off "
       . "ASC_residentsDevice "
       . "ASC_residentsDeviceReading "
@@ -165,8 +165,8 @@ my %userAttrList = (
     'ASC_Time_Down_Late'               => '22:30',
     'ASC_WindowRec'                    => 'none',
     'ASC_Ventilate_Window_Open:on,off' => 'on',
-    'ASC_lock-out:soft,hard'           => 'soft',
-    'ASC_lock-outCmd:inhibit,blocked'  => 'none',
+    'ASC_LockOut:soft,hard,off'           => 'off',
+    'ASC_LockOut_Cmd:inhibit,blocked'  => 'none',
 
     'ASC_Shading_Direction'            => 178,
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
@@ -667,6 +667,10 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.1.89
         delFromDevAttrList( $_, 'ASC_Pos_Cmd' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.93
+        delFromDevAttrList( $_, 'ASC_lock-out:soft,hard' )
+          ;    # temporär muss später gelöscht werden ab Version 0.2.1
+        delFromDevAttrList( $_, 'ASC_lock-outCmd:inhibit,blocked' )
+          ;    # temporär muss später gelöscht werden ab Version 0.2.1
 
         CommandDeleteReading( undef,
             $_ . ' .AutoShuttersControl_InternalTimerFuncHash' )
@@ -1251,55 +1255,85 @@ sub EventProcessingShadingBrightness($@) {
     
     if ( $events =~ m#$reading:\s(\d+)# ) {
         ShadingProcessing($hash,$shuttersDev,$ascDev->getAzimuth,$ascDev->getElevation,$1,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
-            if ( $shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus );
+            if ( $shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus and IsDay( $hash, $shuttersDev ) );
     }
 }
 
 sub EventProcessingTwilightDevice($@) {
     my ( $hash, $device, $events ) = @_;
-    my $name    = $device;
-    my ($azimuth,$elevation, $outTemp, $brightness);
 
-# Twilight
-# azimuth = azimuth = Sonnenwinkel
-# elevation = elevation = Sonnenhöhe
+#     Twilight
+#     azimuth = azimuth = Sonnenwinkel
+#     elevation = elevation = Sonnenhöhe
 # 
-# Astro
-# SunAz = azimuth = Sonnenwinkel
-# SunAlt = evaluation = Sonnenhöhe
-    
-    if ( $events =~ m#([a-zA-Z]+):\s(\d+.\d+)# ) {
-        $azimuth    = $2 if ( $1 eq 'azimuth' );
-        $azimuth    = $2 if ( $1 eq 'SunAz' );
-        $elevation  = $2 if ( $1 eq 'evaluation' );
-        $elevation  = $2 if ( $1 eq 'SunAlt' );
-    }
+#     Astro
+#     SunAz = azimuth = Sonnenwinkel
+#     SunAlt = evaluation = Sonnenhöhe
+    my $name    = $device;
+    Log3( $name, 1,
+        "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Vor dem IF. EVENT ist: " . $events);
+        
+        
+        
+    if ( $events =~ m#(azimuth|evaluation|SunAz|SunAlt):\s(\d+.\d+)# ) {
+        Log3( $name, 1,
+        "AutoShuttersControl ($name) - EventProcessingTwilightDevice - gleich nach dem IF / Wert1 ist: " . $1 . " Wert2 ist: " . $2);
 
-    $azimuth    = $ascDev->getAzimuth if (not defined($azimuth) and not $azimuth );
-    $elevation  = $ascDev->getElevation if (not defined($elevation) and not $elevation );
-    
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
-        $shutters->setShuttersDev($shuttersDev);
-        ShadingProcessing($hash,$shuttersDev,$azimuth,$elevation,$shutters->getBrightness,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
-            if ( $shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus );
+        Log3( $name, 1,
+    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - gleich nach dem ZWEITEN IF");
+        my ($azimuth,$elevation, $outTemp, $brightness);
+        
+        $azimuth    = $2 if ( $1 eq 'azimuth' or $1 eq 'SunAz' );
+        $elevation  = $2 if ( $1 eq 'evaluation' or $1 eq 'SunAlt' );
+
+        $azimuth    = $ascDev->getAzimuth if (not defined($azimuth) and not $azimuth );
+        $elevation  = $ascDev->getElevation if (not defined($elevation) and not $elevation );
+        
+        Log3( $name, 1,
+    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Azimuth: " . $azimuth . ", Elevation: " . $elevation );
+        
+        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+            $shutters->setShuttersDev($shuttersDev);
+            
+            Log3( $name, 1,
+    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Shutters: " . $shuttersDev . ", Ist Tag: " . ( IsDay( $hash, $shuttersDev ? 'yes' : 'no') ) );
+            
+            
+            
+            ShadingProcessing($hash,$shuttersDev,$azimuth,$elevation,$shutters->getBrightness,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
+                if ( ($shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus) and IsDay( $hash, $shuttersDev ) );
+        }
     }
 }
 
 sub ShadingProcessing($@) {
     my ($hash,$shuttersDev,$azimuth,$elevation,$brightness,$outTemp,$shuttersDirection,$shuttersShadingAngleLeft,$shuttersShadingAngleRight) = @_;
     my $name = $hash->{NAME};
-    Log3( $name, 3,
+    
+    Log3( $name, 1,
 "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev
             );
 
-#     ShuttersDev
-#     Aussentemperatur
-#     azimuth
-#     elevation
-#     Himmelsrichtung des Fensters
-#     Eintrittswinkel
-#     Ausstrittswinkel
-#     Brightness
+    return
+    unless ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
+            
+            
+#             brightness -1
+#             outTemp -100
+#             azimuth -1
+#             elevation -1
+            
+            
+            
+            
+
+            Log3( $name, 1,
+"AutoShuttersControl ($name) - Shading Processing, Variablen - Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness
+ . " Aussentemp: " . $outTemp . " Rollladenausrichtung: " . $shuttersDirection . " Eintritswinkel Links: " . $shuttersShadingAngleLeft . " Ausstrittswinkel Rechts: " . $shuttersShadingAngleRight
+            );
+            
+            
+
 }
 
 sub EventProcessingPartyMode($) {
@@ -1363,6 +1397,12 @@ sub ShuttersCommandSet($$$) {
     my $name = $hash->{NAME};
 
     $shutters->setShuttersDev($shuttersDev);
+    
+    my $queryShuttersPosValue = (
+          $shutters->getShuttersPosCmdValueNegate
+        ? $shutters->getStatus > $posValue
+        : $shutters->getStatus < $posValue
+    );
 
     if (
         ( $shutters->getPartyMode eq 'on' and $ascDev->getPartyMode eq 'on' )
@@ -1375,6 +1415,7 @@ sub ShuttersCommandSet($$$) {
             and (  $shutters->getLockOut eq 'soft'
                 or $shutters->getLockOut eq 'hard' )
             and $ascDev->getLockOut eq 'on'
+            and not $queryShuttersPosValue
         )
         or (    $shutters->getAntiFreeze eq 'on'
             and $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
@@ -1518,14 +1559,15 @@ sub RenewSunRiseSetShuttersTimer($) {
 sub SetHardewareBlockForShutters($$) {
     my ( $hash, $cmd ) = @_;
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
-        if (    AttrVal( $_, 'ASC_lock-out', 'soft' ) eq 'hard'
-            and AttrVal( $_, 'ASC_lock-outCmd', 'none' ) ne 'none' )
+        $shutters->setShuttersDev($_);
+        if (    $shutters->getLockOut eq 'hard'
+            and $shutters->getLockOutCmd ne 'none' )
         {
             CommandSet( undef, $_ . ' inhibit ' . $cmd )
-              if ( AttrVal( $_, 'ASC_lock-outCmd', 'none' ) eq 'inhibit' );
+              if ( $shutters->getLockOutCmd eq 'inhibit' );
             CommandSet( undef,
                 $_ . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
-              if ( AttrVal( $_, 'ASC_lock-outCmd', 'none' ) eq 'blocked' );
+              if ( $shutters->getLockOutCmd eq 'blocked' );
         }
     }
 }
@@ -1659,8 +1701,8 @@ sub CreateNewNotifyDev($) {
         $name, 'ASC_rainSensorDevice' )
       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
-        $name, 'ASC_rainSensorDevice' )
-      if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+        $name, 'ASC_twilightDevice' )
+      if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) ne 'none' );
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
 }
 
@@ -2654,7 +2696,13 @@ sub getModeDown {
 sub getLockOut {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_lock-out', 'soft' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_LockOut', 'off' );
+}
+
+sub getLockOutCmd {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_LockOut_Cmd', 'none' );
 }
 
 sub getAntiFreeze {
@@ -2770,7 +2818,7 @@ sub getBrightness {
     my $self = shift;
 
     return ReadingsVal( $shutters->_getShadingBrightnessSensor,
-        $shutters->getShadingBrightnessReading, 0 );
+        $shutters->getShadingBrightnessReading, -1 );
 }
 
 sub getStatus {
@@ -3007,7 +3055,7 @@ sub getMonitoredDevs {
 sub getOutTemp {
     my $self = shift;
 
-    return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempReading, 100 );
+    return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempReading, -100 );
 }
 
 sub getResidentsStatus {
@@ -3032,30 +3080,22 @@ sub getSelfDefense {
 
 sub getAzimuth {
     my $self = shift;
-    my $name = $self->{name};
-    my $hash = $defs{$name};
+    my $azimuth;
+    
+    $azimuth = ReadingsVal( $ascDev->_getTwilightDevice, 'azimuth', -1 ) if ( $defs{$ascDev->_getTwilightDevice}->{TYPE} eq 'Twilight' );
+    $azimuth = ReadingsVal( $ascDev->_getTwilightDevice, 'SunAz', -1 ) if ( $defs{$ascDev->_getTwilightDevice}->{TYPE} eq 'Astro' );
 
-    
-    
-    ReadingsVal( $ascDev->_getTwilightDevice, , -1 );
-    
-    
-    
-    return 
+    return $azimuth;
 }
 
 sub getElevation {
     my $self = shift;
-    my $name = $self->{name};
-    my $hash = $defs{$name};
+    my $elevation;
+    
+    $elevation = ReadingsVal( $ascDev->_getTwilightDevice, 'elevation', -1 ) if ( $defs{$ascDev->_getTwilightDevice}->{TYPE} eq 'Twilight' );
+    $elevation = ReadingsVal( $ascDev->_getTwilightDevice, 'SunAlt', -1 ) if ( $defs{$ascDev->_getTwilightDevice}->{TYPE} eq 'Astro' );
 
-    
-    
-    
-    ReadingsVal( $ascDev->_getTwilightDevice, , -1 );
-    
-    
-    return 
+    return $elevation;
 }
 
 ## Subklasse Attr ##
@@ -3364,8 +3404,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Ventilate_Window_Open - drive to airing position if the window is tilted or opened and actual position is below airing position</li>
       <li>ASC_WindowRec - name of the window sensor mounted to window</li>
       <li>ASC_WindowRec_subType - type of the used window sensor: twostate (optical oder magnetic) or threestate (rotating handle sensor)</li>
-      <li>ASC_lock-out - soft/hard sets the lock out mode. With global activated lock out mode (set ASC-Device lockOut soft) and window sensor open, the shutter stays up. This is true only, if commands are given by ASC module. Is global set to hard, the shutter is blocked by hardware if possible. In this case a locally mounted switch can't be used either.</li>
-      <li>ASC_lock-outCmd - inhibit/blocked set command for the shutter-device for hardware interlock. Possible if "ASC_lock-out" is set to hard</li>
+      <li>ASC_LockOut - soft/hard/off sets the lock out mode. With global activated lock out mode (set ASC-Device lockOut soft) and window sensor open, the shutter stays up. This is true only, if commands are given by ASC module. Is global set to hard, the shutter is blocked by hardware if possible. In this case a locally mounted switch can't be used either.</li>
+      <li>ASC_LockOut_Cmd - inhibit/blocked set command for the shutter-device for hardware interlock. Possible if "ASC_LockOut" is set to hard</li>
       <li>ASC_Self_Defense_Exclude - on/off to exclude this shutter from active Self Defense. Shutter will not be closed if window is open and residents are absent.</li>
       <li>ASC_Shading_Brightness_Sensor - Sensor device used for brightness. ATTENTION! Is used also for ASC_Down - brightness</li>
       <li>ASC_BrightnessMinVal - minimum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
@@ -3412,7 +3452,7 @@ sub getRainSensorShuttersClosedPos {
       <li>..._lastPosValue - letzte Position des Rollladen</li>
       <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl, welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li>partyMode - on/off - aktiviert den globalen Partymodus: Alle Rollladen Devices, welche das Attribut ASC_Partymode auf on gestellt haben, werden nicht mehr gesteuert. Der letzte Schaltbefehl, der durch ein Fensterevent oder Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
-      <li>lockOut - on/off - f&uuml;r das Aktivieren des Aussperrschutzes gem&auml;&szlig; des entsprechenden Attributs ASC_lock-out im jeweiligen Rollladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rollladendevices)</li>
+      <li>lockOut - on/off - f&uuml;r das Aktivieren des Aussperrschutzes gem&auml;&szlig; des entsprechenden Attributs ASC_LockOut im jeweiligen Rollladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rollladendevices)</li>
       <li>room_... - Auflistung aller Rolll&auml;den, welche in den jeweiligen R&auml;men gefunden wurde,Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices: active,enabled,disabled oder Info zur letzten Fahrt</li>
       <li>sunriseTimeWeHoliday - on/off - wird das Rollladen Device Attribut  ASC_Time_Up_WE_Holiday beachtet oder nicht</li>
@@ -3503,8 +3543,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
       <li>ASC_WindowRec - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist</li>
       <li>ASC_WindowRec_subType - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt)</li>
-      <li>ASC_lock-out - soft/hard - stellt entsprechend den Aussperrschutz ein. Bei global aktivem Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rollladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rollladen hardwareseitig zu blockieren. Dann ist auch ein Fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
-      <li>ASC_lock-outCmd - inhibit/blocked - set Befehl f&uuml;r das Rollladen-Device zum Hardware sperren. Dieser Befehl wird gesetzt werden, wenn man "ASC_lock-out" auf hard setzt</li>
+      <li>ASC_LockOut - soft/hard/off - stellt entsprechend den Aussperrschutz ein. Bei global aktivem Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rollladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rollladen hardwareseitig zu blockieren. Dann ist auch ein Fahren &uuml;ber die Taster nicht mehr m&ouml;glich.</li>
+      <li>ASC_LockOut_Cmd - inhibit/blocked - set Befehl f&uuml;r das Rollladen-Device zum Hardware sperren. Dieser Befehl wird gesetzt werden, wenn man "ASC_LockOut" auf hard setzt</li>
       <li>ASC_Self_Defense_Exclude - on/off - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist.</li>
       <li>ASC_Shading_Brightness_Sensor - Sensor Device, welches f&uuml;r die Lichtwerte verwendet wird. ACHTUNG! Findet auch Verwendung bei ASC_Down - brightness</li>
       <li>ASC_BrightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
