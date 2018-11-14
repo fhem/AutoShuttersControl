@@ -81,6 +81,7 @@ sub AutoShuttersControl_Initialize($) {
       . "ASC_timeUpHolidayReading "
       . "ASC_shuttersDriveOffset "
       . "ASC_twilightDevice "
+      . "ASC_expert "
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
 
@@ -539,7 +540,7 @@ sub Set($$@) {
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " createNewNotifyDev:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-            and AttrVal( $name, 'verbose', 3 ) > 3 );
+            and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -567,7 +568,7 @@ sub Get($$@) {
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " showNotifyDevsInformations:noArg"
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-            and AttrVal( $name, 'verbose', 3 ) > 3 );
+            and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
