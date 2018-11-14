@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev25";
+my $version = "0.2.1dev26";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -240,12 +240,13 @@ sub Define($$) {
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
     $ascDev->setName($name);
 
-    readingsSingleUpdate(
-        $hash,
+    readingsBeginUpdate($hash);
+    readingsBulkUpdate($hash,
         "state",
-"please set attribute ASC with value 1 or 2 in all auto controlled shutter devices and then execute 'set DEVICENAME scanForShutters'",
-        1
-    );
+"please set attribute ASC with value 1 or 2 in all auto controlled shutter devices and then execute 'set DEVICENAME scanForShutters'");
+    readingsBulkUpdate($hash, 'userAttrList', 'none', 0);
+    readingsEndUpdate($hash, 1);
+
     CommandAttr( undef, $name . ' room ASC' )
       if ( AttrVal( $name, 'room', 'none' ) eq 'none' );
     CommandAttr( undef, $name . ' icon fts_shutter_automatic' )
@@ -362,16 +363,6 @@ sub Notify($$) {
           if ( $ascDev->getSunriseTimeWeHoliday eq 'none' );
         readingsSingleUpdate( $hash, 'selfDefense', 'off', 0 )
           if ( $ascDev->getSelfDefense eq 'none' );
-        CommandDeleteReading( undef, $name . ' selfDefence' )
-          if ( ReadingsVal( $name, 'selfDefence', 'none' ) ne 'none' )
-          ;    # temporär kann später entfernt werden.
-        if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
-            CommandAttr( undef,
-                    $name
-                  . ' ASC_twilightDevice '
-                  . ( devspec2array('TYPE=(Astro|Twilight)') )[0] )
-              if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) eq 'none' );
-        }
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
         ShuttersDeviceScan($hash)
@@ -390,6 +381,9 @@ sub Notify($$) {
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
                 InternalTimer( gettimeofday() + 3,
                     'AutoShuttersControl::RenewSunRiseSetShuttersTimer',
+                    $hash );
+                InternalTimer( gettimeofday() + 5,
+                    'AutoShuttersControl::AutoSearchTwilightDev',
                     $hash );
             }
         }
@@ -606,29 +600,6 @@ sub ShuttersDeviceScan($) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
-        delFromDevAttrList( $_, 'ASC_Up:time,astro' )
-          if (
-            AttrVal( $_, 'userattr', 'none' ) =~ /\sASC_Up:time,astro\sASC_/ )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.80
-        delFromDevAttrList( $_, 'ASC_Down:time,astro' )
-          if (
-            AttrVal( $_, 'userattr', 'none' ) =~ /\sASC_Down:time,astro\sASC_/ )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.80
-        delFromDevAttrList( $_, 'ASC_Mode_Up:absent,always,off' )
-          if ( AttrVal( $_, 'userattr', 'none' ) =~
-            /\sASC_Mode_Up:absent,always,off\sASC_/ )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-        delFromDevAttrList( $_, 'ASC_Mode_Down:absent,always,off' )
-          if ( AttrVal( $_, 'userattr', 'none' ) =~
-            /\sASC_Mode_Down:absent,always,off\sASC_/ )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-        delFromDevAttrList( $_, 'ASC_Self_Defence_Exclude:on,off' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.80
-        delFromDevAttrList( $_, 'ASC_Offset_Minutes_Morning' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-        delFromDevAttrList( $_, 'ASC_Offset_Minutes_Evening' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-
         delFromDevAttrList( $_, 'ASC_Direction' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.89
         delFromDevAttrList( $_,
@@ -671,15 +642,6 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.2.1
         delFromDevAttrList( $_, 'ASC_lock-outCmd:inhibit,blocked' )
           ;    # temporär muss später gelöscht werden ab Version 0.2.1
-
-        CommandDeleteReading( undef,
-            $_ . ' .AutoShuttersControl_InternalTimerFuncHash' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-        CommandDeleteReading( undef,
-            $_ . ' .AutoShuttersControl_LastPosition' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.81
-        CommandDeleteReading( undef, $_ . ' .AutoShuttersControl_DelayCmd' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.82
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1269,18 +1231,9 @@ sub EventProcessingTwilightDevice($@) {
 #     Astro
 #     SunAz = azimuth = Sonnenwinkel
 #     SunAlt = evaluation = Sonnenhöhe
-    my $name    = $device;
-    Log3( $name, 1,
-        "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Vor dem IF. EVENT ist: " . $events);
-        
-        
-        
-    if ( $events =~ m#(azimuth|evaluation|SunAz|SunAlt):\s(\d+.\d+)# ) {
-        Log3( $name, 1,
-        "AutoShuttersControl ($name) - EventProcessingTwilightDevice - gleich nach dem IF / Wert1 ist: " . $1 . " Wert2 ist: " . $2);
 
-        Log3( $name, 1,
-    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - gleich nach dem ZWEITEN IF");
+    if ( $events =~ m#(azimuth|evaluation|SunAz|SunAlt):\s(\d+.\d+)# ) {
+        my $name    = $device;
         my ($azimuth,$elevation, $outTemp, $brightness);
         
         $azimuth    = $2 if ( $1 eq 'azimuth' or $1 eq 'SunAz' );
@@ -1288,18 +1241,9 @@ sub EventProcessingTwilightDevice($@) {
 
         $azimuth    = $ascDev->getAzimuth if (not defined($azimuth) and not $azimuth );
         $elevation  = $ascDev->getElevation if (not defined($elevation) and not $elevation );
-        
-        Log3( $name, 1,
-    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Azimuth: " . $azimuth . ", Elevation: " . $elevation );
-        
+
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            
-            Log3( $name, 1,
-    "AutoShuttersControl ($name) - EventProcessingTwilightDevice - Shutters: " . $shuttersDev . ", Ist Tag: " . ( IsDay( $hash, $shuttersDev ? 'yes' : 'no') ) );
-            
-            
-            
             ShadingProcessing($hash,$shuttersDev,$azimuth,$elevation,$shutters->getBrightness,$ascDev->getOutTemp,$shutters->getDirection,$shutters->getShadingAngleLeft,$shutters->getShadingAngleRight)
                 if ( ($shutters->getShadingMode eq 'on' or $shutters->getShadingMode eq $ascDev->getResidentsStatus) and IsDay( $hash, $shuttersDev ) );
         }
@@ -1491,32 +1435,6 @@ sub CreateSunRiseSetShuttersTimer($$) {
         )
     );
     readingsEndUpdate( $hash, 1 );
-
-    CommandDeleteReading( undef,
-        $name . ' ' . $shuttersDev . '_nextAstroEvent' )
-      if ( ReadingsVal( $name, $shuttersDev . '_nextAstroEvent', 'none' ) ne
-        'none' );    # temporär
-    CommandDeleteReading( undef,
-        $shuttersDev . ' AutoShuttersControl_Time_Sunrise' )
-      if (
-        ReadingsVal( $shuttersDev, 'AutoShuttersControl_Time_Sunrise', 'none' )
-        ne 'none' );    # temporär
-    CommandDeleteReading( undef,
-        $shuttersDev . ' AutoShuttersControl_Time_Sunset' )
-      if (
-        ReadingsVal( $shuttersDev, 'AutoShuttersControl_Time_Sunset', 'none' )
-        ne 'none' );    # temporär
-    CommandDeleteReading( undef,
-        $shuttersDev . ' AutoShuttersControl_Time_DriveDown' )
-      if (
-        ReadingsVal( $shuttersDev, 'AutoShuttersControl_Time_DriveDown',
-            'none' ) ne 'none'
-      );                # temporär
-    CommandDeleteReading( undef,
-        $shuttersDev . ' AutoShuttersControl_Time_DriveUp' )
-      if (
-        ReadingsVal( $shuttersDev, 'AutoShuttersControl_Time_DriveUp', 'none' )
-        ne 'none' );    # temporär
 
     RemoveInternalTimer( $shutters->getInTimerFuncHash )
       if ( defined( $shutters->getInTimerFuncHash ) );
@@ -1841,6 +1759,19 @@ sub GetMonitoredDevs($) {
 #################################
 ## my little helper
 #################################
+
+sub AutoSearchTwilightDev($) {
+    my $hash = shift;
+    my $name = $hash->{NAME};
+    
+    if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
+        CommandAttr( undef,
+                $name
+                . ' ASC_twilightDevice '
+                . ( devspec2array('TYPE=(Astro|Twilight)') )[0] )
+            if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) eq 'none' );
+    }
+}
 
 # Hilfsfunktion welche meinen ReadingString zum finden der getriggerten Devices und der Zurdnung was das Device überhaupt ist und zu welchen Rolladen es gehört aus liest und das Device extraiert
 sub ExtractNotifyDevFromEvent($$$) {
