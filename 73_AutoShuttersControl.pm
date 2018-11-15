@@ -194,7 +194,7 @@ my %userAttrList = (
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' =>
       [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'            => 'none',
-    'ASC_Antifreeze:off,on'           => 'off',
+    'ASC_Antifreeze:off,soft,hard'    => 'off',
     'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
@@ -640,11 +640,17 @@ sub ShuttersDeviceScan($) {
         delFromDevAttrList( $_, 'ASC_Pos_Cmd' )
           ;    # temporär muss später gelöscht werden ab Version 0.1.93
         delFromDevAttrList( $_, 'ASC_lock-out:soft,hard' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.1
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
         delFromDevAttrList( $_, 'ASC_lock-outCmd:inhibit,blocked' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.1
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
         delFromDevAttrList( $_, 'ASC_Pos_after_ComfortOpen:0,10,20,30,40,50,60,70,80,90,100' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.1
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
+
+        delFromDevAttrList( $_, 'ASC_Antifreeze:off,on' )
+          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'soft'
+            and AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'hard'
+             )
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1782,15 +1788,6 @@ sub GetMonitoredDevs($) {
 ## my little helper
 #################################
 
-sub FreezeStatus($) {
-    my $shuttersDev = shift;
-    
-    return
-    ( $shutters->getAntiFreeze eq 'on' and
-      $ascDev->getOutTemp <= $ascDev->getFreezeTemp ?
-        1 : 0 );
-}
-
 sub AutoSearchTwilightDev($) {
     my $hash = shift;
     my $name = $hash->{NAME};
@@ -2253,11 +2250,20 @@ sub setDriveCmd {
     my $offSet = 0;
     
     ### antifreeze Routine
-    if ( AutoShuttersControl::FreezeStatus($self->{shuttersDev})
+    if ( ( $shutters->getFreezeStatus
+        or $shutters->getFreezeStatus == 2)
       and $posValue == $shutters->getClosedPos )
     {
-        $posValue = $shutters->getAntiFreezePos;
-        $shutters->setLastDrive($shutters->getLastDrive . ' - antifreeze mode');
+        if ( $shutters->getFreezeStatus == 2 ) {
+            $posValue = $shutters->getStatus;
+            $shutters->setLastDrive('no drive - antifreeze defense');
+            $shutters->setLastDriveReading;
+            $ascDev->setStateReading;
+        }
+        else {
+            $posValue = $shutters->getAntiFreezePos;
+            $shutters->setLastDrive($shutters->getLastDrive . ' - antifreeze mode');
+        }
     }
     
     my %h      = (
@@ -2364,6 +2370,22 @@ sub setInTimerFuncHash {
     $self->{ $self->{shuttersDev} }{inTimerFuncHash} = $inTimerFuncHash
       if ( defined($inTimerFuncHash) );
     return 0;
+}
+
+sub getFreezeStatus {
+    my $self = shift;
+
+    if ( $shutters->getAntiFreeze eq 'soft' and
+      $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
+    {
+        return 1;
+    }
+    elsif ( $shutters->getAntiFreeze eq 'hard' and
+      $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
+    {
+        return 2;
+    }
+    else { return 0; }
 }
 
 sub getShuttersPosCmdValueNegate {
