@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev30";
+my $version = "0.2.0.6";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -168,25 +168,25 @@ my %userAttrList = (
     'ASC_LockOut:soft,hard,off'           => 'off',
     'ASC_LockOut_Cmd:inhibit,blocked'  => 'none',
 
-    'ASC_Shading_Direction'            => 178,
-    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
-    'ASC_Shading_Mode:on,off,home,absent'      => 'off',
-    'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-      => 85,
-    'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-      => 85,
-    'ASC_Shading_Brightness_Sensor'  => 'none',
-    'ASC_Shading_Brightness_Reading' => 'brightness',
-
-    #     'ASC_Shading_StateChange_Sunny'                    => '6000',
-    #     'ASC_Shading_StateChange_Cloudy'                   => '4000',
-    #     'ASC_Shading_WaitingPeriod'                        => 20,
-    #     'ASC_Shading_Min_Elevation'                        => 'none',
-    #     'ASC_Shading_Min_OutsideTemperature'               => 18,
-    #     'ASC_Shading_BlockingTime_After_Manual'            => 20,
-    #     'ASC_Shading_BlockingTime_Twilight'                => 45,
-    #     'ASC_Shading_Fast_Open:on,off'                     => 'none',
-    #     'ASC_Shading_Fast_Close:on,off'                    => 'none',
+#     'ASC_Shading_Direction'            => 178,
+#     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
+#     'ASC_Shading_Mode:on,off,home,absent'      => 'off',
+#     'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+#       => 85,
+#     'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+#       => 85,
+#     'ASC_Shading_Brightness_Sensor'  => 'none',
+#     'ASC_Shading_Brightness_Reading' => 'brightness',
+# 
+#     'ASC_Shading_StateChange_Sunny'                    => '6000',
+#     'ASC_Shading_StateChange_Cloudy'                   => '4000',
+#     'ASC_Shading_WaitingPeriod'                        => 20,
+#     'ASC_Shading_Min_Elevation'                        => 'none',
+#     'ASC_Shading_Min_OutsideTemperature'               => 18,
+#     'ASC_Shading_BlockingTime_After_Manual'            => 20,
+#     'ASC_Shading_BlockingTime_Twilight'                => 45,
+#     'ASC_Shading_Fast_Open:on,off'                     => 'none',
+#     'ASC_Shading_Fast_Close:on,off'                    => 'none',
     'ASC_Drive_Offset'                                 => -1,
     'ASC_WindowRec_subType:twostate,threestate'        => 'twostate',
     'ASC_ShuttersPlace:window,terrace'                 => 'window',
@@ -334,7 +334,7 @@ sub Notify($$) {
     my $events  = deviceEvents( $dev, 1 );
     return if ( !$events );
 
-    Log3( $name, 5,
+    Log3( $name, 4,
             "AutoShuttersControl ($name) - Devname: "
           . $devname
           . " Name: "
@@ -1063,6 +1063,8 @@ sub EventProcessingResidents($@) {
                 and $shutters->getRoommatesStatus eq 'none'
                 and (  $shutters->getModeDown eq 'home'
                     or $shutters->getModeDown eq 'always' )
+                and (  $ascDev->getResidentsLastStatus ne 'asleep'
+                    or $ascDev->getResidentsLastStatus ne 'awoken' )
               )
             {
                 $shutters->setLastDrive('residents home');
@@ -1282,27 +1284,25 @@ sub ShadingProcessing($@) {
     my ($hash,$shuttersDev,$azimuth,$elevation,$brightness,$outTemp,$shuttersDirection,$shuttersShadingAngleLeft,$shuttersShadingAngleRight) = @_;
     my $name = $hash->{NAME};
     
-    Log3( $name, 1,
-"AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
-            );
-
-    return
-    if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
-            
-            
-#             brightness -1
-#             outTemp -100
-#             azimuth -1
-#             elevation -1
-            
-            
-            
-            
-
-            Log3( $name, 1,
-"AutoShuttersControl ($name) - Shading Processing hinter dem return");
-            
-            
+#     Log3( $name, 1,
+# "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
+#             );
+# 
+#     return
+#     if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
+#             
+#             
+# #             brightness -1
+# #             outTemp -100
+# #             azimuth -1
+# #             elevation -1
+#             
+#             
+#             
+#             
+# 
+#             Log3( $name, 1,
+# "AutoShuttersControl ($name) - Shading Processing hinter dem return");
 
 }
 
@@ -2250,17 +2250,14 @@ sub setDriveCmd {
     my $offSet = 0;
     
     ### antifreeze Routine
-    if ( ( $shutters->getFreezeStatus
-        or $shutters->getFreezeStatus == 2)
-      and $posValue == $shutters->getClosedPos )
-    {
-        if ( $shutters->getFreezeStatus == 2 ) {
+    if ( $shutters->getFreezeStatus > 0 ) {
+        if ( $shutters->getFreezeStatus != 1 ) {
             $posValue = $shutters->getStatus;
             $shutters->setLastDrive('no drive - antifreeze defense');
             $shutters->setLastDriveReading;
             $ascDev->setStateReading;
         }
-        else {
+        elsif ( $posValue == $shutters->getClosedPos ) {
             $posValue = $shutters->getAntiFreezePos;
             $shutters->setLastDrive($shutters->getLastDrive . ' - antifreeze mode');
         }
@@ -2375,17 +2372,22 @@ sub setInTimerFuncHash {
 sub getFreezeStatus {
     use POSIX qw(strftime);
     my $self = shift;
-    my $daytime = strftime("%p", localtime());
+    my $daytime = strftime("%P", localtime());
 
-    if ( $shutters->getAntiFreeze eq 'soft' and
-      $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
-    {
-        return 1;
-    }
-    elsif ( $shutters->getAntiFreeze eq 'hard' and
-      $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
-    {
-        return 2;
+    if ( $shutters->getAntiFreeze ne 'off'
+     and $ascDev->getOutTemp <= $ascDev->getFreezeTemp ) {
+     
+        if ( $shutters->getAntiFreeze eq 'soft') {
+            return 1;
+        }
+        elsif ( $shutters->getAntiFreeze eq $daytime
+             or $shutters->getAntiFreeze eq $daytime )
+        {
+            return 2;
+        }
+        elsif ( $shutters->getAntiFreeze eq 'hard' ) {
+            return 3;
+        }
     }
     else { return 0; }
 }
@@ -3379,7 +3381,7 @@ sub getRainSensorShuttersClosedPos {
     In the shutter devices
     <ul>
       <li>AutoShuttersControl - 0/1/2 1 = "Inverse or shutter e.g.: shutter upn 0,shutter down 100 and the command to travel is position",2 = "Homematic Style e.g.: shutter up 100,shutter down 0 and the command to travel is pct</li>
-      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft, the shutters drive to the ASC_AntifreezePos and if hard is not drive at all</li>
+      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_AntifreezePos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
       <li>ASC_AntifreezePos - Position to be approached when the move command closes completely, but the frost protection is active</li>
       <li>ASC_AutoAstroModeEvening - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeEvening.</li>
@@ -3519,7 +3521,7 @@ sub getRainSensorShuttersClosedPos {
     In den Rolll&auml;den Devices
     <ul>
       <li>ASC - 0/1/2 1 = "Inverse oder Rollo - Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
-      <li>ASC_Antifreeze - soft/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_AntifreezePos und wenn hard wird gar nicht gefahren</li>
+      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_AntifreezePos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren</li>
       <li>ASC_AntifreezePos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist</li>
       <li>ASC_AutoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
