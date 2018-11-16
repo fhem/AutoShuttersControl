@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.6";
+my $version = "0.2.1dev30";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -168,15 +168,15 @@ my %userAttrList = (
     'ASC_LockOut:soft,hard,off'           => 'off',
     'ASC_LockOut_Cmd:inhibit,blocked'  => 'none',
 
-#     'ASC_Shading_Direction'            => 178,
-#     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
-#     'ASC_Shading_Mode:on,off,home,absent'      => 'off',
-#     'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
-#     'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
-#     'ASC_Shading_Brightness_Sensor'  => 'none',
-#     'ASC_Shading_Brightness_Reading' => 'brightness',
+    'ASC_Shading_Direction'            => 178,
+    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
+    'ASC_Shading_Mode:on,off,home,absent'      => 'off',
+    'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
+    'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
+    'ASC_Shading_Brightness_Sensor'  => 'none',
+    'ASC_Shading_Brightness_Reading' => 'brightness',
 
     #     'ASC_Shading_StateChange_Sunny'                    => '6000',
     #     'ASC_Shading_StateChange_Cloudy'                   => '4000',
@@ -194,7 +194,7 @@ my %userAttrList = (
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' =>
       [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'            => 'none',
-    'ASC_Antifreeze:off,soft,hard'    => 'off',
+    'ASC_Antifreeze:off,soft,hard,am,pm'    => 'off',
     'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
@@ -647,8 +647,8 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
 
         delFromDevAttrList( $_, 'ASC_Antifreeze:off,on' )
-          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'soft'
-            and AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'hard'
+          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'on'
+            or AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'off'
              )
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
 
@@ -1282,26 +1282,26 @@ sub ShadingProcessing($@) {
     my ($hash,$shuttersDev,$azimuth,$elevation,$brightness,$outTemp,$shuttersDirection,$shuttersShadingAngleLeft,$shuttersShadingAngleRight) = @_;
     my $name = $hash->{NAME};
     
-#     Log3( $name, 1,
-# "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
-#             );
-# 
-#     return
-#     if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
-#             
-#             
-# #             brightness -1
-# #             outTemp -100
-# #             azimuth -1
-# #             elevation -1
-#             
-#             
-#             
-#             
-# 
-#             Log3( $name, 1,
-# "AutoShuttersControl ($name) - Shading Processing hinter dem return");
-#             
+    Log3( $name, 1,
+"AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
+            );
+
+    return
+    if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
+            
+            
+#             brightness -1
+#             outTemp -100
+#             azimuth -1
+#             elevation -1
+            
+            
+            
+            
+
+            Log3( $name, 1,
+"AutoShuttersControl ($name) - Shading Processing hinter dem return");
+            
             
 
 }
@@ -2373,7 +2373,9 @@ sub setInTimerFuncHash {
 }
 
 sub getFreezeStatus {
+    use POSIX qw(strftime);
     my $self = shift;
+    my $daytime = strftime("%p", localtime());
 
     if ( $shutters->getAntiFreeze eq 'soft' and
       $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
