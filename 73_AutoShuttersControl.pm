@@ -194,7 +194,7 @@ my %userAttrList = (
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' =>
       [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'            => 'none',
-    'ASC_Antifreeze:off,soft,hard'    => 'off',
+    'ASC_Antifreeze:off,soft,hard,am,pm'    => 'off',
     'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
@@ -647,8 +647,8 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
 
         delFromDevAttrList( $_, 'ASC_Antifreeze:off,on' )
-          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'soft'
-            and AttrVal( $_, 'ASC_Antifreeze', 'on' ) ne 'hard'
+          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'on'
+            or AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'off'
              )
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
 
@@ -2373,7 +2373,9 @@ sub setInTimerFuncHash {
 }
 
 sub getFreezeStatus {
+    use POSIX qw(strftime);
     my $self = shift;
+    my $daytime = strftime("%p", localtime());
 
     if ( $shutters->getAntiFreeze eq 'soft' and
       $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
