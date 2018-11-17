@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.6";
+my $version = "0.2.0.7";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1993,12 +1993,68 @@ sub ShuttersSunrise($$$) {
             }
         }
         elsif ( $shutters->getUp eq 'time' ) {
-            $shuttersSunriseUnixtime =
-              computeAlignTime( '24:00', $shutters->getTimeUpEarly );
+            if ( ( IsWe() or IsWeTomorrow() )
+                and $ascDev->getSunriseTimeWeHoliday eq 'on' )
+            {
+                if ( not IsWeTomorrow() ) {
+                    if (
+                        IsWe()
+                        and int( gettimeofday() / 86400 ) == int(
+                                computeAlignTime(
+                                    '24:00',
+                                    $shutters->getTimeUpWeHoliday
+                                )
+                            ) / 86400
+                        )
+                    {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->getTimeUpWeHoliday
+                            );
+                    }
+                    elsif (
+                        int( gettimeofday() / 86400 ) == int(
+                                computeAlignTime(
+                                    '24:00',
+                                    $shutters->getTimeUpEarly
+                                )
+                            ) / 86400
+                        )
+                    {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->getTimeUpWeHoliday
+                            );
+                    }
+                    else {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->$shutters->getTimeUpEarly
+                            );
+                    }
+                }
+                else {
+                    $shuttersSunriseUnixtime =
+                        computeAlignTime(
+                            '24:00',
+                            $shutters->getTimeUpWeHoliday
+                        );
+                }
+            }
+            else {
+                $shuttersSunriseUnixtime =
+                    computeAlignTime(
+                        '24:00',
+                        $shutters->$shutters->getTimeUpEarly
+                    );
+            }
         }
         elsif ( $shutters->getUp eq 'brightness' ) {
             $shuttersSunriseUnixtime =
-              computeAlignTime( '24:00', $shutters->getTimeUpLate );
+            computeAlignTime( '24:00', $shutters->getTimeUpLate );
         }
         return $shuttersSunriseUnixtime;
     }
