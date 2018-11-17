@@ -853,10 +853,14 @@ sub EventProcessingWindowRec($@) {
         elsif ( $1 eq 'closed'
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
         {
-            $shutters->setLastDrive('window closed');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos )
-              if ( $shutters->getStatus == $shutters->getVentilatePos
-                or $shutters->getStatus == $shutters->getComfortOpenPos );
+            
+            if ( $shutters->getStatus == $shutters->getVentilatePos
+              or $shutters->getStatus == $shutters->getComfortOpenPos )
+            {
+                $shutters->setLastDrive('window closed');
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
+            }
+            
         }
         elsif (
             (
