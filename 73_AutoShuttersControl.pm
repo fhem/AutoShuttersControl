@@ -175,8 +175,8 @@ my %userAttrList = (
 #       => 85,
 #     'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
 #       => 85,
-#     'ASC_Shading_Brightness_Sensor'  => 'none',
-#     'ASC_Shading_Brightness_Reading' => 'brightness',
+    'ASC_Shading_Brightness_Sensor'  => 'none',
+    'ASC_Shading_Brightness_Reading' => 'brightness',
 # 
 #     'ASC_Shading_StateChange_Sunny'                    => '6000',
 #     'ASC_Shading_StateChange_Cloudy'                   => '4000',
@@ -195,7 +195,7 @@ my %userAttrList = (
       [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'            => 'none',
     'ASC_Antifreeze:off,soft,hard,am,pm'    => 'off',
-    'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
+    'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
     'ASC_Roommate_Reading'            => 'state',
@@ -651,6 +651,9 @@ sub ShuttersDeviceScan($) {
             or AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'off'
              )
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
+          
+        delFromDevAttrList( $_, 'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' )
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.7
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
