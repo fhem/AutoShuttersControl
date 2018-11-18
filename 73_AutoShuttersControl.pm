@@ -1580,7 +1580,7 @@ sub SunSetShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (   $shutters->getModeDown eq $homemode
-        or $homemode eq 'none'
+#         or $homemode eq 'none'
         or $shutters->getModeDown eq 'always' )
     {
         $shutters->setLastDrive('night close');
@@ -1601,7 +1601,7 @@ sub SunRiseShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (   $shutters->getModeUp eq $homemode
-        or $homemode eq 'none'
+#         or $homemode eq 'none'
         or $shutters->getModeUp eq 'always' )
     {
         if (
