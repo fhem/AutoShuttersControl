@@ -2039,7 +2039,7 @@ sub ShuttersSunrise($$$) {
                         $shuttersSunriseUnixtime =
                             computeAlignTime(
                                 '24:00',
-                                $shutters->$shutters->getTimeUpEarly
+                                $shutters->getTimeUpEarly
                             );
                     }
                 }
@@ -2055,7 +2055,7 @@ sub ShuttersSunrise($$$) {
                 $shuttersSunriseUnixtime =
                     computeAlignTime(
                         '24:00',
-                        $shutters->$shutters->getTimeUpEarly
+                        $shutters->getTimeUpEarly
                     );
             }
         }
@@ -2610,7 +2610,7 @@ BEGIN {
 sub getAntiFreezePos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_AntifreezePos', 50 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Antifreeze_Pos', 50 );
 }
 
 sub getShuttersPlace {
@@ -3444,8 +3444,8 @@ sub getRainSensorShuttersClosedPos {
     In the shutter devices
     <ul>
       <li>AutoShuttersControl - 0/1/2 1 = "Inverse or shutter e.g.: shutter upn 0,shutter down 100 and the command to travel is position",2 = "Homematic Style e.g.: shutter up 100,shutter down 0 and the command to travel is pct</li>
-      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_AntifreezePos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
-      <li>ASC_AntifreezePos - Position to be approached when the move command closes completely, but the frost protection is active</li>
+      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_Antifreeze_Pos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
+      <li>ASC_Antifreeze_Pos - Position to be approached when the move command closes completely, but the frost protection is active</li>
       <li>ASC_AutoAstroModeEvening - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeEvening.</li>
       <li>ASC_AutoAstroModeMorning - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
@@ -3584,8 +3584,8 @@ sub getRainSensorShuttersClosedPos {
     In den Rolll&auml;den Devices
     <ul>
       <li>ASC - 0/1/2 1 = "Inverse oder Rollo - Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
-      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_AntifreezePos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren</li>
-      <li>ASC_AntifreezePos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist</li>
+      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_Antifreeze_Pos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren</li>
+      <li>ASC_Antifreeze_Pos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist</li>
       <li>ASC_AutoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
       <li>ASC_AutoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
