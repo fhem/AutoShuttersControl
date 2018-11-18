@@ -266,7 +266,7 @@ sub Define($$) {
       if ( $ascDev->getFreezeTemp eq 'none' );
     CommandAttr( undef,
         $name
-          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night close:scene_night'
+          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night.close:scene_night'
     ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
@@ -832,38 +832,47 @@ sub EventProcessingWindowRec($@) {
             : $shutters->getStatus < $shutters->getComfortOpenPos
         );
 
-        if ( $shutters->getDelayCmd ne 'none' )
+        if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
-            if ( $1 eq 'closed' ) {
-                $shutters->setLastDrive('delayed closed');
+#             if ( $1 eq 'closed' ) {
+                $shutters->setLastDrive('delayed drive - window closed');
                 ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getClosedPos );
-            }
-            elsif (
-                (
-                    $1 eq 'tilted'
-                    or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
-                )
-                and $shutters->getVentilateOpen eq 'on'
-                and $queryShuttersPosWinRecTilted
-              )
-            {
-                $shutters->setLastDrive('delayed ventilate open');
-                ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getVentilatePos );
-            }
+                    $shutters->getDelayCmd );
+#             }
+#             elsif (
+#                 (
+#                     $1 eq 'tilted'
+#                     or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
+#                 )
+#                 and $shutters->getVentilateOpen eq 'on'
+#                 and $queryShuttersPosWinRecTilted
+#               )
+#             {
+#                 $shutters->setLastDrive('delayed ventilate open');
+#                 ShuttersCommandSet( $hash, $shuttersDev,
+#                     $shutters->getVentilatePos );
+#             }
         }
         elsif ( $1 eq 'closed'
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
         {
-            
             if ( $shutters->getStatus == $shutters->getVentilatePos
               or $shutters->getStatus == $shutters->getComfortOpenPos )
             {
+                my $homemode = $shutters->getRoommatesStatus;
+                $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
                 $shutters->setLastDrive('window closed');
-                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
+                
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos )
+                    if ( IsDay($hash,$shuttersDev)
+                      and ($homemode ne 'asleep'
+                        or $homemode ne 'gotosleep'
+                        or $homemode eq 'none') );
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos )
+                    if ( not IsDay($hash,$shuttersDev)
+                      or $homemode eq 'asleep'
+                      or $homemode eq 'gotosleep' );
             }
-            
         }
         elsif (
             (
@@ -874,7 +883,7 @@ sub EventProcessingWindowRec($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
-            $shutters->setLastDrive('ventilate open');
+            $shutters->setLastDrive('ventilate - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
         }
@@ -883,7 +892,7 @@ sub EventProcessingWindowRec($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecComfort )
         {
-            $shutters->setLastDrive('comfort open');
+            $shutters->setLastDrive('comfort - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getComfortOpenPos );
         }
