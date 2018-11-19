@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev29";
+my $version = "0.2.1dev30";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -167,7 +167,6 @@ my %userAttrList = (
     'ASC_Ventilate_Window_Open:on,off' => 'on',
     'ASC_LockOut:soft,hard,off'           => 'off',
     'ASC_LockOut_Cmd:inhibit,blocked'  => 'none',
-
     'ASC_Shading_Direction'            => 178,
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
     'ASC_Shading_Mode:on,off,home,absent'      => 'off',
@@ -195,7 +194,7 @@ my %userAttrList = (
       [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'            => 'none',
     'ASC_Antifreeze:off,soft,hard,am,pm'    => 'off',
-    'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
+    'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
     'ASC_Roommate_Reading'            => 'state',
@@ -266,7 +265,7 @@ sub Define($$) {
       if ( $ascDev->getFreezeTemp eq 'none' );
     CommandAttr( undef,
         $name
-          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night close:scene_night'
+          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense.inactive:status_open day.open:scene_day night.close:scene_night'
     ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
@@ -651,6 +650,9 @@ sub ShuttersDeviceScan($) {
             or AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'off'
              )
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
+          
+        delFromDevAttrList( $_, 'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100' )
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.7
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -829,34 +831,47 @@ sub EventProcessingWindowRec($@) {
             : $shutters->getStatus < $shutters->getComfortOpenPos
         );
 
-        if ( $shutters->getDelayCmd ne 'none' )
+        if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
-            if ( $1 eq 'closed' ) {
-                $shutters->setLastDrive('delayed closed');
+#             if ( $1 eq 'closed' ) {
+                $shutters->setLastDrive('delayed drive - window closed');
                 ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getClosedPos );
-            }
-            elsif (
-                (
-                    $1 eq 'tilted'
-                    or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
-                )
-                and $shutters->getVentilateOpen eq 'on'
-                and $queryShuttersPosWinRecTilted
-              )
-            {
-                $shutters->setLastDrive('delayed ventilate open');
-                ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getVentilatePos );
-            }
+                    $shutters->getDelayCmd );
+#             }
+#             elsif (
+#                 (
+#                     $1 eq 'tilted'
+#                     or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
+#                 )
+#                 and $shutters->getVentilateOpen eq 'on'
+#                 and $queryShuttersPosWinRecTilted
+#               )
+#             {
+#                 $shutters->setLastDrive('delayed ventilate open');
+#                 ShuttersCommandSet( $hash, $shuttersDev,
+#                     $shutters->getVentilatePos );
+#             }
         }
         elsif ( $1 eq 'closed'
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
         {
-            $shutters->setLastDrive('window closed');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos )
-              if ( $shutters->getStatus == $shutters->getVentilatePos
-                or $shutters->getStatus == $shutters->getComfortOpenPos );
+            if ( $shutters->getStatus == $shutters->getVentilatePos
+              or $shutters->getStatus == $shutters->getComfortOpenPos )
+            {
+                my $homemode = $shutters->getRoommatesStatus;
+                $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+                $shutters->setLastDrive('window closed');
+                
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos )
+                    if ( IsDay($hash,$shuttersDev)
+                      and ($homemode ne 'asleep'
+                        or $homemode ne 'gotosleep'
+                        or $homemode eq 'none') );
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos )
+                    if ( not IsDay($hash,$shuttersDev)
+                      or $homemode eq 'asleep'
+                      or $homemode eq 'gotosleep' );
+            }
         }
         elsif (
             (
@@ -867,7 +882,7 @@ sub EventProcessingWindowRec($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
-            $shutters->setLastDrive('ventilate open');
+            $shutters->setLastDrive('ventilate - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
         }
@@ -876,7 +891,7 @@ sub EventProcessingWindowRec($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecComfort )
         {
-            $shutters->setLastDrive('comfort open');
+            $shutters->setLastDrive('comfort - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getComfortOpenPos );
         }
@@ -1573,7 +1588,7 @@ sub SunSetShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (   $shutters->getModeDown eq $homemode
-        or $homemode eq 'none'
+#         or $homemode eq 'none'
         or $shutters->getModeDown eq 'always' )
     {
         $shutters->setLastDrive('night close');
@@ -1594,7 +1609,7 @@ sub SunRiseShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (   $shutters->getModeUp eq $homemode
-        or $homemode eq 'none'
+#         or $homemode eq 'none'
         or $shutters->getModeUp eq 'always' )
     {
         if (
@@ -1993,12 +2008,68 @@ sub ShuttersSunrise($$$) {
             }
         }
         elsif ( $shutters->getUp eq 'time' ) {
-            $shuttersSunriseUnixtime =
-              computeAlignTime( '24:00', $shutters->getTimeUpEarly );
+            if ( ( IsWe() or IsWeTomorrow() )
+                and $ascDev->getSunriseTimeWeHoliday eq 'on' )
+            {
+                if ( not IsWeTomorrow() ) {
+                    if (
+                        IsWe()
+                        and int( gettimeofday() / 86400 ) == int(
+                                computeAlignTime(
+                                    '24:00',
+                                    $shutters->getTimeUpWeHoliday
+                                )
+                            ) / 86400
+                        )
+                    {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->getTimeUpWeHoliday
+                            );
+                    }
+                    elsif (
+                        int( gettimeofday() / 86400 ) == int(
+                                computeAlignTime(
+                                    '24:00',
+                                    $shutters->getTimeUpEarly
+                                )
+                            ) / 86400
+                        )
+                    {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->getTimeUpWeHoliday
+                            );
+                    }
+                    else {
+                        $shuttersSunriseUnixtime =
+                            computeAlignTime(
+                                '24:00',
+                                $shutters->getTimeUpEarly
+                            );
+                    }
+                }
+                else {
+                    $shuttersSunriseUnixtime =
+                        computeAlignTime(
+                            '24:00',
+                            $shutters->getTimeUpWeHoliday
+                        );
+                }
+            }
+            else {
+                $shuttersSunriseUnixtime =
+                    computeAlignTime(
+                        '24:00',
+                        $shutters->getTimeUpEarly
+                    );
+            }
         }
         elsif ( $shutters->getUp eq 'brightness' ) {
             $shuttersSunriseUnixtime =
-              computeAlignTime( '24:00', $shutters->getTimeUpLate );
+            computeAlignTime( '24:00', $shutters->getTimeUpLate );
         }
         return $shuttersSunriseUnixtime;
     }
@@ -2337,7 +2408,7 @@ sub setLastPos
 }
 
 sub setLastManPos
-{ # letzte ermittelte Position bevor die Position des Rolladen manuell (nicht über ASC) geändert wurde
+{
     my ( $self, $position ) = @_;
 
     $self->{ $self->{shuttersDev} }{lastManPos}{VAL} = $position
@@ -2547,7 +2618,7 @@ BEGIN {
 sub getAntiFreezePos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_AntifreezePos', 50 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Antifreeze_Pos', 50 );
 }
 
 sub getShuttersPlace {
@@ -3381,8 +3452,8 @@ sub getRainSensorShuttersClosedPos {
     In the shutter devices
     <ul>
       <li>AutoShuttersControl - 0/1/2 1 = "Inverse or shutter e.g.: shutter upn 0,shutter down 100 and the command to travel is position",2 = "Homematic Style e.g.: shutter up 100,shutter down 0 and the command to travel is pct</li>
-      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_AntifreezePos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
-      <li>ASC_AntifreezePos - Position to be approached when the move command closes completely, but the frost protection is active</li>
+      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_Antifreeze_Pos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
+      <li>ASC_Antifreeze_Pos - Position to be approached when the move command closes completely, but the frost protection is active</li>
       <li>ASC_AutoAstroModeEvening - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeEvening.</li>
       <li>ASC_AutoAstroModeMorning - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
@@ -3521,8 +3592,8 @@ sub getRainSensorShuttersClosedPos {
     In den Rolll&auml;den Devices
     <ul>
       <li>ASC - 0/1/2 1 = "Inverse oder Rollo - Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
-      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_AntifreezePos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren</li>
-      <li>ASC_AntifreezePos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist</li>
+      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_Antifreeze_Pos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren</li>
+      <li>ASC_Antifreeze_Pos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist</li>
       <li>ASC_AutoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <li>ASC_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
       <li>ASC_AutoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
