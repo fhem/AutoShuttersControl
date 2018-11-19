@@ -266,7 +266,7 @@ sub Define($$) {
       if ( $ascDev->getFreezeTemp eq 'none' );
     CommandAttr( undef,
         $name
-          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense inactive:status_open day.open:scene_day night.close:scene_night'
+          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense.inactive:status_open day.open:scene_day night.close:scene_night'
     ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
@@ -863,7 +863,7 @@ sub EventProcessingWindowRec($@) {
                 $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
                 $shutters->setLastDrive('window closed');
                 
-                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos )
+                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos )
                     if ( IsDay($hash,$shuttersDev)
                       and ($homemode ne 'asleep'
                         or $homemode ne 'gotosleep'
@@ -2409,7 +2409,7 @@ sub setLastPos
 }
 
 sub setLastManPos
-{ # letzte ermittelte Position bevor die Position des Rolladen manuell (nicht über ASC) geändert wurde
+{
     my ( $self, $position ) = @_;
 
     $self->{ $self->{shuttersDev} }{lastManPos}{VAL} = $position
