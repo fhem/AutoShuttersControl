@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.9";
+my $version = "0.2.0.10";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -166,7 +166,7 @@ my %userAttrList = (
     'ASC_WindowRec'                    => 'none',
     'ASC_Ventilate_Window_Open:on,off' => 'on',
     'ASC_LockOut:soft,hard,off'        => 'off',
-    'ASC_LockOut_Cmd:inhibit,blocked'  => 'none',
+    'ASC_LockOut_Cmd:inhibit,blocked,protection'  => 'none',
 
 #     'ASC_Shading_Direction'            => 178,
 #     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
@@ -601,44 +601,6 @@ sub ShuttersDeviceScan($) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
-        delFromDevAttrList( $_, 'ASC_Direction' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_,
-            'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Rand_Minutes' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading:on,off,delayed,present,absent' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_,
-            'ASC_Shading_Pos_after_Shading:-1,0,10,20,30,40,50,60,70,80,90,100'
-        );     # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_,
-'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-        );     # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_,
-'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-        );     # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Sunny' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Cloudy' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_WaitingPeriod' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_Min_OutsideTemperature' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_BlockingTime_After_Manual' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_BlockingTime_Twilight' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_Fast_Open:on,off' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Shading_Fast_Close:on,off' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.89
-        delFromDevAttrList( $_, 'ASC_Pos_Cmd' )
-          ;    # temporär muss später gelöscht werden ab Version 0.1.93
         delFromDevAttrList( $_, 'ASC_lock-out:soft,hard' )
           ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
         delFromDevAttrList( $_, 'ASC_lock-outCmd:inhibit,blocked' )
@@ -655,6 +617,10 @@ sub ShuttersDeviceScan($) {
         delFromDevAttrList( $_,
 'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
         );     # temporär muss später gelöscht werden ab Version 0.2.0.7
+
+        delFromDevAttrList( $_, 'ASC_LockOut_Cmd:inhibit,blocked' )
+          if ( AttrVal( $_, 'ASC_LockOut_Cmd', 'none' ) eq 'none'
+          ;     # temporär muss später gelöscht werden ab Version 0.2.0.10
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1583,6 +1549,9 @@ sub SetHardewareBlockForShutters($$) {
             CommandSet( undef,
                 $_ . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
               if ( $shutters->getLockOutCmd eq 'blocked' );
+            CommandSet( undef,
+                $_ . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
+              if ( $shutters->getLockOutCmd eq 'protection' );
         }
     }
 }
