@@ -518,7 +518,7 @@ sub Set($$@) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
     }
-    elsif ( lc $cmd eq 'lockout' ) {
+    elsif ( lc $cmd eq 'hardlockout' ) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
         HardewareBlockForShutters( $hash, join( ' ', @args ) );
@@ -539,7 +539,7 @@ sub Set($$@) {
     else {
         my $list = "scanForShutters:noArg";
         $list .=
-" renewSetSunriseSunsetTimer:noArg partyMode:on,off lockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off wiggle:all,"
+" renewSetSunriseSunsetTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off selfDefense:on,off wiggle:all,"
           . join( ',', @{ $hash->{helper}{shuttersList} } )
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= " createNewNotifyDev:noArg"
@@ -786,6 +786,11 @@ sub EventProcessingWindowRec($@) {
 
     if ( $events =~ m#state:\s(open|closed|tilted)# ) {
         $shutters->setShuttersDev($shuttersDev);
+
+        #### Hardware Lock der Rollläden
+        $shutters->setHardLockOut('off') unless ( $1 eq 'open' or $1 eq 'tilted' );
+        $shutters->setHardLockOut('on') unless ( $1 eq 'closed' );
+        
         $shutters->setNoOffset(1);
 
         my $queryShuttersPosWinRecTilted = (
@@ -803,7 +808,6 @@ sub EventProcessingWindowRec($@) {
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
 
             #             if ( $1 eq 'closed' ) {
-            $shutters->setHardLockOut('off');
             $shutters->setLastDrive('delayed drive - window closed');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
             
@@ -826,7 +830,6 @@ sub EventProcessingWindowRec($@) {
         elsif ( $1 eq 'closed'
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
         {
-            $shutters->setHardLockOut('off');
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos )
             {
@@ -858,7 +861,6 @@ sub EventProcessingWindowRec($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
-            $shutters->setHardLockOut('on');
             $shutters->setLastDrive('ventilate - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
@@ -868,7 +870,6 @@ sub EventProcessingWindowRec($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecComfort )
         {
-            $shutters->setHardLockOut('on');
             $shutters->setLastDrive('comfort - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getComfortOpenPos );
