@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.9";
+my $version = "0.2.0.10";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -521,7 +521,7 @@ sub Set($$@) {
     elsif ( lc $cmd eq 'lockout' ) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
-        SetHardewareBlockForShutters( $hash, join( ' ', @args ) );
+        HardewareBlockForShutters( $hash, join( ' ', @args ) );
     }
     elsif ( lc $cmd eq 'sunrisetimeweholiday' ) {
         return "usage: $cmd" if ( @args > 1 );
@@ -803,9 +803,10 @@ sub EventProcessingWindowRec($@) {
         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
 
             #             if ( $1 eq 'closed' ) {
+            $shutters->setHardLockOut('off');
             $shutters->setLastDrive('delayed drive - window closed');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
-
+            
 #             }
 #             elsif (
 #                 (
@@ -820,10 +821,12 @@ sub EventProcessingWindowRec($@) {
 #                 ShuttersCommandSet( $hash, $shuttersDev,
 #                     $shutters->getVentilatePos );
 #             }
+
         }
         elsif ( $1 eq 'closed'
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
         {
+            $shutters->setHardLockOut('off');
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos )
             {
@@ -855,6 +858,7 @@ sub EventProcessingWindowRec($@) {
             and $queryShuttersPosWinRecTilted
           )
         {
+            $shutters->setHardLockOut('on');
             $shutters->setLastDrive('ventilate - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
@@ -864,6 +868,7 @@ sub EventProcessingWindowRec($@) {
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecComfort )
         {
+            $shutters->setHardLockOut('on');
             $shutters->setLastDrive('comfort - window open');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getComfortOpenPos );
@@ -1537,22 +1542,11 @@ sub RenewSunRiseSetShuttersTimer($) {
 }
 
 ## Funktion zum hardwareseitigen setzen des lock-out oder blocking beim Rolladen selbst
-sub SetHardewareBlockForShutters($$) {
+sub HardewareBlockForShutters($$) {
     my ( $hash, $cmd ) = @_;
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($_);
-        if (    $shutters->getLockOut eq 'hard'
-            and $shutters->getLockOutCmd ne 'none' )
-        {
-            CommandSet( undef, $_ . ' inhibit ' . $cmd )
-              if ( $shutters->getLockOutCmd eq 'inhibit' );
-            CommandSet( undef,
-                $_ . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
-              if ( $shutters->getLockOutCmd eq 'blocked' );
-            CommandSet( undef,
-                $_ . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
-              if ( $shutters->getLockOutCmd eq 'protection' );
-        }
+        $shutters->setHardLockOut($cmd);
     }
 }
 
@@ -2306,7 +2300,8 @@ BEGIN {
           ReadingsVal
           readingsSingleUpdate
           gettimeofday
-          InternalTimer)
+          InternalTimer
+          CommandSet)
     );
 }
 
@@ -2333,6 +2328,24 @@ sub getShuttersDev {
     my $self = shift;
 
     return $self->{shuttersDev};
+}
+
+sub setHardLockOut {
+    my ( $self, $cmd ) = @_;
+
+    if (  $shutters->getLockOut eq 'hard'
+      and $shutters->getLockOutCmd ne 'none' )
+    {
+        CommandSet( undef, $_ . ' inhibit ' . $cmd )
+            if ( $shutters->getLockOutCmd eq 'inhibit' );
+        CommandSet( undef,
+            $_ . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
+            if ( $shutters->getLockOutCmd eq 'blocked' );
+        CommandSet( undef,
+            $_ . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
+            if ( $shutters->getLockOutCmd eq 'protection' );
+    }
+    return 0;
 }
 
 sub setNoOffset {
