@@ -2336,13 +2336,13 @@ sub setHardLockOut {
     if (  $shutters->getLockOut eq 'hard'
       and $shutters->getLockOutCmd ne 'none' )
     {
-        CommandSet( undef, $_ . ' inhibit ' . $cmd )
+        CommandSet( undef, $self->{shuttersDev} . ' inhibit ' . $cmd )
             if ( $shutters->getLockOutCmd eq 'inhibit' );
         CommandSet( undef,
-            $_ . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
+            $self->{shuttersDev} . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
             if ( $shutters->getLockOutCmd eq 'blocked' );
         CommandSet( undef,
-            $_ . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
+            $self->{shuttersDev} . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
             if ( $shutters->getLockOutCmd eq 'protection' );
     }
     return 0;
