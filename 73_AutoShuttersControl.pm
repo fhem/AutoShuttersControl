@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.0.10";
+my $version = "0.2.0.11";
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -788,8 +788,8 @@ sub EventProcessingWindowRec($@) {
         $shutters->setShuttersDev($shuttersDev);
 
         #### Hardware Lock der Rollläden
-        $shutters->setHardLockOut('off') unless ( $1 eq 'open' or $1 eq 'tilted' );
-        $shutters->setHardLockOut('on') unless ( $1 eq 'closed' );
+        $shutters->setHardLockOut('off') if ( $1 eq 'closed' and $shutters->getShuttersPlace eq 'terrace' );
+        $shutters->setHardLockOut('on') if ( $1 eq 'open' and $shutters->getShuttersPlace eq 'terrace' );
         
         $shutters->setNoOffset(1);
 
@@ -1004,7 +1004,7 @@ sub EventProcessingResidents($@) {
     if ( $events =~ m#$reading:\s(absent)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-
+            $shutters->setHardLockOut('off')
             if (
                     CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $ascDev->getSelfDefense eq 'on'
@@ -1035,7 +1035,7 @@ sub EventProcessingResidents($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-
+            $shutters->setHardLockOut('off')
             if ( $shutters->getShuttersPlace eq 'terrace' ) {
                 $shutters->setLastDrive('selfeDefense terrace');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
@@ -1078,6 +1078,7 @@ sub EventProcessingResidents($@) {
             {
                 $shutters->setLastDrive('selfeDefense inactive');
                 $shutters->setDriveCmd( $shutters->getLastPos );
+                $shutters->setHardLockOut('on') if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and $shutters->getShuttersPlace eq 'terrace' );
             }
             elsif (
                     $shutters->getStatus == $shutters->getClosedPos
