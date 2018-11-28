@@ -41,48 +41,48 @@ package main;
 use strict;
 use warnings;
 
-my $version = "0.2.1dev30";
+my $version = '0.2.0.11';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = "AutoShuttersControl::Set";
-    $hash->{GetFn}    = "AutoShuttersControl::Get";
-    $hash->{DefFn}    = "AutoShuttersControl::Define";
-    $hash->{NotifyFn} = "AutoShuttersControl::Notify";
-    $hash->{UndefFn}  = "AutoShuttersControl::Undef";
-    $hash->{AttrFn}   = "AutoShuttersControl::Attr";
+    $hash->{SetFn}    = 'AutoShuttersControl::Set';
+    $hash->{GetFn}    = 'AutoShuttersControl::Get';
+    $hash->{DefFn}    = 'AutoShuttersControl::Define';
+    $hash->{NotifyFn} = 'AutoShuttersControl::Notify';
+    $hash->{UndefFn}  = 'AutoShuttersControl::Undef';
+    $hash->{AttrFn}   = 'AutoShuttersControl::Attr';
     $hash->{AttrList} =
-        "disable:0,1 "
-      . "disabledForIntervals "
-      . "ASC_guestPresence:on,off "
-      . "ASC_temperatureSensor "
-      . "ASC_temperatureReading "
-      . "ASC_brightnessMinVal "
-      . "ASC_brightnessMaxVal "
-      . "ASC_autoShuttersControlMorning:on,off "
-      . "ASC_autoShuttersControlEvening:on,off "
-      . "ASC_autoShuttersControlShading:on,off "
-      . "ASC_autoShuttersControlComfort:on,off "
-      . "ASC_residentsDevice "
-      . "ASC_residentsDeviceReading "
-      . "ASC_rainSensorDevice "
-      . "ASC_rainSensorReading "
-      . "ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 "
-      . "ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON "
-      . "ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 "
-      . "ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON "
-      . "ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 "
-      . "ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 "
-      . "ASC_timeUpHolidayDevice "
-      . "ASC_timeUpHolidayReading "
-      . "ASC_shuttersDriveOffset "
-      . "ASC_twilightDevice "
-      . "ASC_expert:1 "
+        'disable:0,1 '
+      . 'disabledForIntervals '
+      . 'ASC_guestPresence:on,off '
+      . 'ASC_temperatureSensor '
+      . 'ASC_temperatureReading '
+      . 'ASC_brightnessMinVal '
+      . 'ASC_brightnessMaxVal '
+      . 'ASC_autoShuttersControlMorning:on,off '
+      . 'ASC_autoShuttersControlEvening:on,off '
+      . 'ASC_autoShuttersControlShading:on,off '
+      . 'ASC_autoShuttersControlComfort:on,off '
+      . 'ASC_residentsDevice '
+      . 'ASC_residentsDeviceReading '
+      . 'ASC_rainSensorDevice '
+      . 'ASC_rainSensorReading '
+      . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+      . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
+      . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
+      . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
+      . 'ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
+      . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
+      . 'ASC_timeUpHolidayDevice '
+      . 'ASC_timeUpHolidayReading '
+      . 'ASC_shuttersDriveOffset '
+      . 'ASC_twilightDevice '
+      . 'ASC_expert:1 '
       . $readingFnAttributes;
-    $hash->{NotifyOrderPrefix} = "51-";    # Order Nummer für NotifyFn
+    $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
 ## Ist nur damit sich bei einem reload auch die Versionsnummer erneuert.
     foreach my $d ( sort keys %{ $modules{AutoShuttersControl}{defptr} } ) {
@@ -103,8 +103,8 @@ use GPUtils qw(:all)
 use Data::Dumper;    #only for Debugging
 use Date::Parse;
 
-my $missingModul = "";
-eval "use JSON qw(decode_json encode_json);1" or $missingModul .= "JSON ";
+my $missingModul = '';
+eval "use JSON qw(decode_json encode_json);1" or $missingModul .= 'JSON ';
 
 ## Import der FHEM Funktionen
 BEGIN {
@@ -222,14 +222,14 @@ my $ascDev   = new ASC_Dev();
 
 sub Define($$) {
     my ( $hash, $def ) = @_;
-    my @a = split( "[ \t][ \t]*", $def );
+    my @a = split( '[ \t][ \t]*', $def );
 
-    return "only one AutoShuttersControl instance allowed"
+    return 'only one AutoShuttersControl instance allowed'
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
-    return "too few parameters: define <name> ShuttersControl" if ( @a != 2 );
+    return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
     return
-"Cannot define ShuttersControl device. Perl modul ${missingModul}is missing."
+'Cannot define ShuttersControl device. Perl modul ' . ${missingModul} . 'is missing.'
       if ($missingModul)
       ; # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
 
@@ -238,14 +238,14 @@ sub Define($$) {
     $hash->{VERSION} = $version;
     $hash->{MID}     = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-    $hash->{NOTIFYDEV} = "global,"
+    $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
     $ascDev->setName($name);
 
     readingsSingleUpdate(
         $hash,
-        "state",
-"please set attribute ASC with value 1 or 2 in all auto controlled shutter devices and then execute 'set DEVICENAME scanForShutters'",
+        'state',
+'please set attribute ASC with value 1 or 2 in all auto controlled shutter devices and then execute \'set DEVICENAME scanForShutters\'',
         1
     );
 
@@ -298,25 +298,25 @@ sub Attr(@) {
     my ( $cmd, $name, $attrName, $attrVal ) = @_;
     my $hash = $defs{$name};
 
-    if ( $attrName eq "disable" ) {
-        if ( $cmd eq "set" and $attrVal eq "1" ) {
+    if ( $attrName eq 'disable' ) {
+        if ( $cmd eq 'set' and $attrVal eq '1' ) {
             Log3( $name, 3, "AutoShuttersControl ($name) - disabled" );
         }
-        elsif ( $cmd eq "del" ) {
+        elsif ( $cmd eq 'del' ) {
             Log3( $name, 3, "AutoShuttersControl ($name) - enabled" );
         }
     }
-    elsif ( $attrName eq "disabledForIntervals" ) {
-        if ( $cmd eq "set" ) {
+    elsif ( $attrName eq 'disabledForIntervals' ) {
+        if ( $cmd eq 'set' ) {
             return
-"check disabledForIntervals Syntax HH:MM-HH:MM or 'HH:MM-HH:MM HH:MM-HH:MM ...'"
+'check disabledForIntervals Syntax HH:MM-HH:MM or \'HH:MM-HH:MM HH:MM-HH:MM ...\''
               unless ( $attrVal =~ /^((\d{2}:\d{2})-(\d{2}:\d{2})\s?)+$/ );
             Log3( $name, 3,
                 "AutoShuttersControl ($name) - disabledForIntervals" );
 
             #readingsSingleUpdate ($hash,"state","disabled",1);
         }
-        elsif ( $cmd eq "del" ) {
+        elsif ( $cmd eq 'del' ) {
             Log3( $name, 3, "AutoShuttersControl ($name) - enabled" );
 
             #readingsSingleUpdate ($hash,"state","active",1);
@@ -806,15 +806,12 @@ sub EventProcessingWindowRec($@) {
         );
 
         if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
-        { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
-
-            #             if ( $1 eq 'closed' ) {
+        {   # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
             $shutters->setLastDrive('delayed drive - window closed');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
-
         }
         elsif ( $1 eq 'closed'
-          ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen oder zum lüften geöffnet
+          )     # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
         {
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos )
@@ -831,8 +828,7 @@ sub EventProcessingWindowRec($@) {
                     or $homemode eq 'none' ) )
                 {
                     $shutters->setLastDrive('window day closed');
-                    ShuttersCommandSet( $hash, $shuttersDev,
-                      $shutters->getLastPos );
+                    ShuttersCommandSet( $hash, $shuttersDev,$shutters->getLastPos );
                 }
                 
                 elsif ( not IsDay( $hash, $shuttersDev )
@@ -840,8 +836,7 @@ sub EventProcessingWindowRec($@) {
                      or $homemode eq 'gotosleep' )
                 {
                     $shutters->setLastDrive('window night closed');
-                    ShuttersCommandSet( $hash, $shuttersDev,
-                      $shutters->getClosedPos );
+                    ShuttersCommandSet( $hash, $shuttersDev,$shutters->getClosedPos );
                 }
             }
         }
@@ -997,7 +992,7 @@ sub EventProcessingResidents($@) {
     if ( $events =~ m#$reading:\s(absent)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setHardLockOut('off')
+            $shutters->setHardLockOut('off');
             if (
                     CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $ascDev->getSelfDefense eq 'on'
@@ -1028,7 +1023,7 @@ sub EventProcessingResidents($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setHardLockOut('off')
+            $shutters->setHardLockOut('off');
             if ( $shutters->getShuttersPlace eq 'terrace' ) {
                 $shutters->setLastDrive('selfeDefense terrace');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
