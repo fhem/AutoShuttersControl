@@ -214,6 +214,7 @@ my %posSetCmds = (
     tahoma     => 'dim',
     KLF200Node => 'pct',
     DUOFERN    => 'position',
+    HM485      => 'level',
 );
 
 my $shutters = new ASC_Shutters();
@@ -810,21 +811,6 @@ sub EventProcessingWindowRec($@) {
             #             if ( $1 eq 'closed' ) {
             $shutters->setLastDrive('delayed drive - window closed');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
-            
-#             }
-#             elsif (
-#                 (
-#                     $1 eq 'tilted'
-#                     or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
-#                 )
-#                 and $shutters->getVentilateOpen eq 'on'
-#                 and $queryShuttersPosWinRecTilted
-#               )
-#             {
-#                 $shutters->setLastDrive('delayed ventilate open');
-#                 ShuttersCommandSet( $hash, $shuttersDev,
-#                     $shutters->getVentilatePos );
-#             }
 
         }
         elsif ( $1 eq 'closed'
@@ -836,20 +822,27 @@ sub EventProcessingWindowRec($@) {
                 my $homemode = $shutters->getRoommatesStatus;
                 $homemode = $ascDev->getResidentsStatus
                   if ( $homemode eq 'none' );
-                $shutters->setLastDrive('window closed');
 
-                ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos )
-                  if (
-                    IsDay( $hash, $shuttersDev )
-                    and (  $homemode ne 'asleep'
-                        or $homemode ne 'gotosleep'
-                        or $homemode eq 'none' )
-                  );
-                ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getClosedPos )
-                  if ( not IsDay( $hash, $shuttersDev )
-                    or $homemode eq 'asleep'
-                    or $homemode eq 'gotosleep' );
+                if (
+                IsDay( $hash, $shuttersDev )
+                and $shutters->getStatus != $shutters->getOpenPos
+                and (  $homemode ne 'asleep'
+                    or $homemode ne 'gotosleep'
+                    or $homemode eq 'none' ) )
+                {
+                    $shutters->setLastDrive('window day closed');
+                    ShuttersCommandSet( $hash, $shuttersDev,
+                      $shutters->getLastPos );
+                }
+                
+                elsif ( not IsDay( $hash, $shuttersDev )
+                     or $homemode eq 'asleep'
+                     or $homemode eq 'gotosleep' )
+                {
+                    $shutters->setLastDrive('window night closed');
+                    ShuttersCommandSet( $hash, $shuttersDev,
+                      $shutters->getClosedPos );
+                }
             }
         }
         elsif (
@@ -1326,22 +1319,22 @@ sub ShadingProcessing($@) {
     my $name = $hash->{NAME};
 
     
-    Log3( $name, 1,
-"AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
-            );
-
-    return
-    if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
-            
-            
-#             brightness -1
-#             outTemp -100
-#             azimuth -1
-#             elevation -1
-            
-
-            Log3( $name, 1,
-"AutoShuttersControl ($name) - Shading Processing hinter dem return");
+#     Log3( $name, 1,
+# "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
+#             );
+# 
+#     return
+#     if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
+#             
+#             
+# #             brightness -1
+# #             outTemp -100
+# #             azimuth -1
+# #             elevation -1
+#             
+# 
+#             Log3( $name, 1,
+# "AutoShuttersControl ($name) - Shading Processing hinter dem return");
 
 
 }
