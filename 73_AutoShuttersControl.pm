@@ -157,16 +157,16 @@ my %userAttrList = (
       => 'none',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
-    'ASC_Pos_Reading'                  => [ '', 'position', 'pct' ],
-    'ASC_Time_Up_Early'                => '04:30',
-    'ASC_Time_Up_Late'                 => '09:00',
-    'ASC_Time_Up_WE_Holiday'           => '08:30',
-    'ASC_Time_Down_Early'              => '15:30',
-    'ASC_Time_Down_Late'               => '22:30',
-    'ASC_WindowRec'                    => 'none',
-    'ASC_Ventilate_Window_Open:on,off' => 'on',
-    'ASC_LockOut:soft,hard,off'        => 'off',
-    'ASC_LockOut_Cmd:inhibit,blocked,protection'  => 'none',
+    'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
+    'ASC_Time_Up_Early'                          => '04:30',
+    'ASC_Time_Up_Late'                           => '09:00',
+    'ASC_Time_Up_WE_Holiday'                     => '08:30',
+    'ASC_Time_Down_Early'                        => '15:30',
+    'ASC_Time_Down_Late'                         => '22:30',
+    'ASC_WindowRec'                              => 'none',
+    'ASC_Ventilate_Window_Open:on,off'           => 'on',
+    'ASC_LockOut:soft,hard,off'                  => 'off',
+    'ASC_LockOut_Cmd:inhibit,blocked,protection' => 'none',
 
 #     'ASC_Shading_Direction'            => 178,
 #     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
@@ -229,7 +229,9 @@ sub Define($$) {
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
     return
-'Cannot define ShuttersControl device. Perl modul ' . ${missingModul} . 'is missing.'
+        'Cannot define ShuttersControl device. Perl modul '
+      . ${missingModul}
+      . 'is missing.'
       if ($missingModul)
       ; # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
 
@@ -621,7 +623,7 @@ sub ShuttersDeviceScan($) {
 
         delFromDevAttrList( $_, 'ASC_LockOut_Cmd:inhibit,blocked' )
           if ( AttrVal( $_, 'ASC_LockOut_Cmd', 'none' ) eq 'none' )
-          ;     # temporär muss später gelöscht werden ab Version 0.2.0.10
+          ;    # temporär muss später gelöscht werden ab Version 0.2.0.10
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -789,9 +791,11 @@ sub EventProcessingWindowRec($@) {
         $shutters->setShuttersDev($shuttersDev);
 
         #### Hardware Lock der Rollläden
-        $shutters->setHardLockOut('off') if ( $1 eq 'closed' and $shutters->getShuttersPlace eq 'terrace' );
-        $shutters->setHardLockOut('on') if ( $1 eq 'open' and $shutters->getShuttersPlace eq 'terrace' );
-        
+        $shutters->setHardLockOut('off')
+          if ( $1 eq 'closed' and $shutters->getShuttersPlace eq 'terrace' );
+        $shutters->setHardLockOut('on')
+          if ( $1 eq 'open' and $shutters->getShuttersPlace eq 'terrace' );
+
         $shutters->setNoOffset(1);
 
         my $queryShuttersPosWinRecTilted = (
@@ -806,12 +810,12 @@ sub EventProcessingWindowRec($@) {
         );
 
         if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
-        {   # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
+        { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
             $shutters->setLastDrive('delayed drive - window closed');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
         }
         elsif ( $1 eq 'closed'
-          )     # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
+          ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
         {
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos )
@@ -821,22 +825,25 @@ sub EventProcessingWindowRec($@) {
                   if ( $homemode eq 'none' );
 
                 if (
-                IsDay( $hash, $shuttersDev )
-                and $shutters->getStatus != $shutters->getOpenPos
-                and (  $homemode ne 'asleep'
-                    or $homemode ne 'gotosleep'
-                    or $homemode eq 'none' ) )
+                        IsDay( $hash, $shuttersDev )
+                    and $shutters->getStatus != $shutters->getOpenPos
+                    and (  $homemode ne 'asleep'
+                        or $homemode ne 'gotosleep'
+                        or $homemode eq 'none' )
+                  )
                 {
                     $shutters->setLastDrive('window day closed');
-                    ShuttersCommandSet( $hash, $shuttersDev,$shutters->getLastPos );
+                    ShuttersCommandSet( $hash, $shuttersDev,
+                        $shutters->getLastPos );
                 }
-                
-                elsif ( not IsDay( $hash, $shuttersDev )
-                     or $homemode eq 'asleep'
-                     or $homemode eq 'gotosleep' )
+
+                elsif (not IsDay( $hash, $shuttersDev )
+                    or $homemode eq 'asleep'
+                    or $homemode eq 'gotosleep' )
                 {
                     $shutters->setLastDrive('window night closed');
-                    ShuttersCommandSet( $hash, $shuttersDev,$shutters->getClosedPos );
+                    ShuttersCommandSet( $hash, $shuttersDev,
+                        $shutters->getClosedPos );
                 }
             }
         }
@@ -1066,7 +1073,9 @@ sub EventProcessingResidents($@) {
             {
                 $shutters->setLastDrive('selfeDefense inactive');
                 $shutters->setDriveCmd( $shutters->getLastPos );
-                $shutters->setHardLockOut('on') if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2 and $shutters->getShuttersPlace eq 'terrace' );
+                $shutters->setHardLockOut('on')
+                  if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getShuttersPlace eq 'terrace' );
             }
             elsif (
                     $shutters->getStatus == $shutters->getClosedPos
@@ -1313,24 +1322,22 @@ sub ShadingProcessing($@) {
     ) = @_;
     my $name = $hash->{NAME};
 
-    
 #     Log3( $name, 1,
 # "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
 #             );
-# 
+#
 #     return
 #     if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
-#             
-#             
+#
+#
 # #             brightness -1
 # #             outTemp -100
 # #             azimuth -1
 # #             elevation -1
-#             
-# 
+#
+#
 #             Log3( $name, 1,
 # "AutoShuttersControl ($name) - Shading Processing hinter dem return");
-
 
 }
 
@@ -2246,9 +2253,9 @@ sub SetCmdFn($) {
     my $posValue    = $h->{posValue};
 
     $shutters->setShuttersDev($shuttersDev);
-    
+
     return
-    unless ( $shutters->getASC != 0 );
+      unless ( $shutters->getASC != 0 );
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
@@ -2322,17 +2329,19 @@ sub getShuttersDev {
 sub setHardLockOut {
     my ( $self, $cmd ) = @_;
 
-    if (  $shutters->getLockOut eq 'hard'
-      and $shutters->getLockOutCmd ne 'none' )
+    if (    $shutters->getLockOut eq 'hard'
+        and $shutters->getLockOutCmd ne 'none' )
     {
         CommandSet( undef, $self->{shuttersDev} . ' inhibit ' . $cmd )
-            if ( $shutters->getLockOutCmd eq 'inhibit' );
+          if ( $shutters->getLockOutCmd eq 'inhibit' );
         CommandSet( undef,
-            $self->{shuttersDev} . ' ' . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
-            if ( $shutters->getLockOutCmd eq 'blocked' );
+            $self->{shuttersDev} . ' '
+              . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
+          if ( $shutters->getLockOutCmd eq 'blocked' );
         CommandSet( undef,
-            $self->{shuttersDev} . ' ' . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
-            if ( $shutters->getLockOutCmd eq 'protection' );
+            $self->{shuttersDev} . ' '
+              . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
+          if ( $shutters->getLockOutCmd eq 'protection' );
     }
     return 0;
 }
