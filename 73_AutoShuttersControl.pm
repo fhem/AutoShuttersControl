@@ -982,7 +982,8 @@ sub EventProcessingRoommate($@) {
             ShuttersCommandSet( $hash, $shuttersDev, $position );
         }
         elsif ( $shutters->getModeDown eq 'absent'
-            and $1 eq 'absent' )
+            and $1 eq 'absent'
+            and not IsDay($hash,$shuttersDev) )
         {
             $shutters->setLastDrive('roommate absent');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
