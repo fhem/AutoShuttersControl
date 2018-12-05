@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.0.12';
+my $version = '0.2.1.30';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -150,10 +150,10 @@ my %userAttrList = (
     'ASC_Up:time,astro,brightness'                                  => 'astro',
     'ASC_Down:time,astro,brightness'                                => 'astro',
     'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => 'none',
-'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
+    'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
       => 'none',
     'ASC_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => 'none',
-'ASC_AutoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
+    'ASC_AutoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
       => 'none',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
@@ -167,26 +167,25 @@ my %userAttrList = (
     'ASC_Ventilate_Window_Open:on,off'           => 'on',
     'ASC_LockOut:soft,hard,off'                  => 'off',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => 'none',
-
-#     'ASC_Shading_Direction'            => 178,
-#     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
-#     'ASC_Shading_Mode:on,off,home,absent'      => 'off',
-#     'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
-#     'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
-#       => 85,
+    'ASC_BlockingTime_beforNightClose' => 3600,
+    'ASC_BlockingTime_beforDayOpen'    => 3600,
+    'ASC_Shading_Direction'            => 178,
+    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 70,   30 ],
+    'ASC_Shading_Mode:on,off,home,absent'      => 'off',
+    'ASC_Shading_Angle_Left:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
+    'ASC_Shading_Angle_Right:0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90'
+      => 85,
     'ASC_Shading_Brightness_Sensor'  => 'none',
     'ASC_Shading_Brightness_Reading' => 'brightness',
-    #
-    #     'ASC_Shading_StateChange_Sunny'                    => '6000',
-    #     'ASC_Shading_StateChange_Cloudy'                   => '4000',
-    #     'ASC_Shading_WaitingPeriod'                        => 20,
-    #     'ASC_Shading_Min_Elevation'                        => 'none',
-    #     'ASC_Shading_Min_OutsideTemperature'               => 18,
-    #     'ASC_Shading_BlockingTime_After_Manual'            => 20,
-    #     'ASC_Shading_BlockingTime_Twilight'                => 45,
-    #     'ASC_Shading_Fast_Open:on,off'                     => 'none',
-    #     'ASC_Shading_Fast_Close:on,off'                    => 'none',
+    'ASC_Shading_StateChange_Sunny'                    => 6000,
+    'ASC_Shading_StateChange_Cloudy'                   => 4000,
+    'ASC_Shading_Min_Elevation'                        => 10.0,
+    'ASC_Shading_Min_OutsideTemperature'               => 18,
+    'ASC_Shading_WaitingPeriod'                        => 1200,
+    'ASC_Shading_BlockingTime_afterManual'             => 1200,
+#     'ASC_Shading_Fast_Open:on,off'                     => 'none',
+#     'ASC_Shading_Fast_Close:on,off'                    => 'none',
     'ASC_Drive_Offset'                                     => -1,
     'ASC_WindowRec_subType:twostate,threestate'            => 'twostate',
     'ASC_ShuttersPlace:window,terrace'                     => 'window',
@@ -194,7 +193,7 @@ my %userAttrList = (
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'                                 => 'none',
     'ASC_Antifreeze:off,soft,hard,am,pm'                   => 'off',
-'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
+    'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
       => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => 'off',
     'ASC_Roommate_Device'             => 'none',
@@ -632,6 +631,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setDelayCmd('none');
         $shutters->setNoOffset(0);
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
+        $shutters->setShading('out');
     }
 
     #     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
@@ -1253,6 +1253,9 @@ sub EventProcessingShadingBrightness($@) {
     my $reading = $shutters->getShadingBrightnessReading;
 
     if ( $events =~ m#$reading:\s(\d+)# ) {
+        my $homemode = $shutters->getRoommatesStatus;
+        $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+        
         ShadingProcessing(
             $hash,                   $shuttersDev,
             $ascDev->getAzimuth,     $ascDev->getElevation,
@@ -1260,8 +1263,8 @@ sub EventProcessingShadingBrightness($@) {
             $shutters->getDirection, $shutters->getShadingAngleLeft,
             $shutters->getShadingAngleRight
           )
-          if ( $shutters->getShadingMode eq 'on'
-            or $shutters->getShadingMode eq $ascDev->getResidentsStatus
+          if ( ( $shutters->getShadingMode eq 'on'
+              or $shutters->getShadingMode eq $homemode)
             and IsDay( $hash, $shuttersDev ) );
     }
 }
@@ -1269,17 +1272,17 @@ sub EventProcessingShadingBrightness($@) {
 sub EventProcessingTwilightDevice($@) {
     my ( $hash, $device, $events ) = @_;
 
-    #     Twilight
-    #     azimuth = azimuth = Sonnenwinkel
-    #     elevation = elevation = Sonnenhöhe
-    #
-    #     Astro
-    #     SunAz = azimuth = Sonnenwinkel
-    #     SunAlt = evaluation = Sonnenhöhe
+#     Twilight
+#     azimuth = azimuth = Sonnenwinkel
+#     elevation = elevation = Sonnenhöhe
+#     
+#     Astro
+#     SunAz = azimuth = Sonnenwinkel
+#     SunAlt = evaluation = Sonnenhöhe
 
     if ( $events =~ m#(azimuth|evaluation|SunAz|SunAlt):\s(\d+.\d+)# ) {
         my $name = $device;
-        my ( $azimuth, $elevation, $outTemp, $brightness );
+        my ( $azimuth, $elevation );
 
         $azimuth   = $2 if ( $1 eq 'azimuth'    or $1 eq 'SunAz' );
         $elevation = $2 if ( $1 eq 'evaluation' or $1 eq 'SunAlt' );
@@ -1291,6 +1294,10 @@ sub EventProcessingTwilightDevice($@) {
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+            
+            my $homemode = $shutters->getRoommatesStatus;
+            $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+            
             ShadingProcessing(
                 $hash,
                 $shuttersDev,
@@ -1305,7 +1312,7 @@ sub EventProcessingTwilightDevice($@) {
               if (
                 (
                        $shutters->getShadingMode eq 'on'
-                    or $shutters->getShadingMode eq $ascDev->getResidentsStatus
+                    or $shutters->getShadingMode eq $homemode
                 )
                 and IsDay( $hash, $shuttersDev )
               );
@@ -1314,32 +1321,56 @@ sub EventProcessingTwilightDevice($@) {
 }
 
 sub ShadingProcessing($@) {
+### angleMinus ist $shutters->getShadingAngleLeft
+### anglePlus ist $shutters->getShadingAngleRight
+### winPos ist die Fensterposition $shutters->getDirection
     my (
         $hash,              $shuttersDev,
         $azimuth,           $elevation,
         $brightness,        $outTemp,
-        $shuttersDirection, $shuttersShadingAngleLeft,
-        $shuttersShadingAngleRight
+        $winPos,            $angleMinus,
+        $anglePlus
     ) = @_;
     my $name = $hash->{NAME};
+    $shutters->setShuttersDev($shuttersDev);
 
-#     Log3( $name, 1,
-# "AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
-#             );
-#
-#     return
-#     if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 );
-#
-#
-# #             brightness -1
-# #             outTemp -100
-# #             azimuth -1
-# #             elevation -1
-#
-#
-#             Log3( $name, 1,
-# "AutoShuttersControl ($name) - Shading Processing hinter dem return");
+    Log3( $name, 1,
+"AutoShuttersControl ($name) - Shading Processing, Rollladen: " . $shuttersDev . " Azimuth: " . $azimuth . " Elevation: " . $elevation . " Brightness: " . $brightness . " OutTemp: " . $outTemp
+            );
 
+    return
+    if ( $azimuth == -1 or $elevation == -1 or $brightness == -1 or $outTemp == -100 or $outTemp <  $shutters->getShadingMinOutsideTemperature );
+
+    # minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
+    my $winPosMin = $winPos - $angleMinus;
+    my $winPosMax = $winPos + $anglePlus;
+
+    if ( $azimuth < $winPosMin
+      or $azimuth > $winPosMax
+      or $elevation < $shutters->getShadingMinElevation
+      or $brightness < $shutters->getShadingStateChangeSunny )
+    {
+        $shutters->setShading('out reserved');
+        $shutters->setShading('out')
+          if ( $shutters->getShading eq 'out reserved'
+            and (int(gettimeofday()) - $shutters->getShadingTimestamp) > $shutters->getShadingWaitingPeriod );
+    }
+    elsif (  $azimuth >= $winPosMin
+      and $azimuth <= $winPosMax
+      and $elevation >= $shutters->getShadingMinElevation
+      and $brightness >= $shutters->getShadingStateChangeSunny )
+    {
+        $shutters->setShading('in reserved') if ($shutters->getShading eq 'out');
+        $shutters->setShading('in')
+          if ( $shutters->getShading eq 'in reserved'
+            and (int(gettimeofday()) - $shutters->getShadingTimestamp) > $shutters->getShadingWaitingPeriod );
+    }
+    
+    if ( $shutters->getShading eq 'out' or $shutters->getShading eq 'in' ) {
+    
+        Log3( $name, 1,
+    "AutoShuttersControl ($name) - Shading Processing - Shading Wert :" . $shutters->getShading );
+    }
 }
 
 sub EventProcessingPartyMode($) {
@@ -2642,6 +2673,37 @@ sub getRoommatesLastStatus {
     return $revStatePrio{$minPrio};
 }
 
+### Begin Beschattung Objekt mit Daten befüllen
+sub setShading {
+    my ( $self, $value ) = @_;
+    ### Werte für value = in, out, in reserved, out reserved
+
+    $self->{ $self->{shuttersDev} }{Shading}{VAL} = $value
+      if ( defined($value) );
+    $self->{ $self->{shuttersDev} }{Shading}{TIME} = int( gettimeofday() )
+      if ( defined( $self->{ $self->{shuttersDev} }{Shading} ) );
+    return 0;
+}
+
+sub getShading
+{ # Werte für value = in, out, in reserved, out reserved
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{Shading}{VAL}
+      if (  defined( $self->{ $self->{shuttersDev} }{Shading} )
+        and defined( $self->{ $self->{shuttersDev} }{Shading}{VAL} ) );
+}
+
+sub getShadingTimestamp {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{Shading}{TIME}
+      if (  defined( $self->{ $self->{shuttersDev} } )
+        and defined( $self->{ $self->{shuttersDev} }{Shading} )
+        and defined( $self->{ $self->{shuttersDev} }{Shading}{TIME} ) );
+}
+### Ende Beschattung
+
 ## Subklasse Attr von ASC_Shutters##
 package ASC_Shutters::Attr;
 
@@ -2689,6 +2751,7 @@ sub getWiggleValue {
     return AttrVal( $self->{shuttersDev}, 'ASC_WiggleValue', 5 );
 }
 
+### Begin Beschattung
 sub getShadingPos {
     my $self    = shift;
     my $default = $self->{defaultarg};
@@ -2741,10 +2804,53 @@ sub getShadingAngleRight {
     return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Right', -1 );
 }
 
+sub getShadingMinOutsideTemperature {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_OutsideTemperature', 2 );
+}
+
+sub getShadingMinElevation {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_Elevation', 15.0 );
+}
+
+sub getShadingStateChangeSunny {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Sunny', 5000 );
+}
+
+sub getShadingStateChangeCloudy {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Cloudy', 2000 );
+}
+
+sub getShadingWaitingPeriod {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_WaitingPeriod', 1200 );
+}
+### Ende Beschattung
+
 sub getOffset {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', 0 );
+}
+
+sub getBlockingTimeBeforNightClose {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_BlockingTime_beforNightClose', 3600 );
+}
+
+sub getBlockingTimeBeforDayOpen {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_BlockingTime_beforDayOpen', 3600 );
 }
 
 sub getPosCmd {
