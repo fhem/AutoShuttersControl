@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.1.42';
+my $version = '0.2.1.43';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -174,7 +174,7 @@ my %userAttrList = (
     'ASC_Brightness_Reading'           => 'brightness',
     'ASC_Shading_Direction'            => 180,
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 80,   20 ],
-    'ASC_Shading_Mode:on,off,home,absent'      => 'off',
+    'ASC_Shading_Mode:absent,always,off,home'        => 'off',
     'ASC_Shading_Angle_Left'         => 75,
     'ASC_Shading_Angle_Right'        => 75,
     'ASC_Shading_StateChange_Sunny'                    => 35000,
