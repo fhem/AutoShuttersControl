@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.1.42';
+my $version = '0.2.1.44';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -167,24 +167,23 @@ my %userAttrList = (
     'ASC_Ventilate_Window_Open:on,off'           => 'on',
     'ASC_LockOut:soft,hard,off'                  => 'off',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => 'none',
-    'ASC_BlockingTime_afterManual'               => 1200,
-    'ASC_BlockingTime_beforNightClose'           => 3600,
-    'ASC_BlockingTime_beforDayOpen'              => 3600,
-    'ASC_Brightness_Sensor'                      => 'none',
-    'ASC_Brightness_Reading'                     => 'brightness',
-    'ASC_Shading_Direction'                      => 180,
-    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 80, 20 ],
-    'ASC_Shading_Mode:on,off,home,absent'            => 'off',
-    'ASC_Shading_Angle_Left'                         => 75,
-    'ASC_Shading_Angle_Right'                        => 75,
-    'ASC_Shading_StateChange_Sunny'                  => 35000,
-    'ASC_Shading_StateChange_Cloudy'                 => 20000,
-    'ASC_Shading_Min_Elevation'                      => 25.0,
-    'ASC_Shading_Min_OutsideTemperature'             => 18,
-    'ASC_Shading_WaitingPeriod'                      => 1200,
-
-    #     'ASC_Shading_Fast_Open:on,off'                     => 'none',
-    #     'ASC_Shading_Fast_Close:on,off'                    => 'none',
+    'ASC_BlockingTime_afterManual'     => 1200,
+    'ASC_BlockingTime_beforNightClose' => 3600,
+    'ASC_BlockingTime_beforDayOpen'    => 3600,
+    'ASC_Brightness_Sensor'            => 'none',
+    'ASC_Brightness_Reading'           => 'brightness',
+    'ASC_Shading_Direction'            => 180,
+    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 80,   20 ],
+    'ASC_Shading_Mode:absent,always,off,home'        => 'off',
+    'ASC_Shading_Angle_Left'         => 75,
+    'ASC_Shading_Angle_Right'        => 75,
+    'ASC_Shading_StateChange_Sunny'                    => 35000,
+    'ASC_Shading_StateChange_Cloudy'                   => 20000,
+    'ASC_Shading_Min_Elevation'                        => 25.0,
+    'ASC_Shading_Min_OutsideTemperature'               => 18,
+    'ASC_Shading_WaitingPeriod'                        => 1200,
+#     'ASC_Shading_Fast_Open:on,off'                     => 'none',
+#     'ASC_Shading_Fast_Close:on,off'                    => 'none',
     'ASC_Drive_Offset'                                     => -1,
     'ASC_WindowRec_subType:twostate,threestate'            => 'twostate',
     'ASC_ShuttersPlace:window,terrace'                     => 'window',
@@ -1279,13 +1278,10 @@ sub EventProcessingShadingBrightness($@) {
             $shutters->getDirection, $shutters->getShadingAngleLeft,
             $shutters->getShadingAngleRight
           )
-          if (
-            (
-                   $shutters->getShadingMode eq 'on'
-                or $shutters->getShadingMode eq $homemode
-            )
-            and IsDay( $hash, $shuttersDev )
-          );
+          
+          if ( ( $shutters->getShadingMode eq 'always'
+              or $shutters->getShadingMode eq $homemode)
+            and IsDay( $hash, $shuttersDev ) );
     }
 }
 
@@ -1331,7 +1327,7 @@ sub EventProcessingTwilightDevice($@) {
               )
               if (
                 (
-                       $shutters->getShadingMode eq 'on'
+                       $shutters->getShadingMode eq 'always'
                     or $shutters->getShadingMode eq $homemode
                 )
                 and IsDay( $hash, $shuttersDev )
