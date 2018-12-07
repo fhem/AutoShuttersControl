@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.1.43';
+my $version = '0.2.1.44';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1277,7 +1277,7 @@ sub EventProcessingShadingBrightness($@) {
             $shutters->getDirection, $shutters->getShadingAngleLeft,
             $shutters->getShadingAngleRight
           )
-          if ( ( $shutters->getShadingMode eq 'on'
+          if ( ( $shutters->getShadingMode eq 'always'
               or $shutters->getShadingMode eq $homemode)
             and IsDay( $hash, $shuttersDev ) );
     }
@@ -1325,7 +1325,7 @@ sub EventProcessingTwilightDevice($@) {
               )
               if (
                 (
-                       $shutters->getShadingMode eq 'on'
+                       $shutters->getShadingMode eq 'always'
                     or $shutters->getShadingMode eq $homemode
                 )
                 and IsDay( $hash, $shuttersDev )
