@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.1.49';
+my $version = '0.2.2';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1351,7 +1351,7 @@ sub ShadingProcessing($@) {
       if ( not IsDay( $hash, $shuttersDev )
         and $shutters->getShading ne 'out' );
 
-    Log3( $name, 1,
+    Log3( $name, 3,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Azimuth: "
@@ -1374,7 +1374,7 @@ sub ShadingProcessing($@) {
         ( $shutters->getShadingWaitingPeriod / 2 )
         or not IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) );
 
-    Log3( $name, 1,
+    Log3( $name, 3,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Nach dem return" );
@@ -1396,7 +1396,7 @@ sub ShadingProcessing($@) {
           if ( $shutters->getShading eq 'out reserved'
             and ( int( gettimeofday() ) - $shutters->getShadingTimestamp ) >=
             $shutters->getShadingWaitingPeriod );
-        Log3( $name, 1,
+        Log3( $name, 3,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
               . $shuttersDev
               . " In der Out Abfrage, Shadingwert: "
@@ -1449,12 +1449,12 @@ sub ShadingProcessing($@) {
         {
             $shutters->setLastDrive('shading out');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos );
-            Log3( $name, 1,
+            Log3( $name, 3,
 "AutoShuttersControl ($name) - Shading Processing - shading out läuft"
             );
         }
 
-        Log3( $name, 1,
+        Log3( $name, 3,
 "AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
               . $shutters->getShading );
     }
