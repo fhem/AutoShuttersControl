@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.2';
+my $version = '0.2.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -55,9 +55,7 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{UndefFn}  = 'AutoShuttersControl::Undef';
     $hash->{AttrFn}   = 'AutoShuttersControl::Attr';
     $hash->{AttrList} =
-        'disable:0,1 '
-      . 'disabledForIntervals '
-      . 'ASC_guestPresence:on,off '
+        'ASC_guestPresence:on,off '
       . 'ASC_temperatureSensor '
       . 'ASC_temperatureReading '
       . 'ASC_brightnessMinVal '
@@ -76,8 +74,6 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
       . 'ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
       . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
-      . 'ASC_timeUpHolidayDevice '
-      . 'ASC_timeUpHolidayReading '
       . 'ASC_shuttersDriveOffset '
       . 'ASC_twilightDevice '
       . 'ASC_expert:1 '
@@ -298,37 +294,13 @@ sub Attr(@) {
     my ( $cmd, $name, $attrName, $attrVal ) = @_;
     my $hash = $defs{$name};
 
-    if ( $attrName eq 'disable' ) {
-        if ( $cmd eq 'set' and $attrVal eq '1' ) {
-            Log3( $name, 3, "AutoShuttersControl ($name) - disabled" );
-        }
-        elsif ( $cmd eq 'del' ) {
-            Log3( $name, 3, "AutoShuttersControl ($name) - enabled" );
-        }
-    }
-    elsif ( $attrName eq 'disabledForIntervals' ) {
-        if ( $cmd eq 'set' ) {
-            return
-'check disabledForIntervals Syntax HH:MM-HH:MM or \'HH:MM-HH:MM HH:MM-HH:MM ...\''
-              unless ( $attrVal =~ /^((\d{2}:\d{2})-(\d{2}:\d{2})\s?)+$/ );
-            Log3( $name, 3,
-                "AutoShuttersControl ($name) - disabledForIntervals" );
 
-            #readingsSingleUpdate ($hash,"state","disabled",1);
-        }
-        elsif ( $cmd eq 'del' ) {
-            Log3( $name, 3, "AutoShuttersControl ($name) - enabled" );
-
-            #readingsSingleUpdate ($hash,"state","active",1);
-        }
-    }
     return undef;
 }
 
 sub Notify($$) {
     my ( $hash, $dev ) = @_;
     my $name = $hash->{NAME};
-    return if ( IsDisabled($name) );
 
     my $devname = $dev->{NAME};
     my $devtype = $dev->{TYPE};
@@ -1466,7 +1438,9 @@ sub EventProcessingPartyMode($) {
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
-        if ( not IsDay( $hash, $shuttersDev ) ) {
+        if (  not IsDay( $hash, $shuttersDev )
+          and $shutters->getModeDown ne 'off' )
+        {
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getSubTyp eq 'threestate' )
             {
@@ -1493,6 +1467,14 @@ sub EventProcessingPartyMode($) {
                     )
                 );
             }
+        }
+        elsif ( IsDay( $hash, $shuttersDev ) ) {
+            $shutters->setLastDrive('drive after party mode');
+            ShuttersCommandSet(
+                $hash,
+                $shuttersDev,
+                $shutters->getDelayCmd
+            );
         }
     }
 }
@@ -1528,21 +1510,19 @@ sub ShuttersCommandSet($$$) {
     );
 
     if (
-        (
-            $posValue != $shutters->getShadingPos
-            and (   $shutters->getPartyMode eq 'on'
-                and $ascDev->getPartyMode eq 'on' )
-            or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getSubTyp eq 'threestate'
-                and $ascDev->getAutoShuttersControlComfort eq 'off'
-                and $shutters->getVentilateOpen eq 'on' )
-            or (
-                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and (  $shutters->getLockOut eq 'soft'
-                    or $shutters->getLockOut eq 'hard' )
-                and $ascDev->getHardLockOut eq 'on'
-                and not $queryShuttersPosValue
-            )
+         $posValue != $shutters->getShadingPos
+         and (   $shutters->getPartyMode eq 'on'
+           and $ascDev->getPartyMode eq 'on' )
+         or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+           and $shutters->getSubTyp eq 'threestate'
+           and $ascDev->getAutoShuttersControlComfort eq 'off'
+           and $shutters->getVentilateOpen eq 'on' )
+         or (
+           CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+           and (  $shutters->getLockOut eq 'soft'
+             or $shutters->getLockOut eq 'hard' )
+           and $ascDev->getHardLockOut eq 'on'
+           and not $queryShuttersPosValue
         )
       )
     {
@@ -2228,7 +2208,22 @@ sub IsAfterShuttersTimeBlocking($$) {
         or ( IsDay( $hash, $shuttersDev )
             and $shutters->getSunsetUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforNightClose )
-      )
+       )
+    {
+        return 0;
+    }
+
+    else { return 1 }
+}
+
+sub IsAfterShuttersManualBlocking($) {
+    my $shuttersDev = shift;
+    $shutters->setShuttersDev($shuttersDev);
+
+    if (
+        ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
+        $shutters->getBlockingTimeAfterManual
+       )
     {
         return 0;
     }
@@ -2525,7 +2520,7 @@ sub setDriveCmd {
     $offSet = $shutters->getOffset       if ( $shutters->getOffset > 0 );
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset == -1 );
 
-    InternalTimer( gettimeofday() + int( rand($offSet) ),
+    InternalTimer( gettimeofday() + int( rand($offSet) + 3 ),
         'AutoShuttersControl::SetCmdFn', \%h )
       if ( $offSet > 0 and not $shutters->getNoOffset );
     AutoShuttersControl::SetCmdFn( \%h )
@@ -3722,8 +3717,6 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_autoShuttersControlMorning - on/off if the shutters shall be controlled by time in the morning.</li>
       <li>ASC_temperatureReading - Reading for outside temperature.</li>
       <li>ASC_temperatureSensor - Device for outside temperature.</li>
-      <li>ASC_timeUpHolidayDevice - Device for holiday detection or similar.</li>
-      <li>ASC_timeUpHolidayReading - corrsponding reading for ASC_timeUpHolidayDevice to detect holiday or similar / has to content 0 or 1.</li>
       <li>ASC_residentsDevice - devicename of the residents device</li>
       <li>ASC_residentsDeviceReading - state of the residents device</li>
       <li>ASC_brightnessMinVal - minimum brightness value to activate check of conditions</li>
@@ -3862,8 +3855,6 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_autoShuttersControlMorning - on/off - ob Morgens die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>ASC_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
       <li>ASC_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
-      <li>ASC_timeUpHolidayDevice - Device zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 im Reading beinhalten.</li>
-      <li>ASC_timeUpHolidayReading - passendes Reading zum ASC_timeUpHolidayDevice zur Urlaubserkennung oder Sonstiges / muss 0 oder 1 beinhalten.</li>
       <li>ASC_residentsDevice - Devicenamen des Residents Device der obersten Ebene</li>
       <li>ASC_residentsDeviceReading - Status Reading vom Residents Device der obersten Ebene</li>
       <li>ASC_brightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
