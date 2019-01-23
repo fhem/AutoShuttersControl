@@ -1344,7 +1344,7 @@ sub ShadingProcessing($@) {
       if ( not IsDay( $hash, $shuttersDev )
         and $shutters->getShading ne 'out' );
 
-    Log3( $name, 3,
+    Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Azimuth: "
