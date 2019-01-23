@@ -1524,19 +1524,29 @@ sub ShuttersCommandSet($$$) {
     );
 
     if (
-        $posValue != $shutters->getShadingPos
-        and (   $shutters->getPartyMode eq 'on'
-            and $ascDev->getPartyMode eq 'on' )
-        or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-            and $shutters->getSubTyp eq 'threestate'
-            and $ascDev->getAutoShuttersControlComfort eq 'off'
-            and $shutters->getVentilateOpen eq 'on' )
-        or (
-            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-            and (  $shutters->getLockOut eq 'soft'
-                or $shutters->getLockOut eq 'hard' )
-            and $ascDev->getHardLockOut eq 'on'
-            and not $queryShuttersPosValue
+        (
+               $posValue != $shutters->getShadingPos
+            or $shutters->getShuttersPlace eq 'terrace'
+        )
+        and (
+            (
+                    $shutters->getPartyMode eq 'on'
+                and $ascDev->getPartyMode eq 'on'
+            )
+            or (
+                    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and $shutters->getSubTyp eq 'threestate'
+                and (  $ascDev->getAutoShuttersControlComfort eq 'off'
+                    or $shutters->getComfortOpenPos != $posValue )
+                and $shutters->getVentilateOpen eq 'on'
+            )
+            or (
+                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and (  $shutters->getLockOut eq 'soft'
+                    or $shutters->getLockOut eq 'hard' )
+                and $ascDev->getHardLockOut eq 'on'
+                and not $queryShuttersPosValue
+            )
         )
       )
     {
@@ -2537,7 +2547,8 @@ sub setDriveCmd {
     $offSet = $shutters->getOffset       if ( $shutters->getOffset > 0 );
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset == -1 );
 
-    InternalTimer( gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
+    InternalTimer(
+        gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
         'AutoShuttersControl::SetCmdFn', \%h )
       if ( $offSet > 0 and not $shutters->getNoOffset );
     AutoShuttersControl::SetCmdFn( \%h )
@@ -2969,8 +2980,12 @@ sub getOffset {
 
 sub getOffsetStart {
     my $self = shift;
-    
-    return ( AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5) > 4 ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5) : 5 );
+
+    return (
+          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 ) > 4
+        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 )
+        : 5
+    );
 }
 
 sub getBlockingTimeAfterManual {
