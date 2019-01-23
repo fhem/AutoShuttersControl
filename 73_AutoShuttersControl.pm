@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.3';
+my $version = '0.4.0';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -159,6 +159,8 @@ my %userAttrList = (
     'ASC_Time_Up_WE_Holiday'                     => '08:30',
     'ASC_Time_Down_Early'                        => '15:30',
     'ASC_Time_Down_Late'                         => '22:30',
+    'ASC_PrivacyDownTime_beforNightClose'        => -1,
+    'ASC_PrivacyDown_Pos'                        => 50,
     'ASC_WindowRec'                              => 'none',
     'ASC_Ventilate_Window_Open:on,off'           => 'on',
     'ASC_LockOut:soft,hard,off'                  => 'off',
@@ -182,6 +184,7 @@ my %userAttrList = (
     #     'ASC_Shading_Fast_Open:on,off'                     => 'none',
     #     'ASC_Shading_Fast_Close:on,off'                    => 'none',
     'ASC_Drive_Offset'                                     => -1,
+    'ASC_Drive_OffsetStart'                                => -1,
     'ASC_WindowRec_subType:twostate,threestate'            => 'twostate',
     'ASC_ShuttersPlace:window,terrace'                     => 'window',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'     => [ '', 70, 30 ],
@@ -788,12 +791,13 @@ sub EventProcessingWindowRec($@) {
             : $shutters->getStatus < $shutters->getComfortOpenPos
         );
 
-        if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
-        { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
-            $shutters->setLastDrive('delayed drive - window closed');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
-        }
-        elsif ( $1 eq 'closed'
+#         ## Wird erstmal deaktiviert da es Sinnlos ist in meinen Augen
+#         if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
+#         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
+#             $shutters->setLastDrive('delayed drive - window closed');
+#             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
+#         }
+        if ( $1 eq 'closed'
             and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
         {
@@ -1214,7 +1218,13 @@ sub EventProcessingBrightness($@) {
             );
 
             my $posValue;
-            if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+            if (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and $shutters->getSubTyp eq 'threestate'
+                and $ascDev->getAutoShuttersControlComfort eq 'on' )
+            {
+                $posValue = $shutters->getComfortOpenPos;
+            }
+            elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                 or $shutters->getVentilateOpen eq 'off' )
             {
                 $posValue = $shutters->getClosedPos;
@@ -1517,19 +1527,29 @@ sub ShuttersCommandSet($$$) {
     );
 
     if (
-        $posValue != $shutters->getShadingPos
-        and (   $shutters->getPartyMode eq 'on'
-            and $ascDev->getPartyMode eq 'on' )
-        or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-            and $shutters->getSubTyp eq 'threestate'
-            and $ascDev->getAutoShuttersControlComfort eq 'off'
-            and $shutters->getVentilateOpen eq 'on' )
-        or (
-            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-            and (  $shutters->getLockOut eq 'soft'
-                or $shutters->getLockOut eq 'hard' )
-            and $ascDev->getHardLockOut eq 'on'
-            and not $queryShuttersPosValue
+        (
+               $posValue != $shutters->getShadingPos
+            or $shutters->getShuttersPlace eq 'terrace'
+        )
+        and (
+            (
+                    $shutters->getPartyMode eq 'on'
+                and $ascDev->getPartyMode eq 'on'
+            )
+            or (
+                    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and $shutters->getSubTyp eq 'threestate'
+                and (  $ascDev->getAutoShuttersControlComfort eq 'off'
+                    or $shutters->getComfortOpenPos != $posValue )
+                and $shutters->getVentilateOpen eq 'on'
+            )
+            or (
+                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and (  $shutters->getLockOut eq 'soft'
+                    or $shutters->getLockOut eq 'hard' )
+                and $ascDev->getHardLockOut eq 'on'
+                and not $queryShuttersPosValue
+            )
         )
       )
     {
@@ -1616,12 +1636,23 @@ sub CreateSunRiseSetShuttersTimer($$) {
     my %funcHash = (
         hash           => $hash,
         shuttersdevice => $shuttersDev,
+        privacyMode    => 0,
         sunsettime     => $shuttersSunsetUnixtime,
         sunrisetime    => $shuttersSunriseUnixtime
     );
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
     $shutters->setInTimerFuncHash( \%funcHash );
+
+    ## Abfrage für die Sichtschutzfahrt am Abend vor dem eigentlichen kompletten schließen
+    if ( $shutters->getPrivacyDownTime > 0 ) {
+        if ( ($shuttersSunsetUnixtime - $shutters->getPrivacyDownTime) > (gettimeofday() + 1) ) {
+            $shuttersSunsetUnixtime = $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime;
+            readingsSingleUpdate($shuttersDevHash, 'ASC_Time_PrivacyDriveUp', strftime( "%e.%m.%Y - %H:%M",
+                localtime($shuttersSunsetUnixtime)), 0);
+            $funcHash{privacyMode} = 1;
+        }
+    }
 
     InternalTimer( $shuttersSunsetUnixtime,
         'AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
@@ -1729,8 +1760,8 @@ sub SunSetShuttersAfterTimerFn($) {
         and IsAfterShuttersManualBlocking($shuttersDev)
       )
     {
-        $shutters->setLastDrive('night close');
-        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+        $shutters->setLastDrive( ($funcHash->{privacyMode} == 1 ? 'privacy position' : 'night close') );
+        ShuttersCommandSet( $hash, $shuttersDev, ($funcHash->{privacyMode} == 1 ? $shutters->getPrivacyDownPos : $posValue) );
     }
 
     CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
@@ -1761,9 +1792,11 @@ sub SunRiseShuttersAfterTimerFn($) {
                 or $shutters->getRoommatesStatus eq 'gone'
                 or $shutters->getRoommatesStatus eq 'none'
             )
-            and $ascDev->getSelfDefense eq 'off'
-            or ( $ascDev->getSelfDefense eq 'on'
-                and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
+            and (
+                $ascDev->getSelfDefense eq 'off'
+                or ( $ascDev->getSelfDefense eq 'on'
+                    and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
+            )
           )
         {
             $shutters->setLastDrive('day open');
@@ -2528,7 +2561,8 @@ sub setDriveCmd {
     $offSet = $shutters->getOffset       if ( $shutters->getOffset > 0 );
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset == -1 );
 
-    InternalTimer( gettimeofday() + int( rand($offSet) + 3 ),
+    InternalTimer(
+        gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
         'AutoShuttersControl::SetCmdFn', \%h )
       if ( $offSet > 0 and not $shutters->getNoOffset );
     AutoShuttersControl::SetCmdFn( \%h )
@@ -2855,6 +2889,18 @@ sub getShuttersPlace {
     return AttrVal( $self->{shuttersDev}, 'ASC_ShuttersPlace', 'window' );
 }
 
+sub getPrivacyDownTime {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDownTime_beforNightClose', -1);
+}
+
+sub getPrivacyDownPos {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50);
+}
+
 sub getSelfDefenseExclude {
     my $self = shift;
 
@@ -2956,6 +3002,16 @@ sub getOffset {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', 0 );
+}
+
+sub getOffsetStart {
+    my $self = shift;
+
+    return (
+          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 ) > 4
+        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 )
+        : 5
+    );
 }
 
 sub getBlockingTimeAfterManual {
@@ -3759,7 +3815,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Time_Down_Late - Sunset latest time to travel down</li>
       <li>ASC_Time_Up_Early - Sunrise earliest time to travel up</li>
       <li>ASC_Time_Up_Late - Sunrise latest time to travel up</li>
-      <li>ASC_Time_Up_WE_Holiday - Sunrise earliest time to travel up at weekend and/or holiday (we2holiday is respected). Attention should not be bigger than ASC_Time_Up_Late otherwise ASC_Time_Up_Late will be used.</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise earliest time to travel up at weekend and/or holiday (holiday2we is respected).</li>
       <li>ASC_Up - astro/time/brightness with astro sunrise is calculated, with time the value of ASC_Time_Up_Early is used and with brightness ASC_Time_Up_Early and ASC_Time_Up_Late has to be set correctly. The Timer starts after ASC_Time_Up_Late, but during this time ASC_Time_Up_Early and ASC_Time_Up_Late are used, in combination with the attribute ASC_brightnessMinVal reached, if yes the shutter will travel down</li>
       <li>ASC_Ventilate_Pos -  in 10th steps from 0 bis 100, default value is pending from attribute ASC</li>
       <li>ASC_Ventilate_Window_Open - drive to airing position if the window is tilted or opened and actual position is below airing position</li>
@@ -3887,7 +3943,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Down - astro/time/brightness - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen runter gefahren</li>
       <li>ASC_Mode_Down - always/home/absent/off - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert)</li>
       <li>ASC_Mode_Up - always/home/absent/off - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert)</li>
-      <li>ASC_Drive_Offset - maximale zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll.</li>
+      <li>ASC_Drive_Offset - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll.</li>
+      <li>ASC_Drive_OffsetStart - in Sekunden verz&ouml;gerter Wert ab welchen dann erst das Offset startet und dazu addiert wird. Funktioniert nur wenn gleichzeitig ein Drive_Offset gesetzt wird.</li>
       <li>ASC_Open_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
       <li>ASC_Partymode -  on/off - schaltet den Partymodus an oder aus. Wird  am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Rolll&auml;den, welche das Attribut auf on haben, zwischengespeichert und sp&auml;ter erst ausgef&uuml;hrt</li>
       <li>ASC_Pos_Reading - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
@@ -3898,7 +3955,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Time_Down_Late - Sunset sp&auml;teste Zeit zum Runterfahren</li>
       <li>ASC_Time_Up_Early - Sunrise fr&uuml;hste Zeit zum Hochfahren</li>
       <li>ASC_Time_Up_Late - Sunrise sp&auml;teste Zeit zum Hochfahren</li>
-      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (we2holiday wird beachtet). Achtung: Sollte nicht gr&ouml;&szlig;er sein als ASC_Time_Up_Late, sonst wird ASC_Time_Up_Late verwendet</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet).</li>
       <li>ASC_Up - astro/time/brightness - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen runtergefahren</li>
       <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
       <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist</li>
@@ -3911,7 +3968,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Brightness_Reading - passendes Reading welcher den Helligkeitswert von ASC_Brightness_Sensor anth&auml;lt</li>
       <li>ASC_BrightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
       <li>ASC_BrightnessMaxVal - maximaler Lichtwert, bei dem  Schaltbedingungen gepr&uuml;ft werden sollen / wird der Wert von -1 nicht ge&auml;ndert, so wird automatisch der Wert aus dem Moduldevice genommen</li>
-      <li>ASC_ShuttersPlace - window/terrace - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "done" geht und SelfDefence aktiv ist, wird das Rollo geschlossen</li>
+      <li>ASC_ShuttersPlace - window/terrace - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefence aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen</li>
       <li>ASC_WiggleValue - Wert um welchen sich die Position des Rollladens &auml;ndern soll</li>
       <li>ASC_BlockingTime_afterManual - wie viel Sekunden soll die Automatik nach einer manuellen Fahrt aus setzen.</li>
       <li>ASC_BlockingTime_beforNightClose - wie viel Sekunden vor dem n&auml;chtlichen schlie&zlig;en soll keine &ouml;ffnen Fahrt mehr statt finden.</li>
@@ -3925,7 +3982,9 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Shading_StateChange_Cloudy - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
       <li>ASC_Shading_Min_Elevation - ab welcher Höhe des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
       <li>ASC_Shading_Min_OutsideTemperature - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
-      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li> 
+      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
+      <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
+      <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
     </ul>
   </ul>
 </ul>
