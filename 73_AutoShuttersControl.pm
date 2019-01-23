@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.2.4';
+my $version = '0.4.0';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -159,6 +159,8 @@ my %userAttrList = (
     'ASC_Time_Up_WE_Holiday'                     => '08:30',
     'ASC_Time_Down_Early'                        => '15:30',
     'ASC_Time_Down_Late'                         => '22:30',
+    'ASC_PrivacyDownTime_beforNightClose'        => -1,
+    'ASC_PrivacyDown_Pos'                        => 50,
     'ASC_WindowRec'                              => 'none',
     'ASC_Ventilate_Window_Open:on,off'           => 'on',
     'ASC_LockOut:soft,hard,off'                  => 'off',
@@ -789,12 +791,13 @@ sub EventProcessingWindowRec($@) {
             : $shutters->getStatus < $shutters->getComfortOpenPos
         );
 
-        if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
-        { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
-            $shutters->setLastDrive('delayed drive - window closed');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
-        }
-        elsif ( $1 eq 'closed'
+#         ## Wird erstmal deaktiviert da es Sinnlos ist in meinen Augen
+#         if ( $shutters->getDelayCmd ne 'none' and $1 eq 'closed' )
+#         { # Es wird geschaut ob wärend der Fenster offen Phase ein Fahrbefehl über das Modul kam,wenn ja wird dieser aus geführt
+#             $shutters->setLastDrive('delayed drive - window closed');
+#             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
+#         }
+        if ( $1 eq 'closed'
             and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
           ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
         {
@@ -1633,12 +1636,33 @@ sub CreateSunRiseSetShuttersTimer($$) {
     my %funcHash = (
         hash           => $hash,
         shuttersdevice => $shuttersDev,
+        privacyMode    => 0,
         sunsettime     => $shuttersSunsetUnixtime,
         sunrisetime    => $shuttersSunriseUnixtime
     );
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
     $shutters->setInTimerFuncHash( \%funcHash );
+
+    ## Abfrage für die Sichtschutzfahrt am Abend vor dem eigentlichen kompletten schließen
+    if ( $shutters->getPrivacyDownTime > 0 ) {
+        if ( ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime ) >
+            ( gettimeofday() + 1 ) )
+        {
+            $shuttersSunsetUnixtime =
+              $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime;
+            readingsSingleUpdate(
+                $shuttersDevHash,
+                'ASC_Time_PrivacyDriveUp',
+                strftime(
+                    "%e.%m.%Y - %H:%M",
+                    localtime($shuttersSunsetUnixtime)
+                ),
+                0
+            );
+            $funcHash{privacyMode} = 1;
+        }
+    }
 
     InternalTimer( $shuttersSunsetUnixtime,
         'AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
@@ -1746,8 +1770,22 @@ sub SunSetShuttersAfterTimerFn($) {
         and IsAfterShuttersManualBlocking($shuttersDev)
       )
     {
-        $shutters->setLastDrive('night close');
-        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+        $shutters->setLastDrive(
+            (
+                $funcHash->{privacyMode} == 1
+                ? 'privacy position'
+                : 'night close'
+            )
+        );
+        ShuttersCommandSet(
+            $hash,
+            $shuttersDev,
+            (
+                  $funcHash->{privacyMode} == 1
+                ? $shutters->getPrivacyDownPos
+                : $posValue
+            )
+        );
     }
 
     CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
@@ -2875,6 +2913,19 @@ sub getShuttersPlace {
     return AttrVal( $self->{shuttersDev}, 'ASC_ShuttersPlace', 'window' );
 }
 
+sub getPrivacyDownTime {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev},
+        'ASC_PrivacyDownTime_beforNightClose', -1 );
+}
+
+sub getPrivacyDownPos {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50 );
+}
+
 sub getSelfDefenseExclude {
     my $self = shift;
 
@@ -3956,7 +4007,9 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Shading_StateChange_Cloudy - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
       <li>ASC_Shading_Min_Elevation - ab welcher Höhe des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
       <li>ASC_Shading_Min_OutsideTemperature - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte</li>
-      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li> 
+      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
+      <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
+      <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
     </ul>
   </ul>
 </ul>
