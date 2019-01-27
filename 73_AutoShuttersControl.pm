@@ -2,7 +2,7 @@
 #
 # Developed with Kate
 #
-#  (c) 2018 Copyright: Marko Oldenburg (leongaultier at gmail dot com)
+#  (c) 2018-2019 Copyright: Marko Oldenburg (leongaultier at gmail dot com)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0';
+my $version = '0.4.0.1';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -385,7 +385,7 @@ sub Notify($$) {
         }
         elsif (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon)(\s.*|$)/,
             @{$events}
           )
         {
@@ -458,7 +458,7 @@ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_
             DeleteNotifyDev( $hash, $1, $2 );
         }
         elsif ( $events =~
-m#^ATTR\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownTime_beforNightClose|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)\s(.*)$#
           )
         {
             CreateSunRiseSetShuttersTimer( $hash, $1 )
@@ -769,7 +769,9 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if ( $events =~ m#state:\s(open|closed|tilted)# ) {
+    if ( $events =~ m#state:\s(open|closed|tilted)#
+        and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+    {
         $shutters->setShuttersDev($shuttersDev);
 
         #### Hardware Lock der Rollläden
@@ -797,12 +799,10 @@ sub EventProcessingWindowRec($@) {
 #             $shutters->setLastDrive('delayed drive - window closed');
 #             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
 #         }
-        if ( $1 eq 'closed'
-            and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
-          ) # wenn nicht dann wird entsprechend dem Fensterkontakt Event der Rolladen geschlossen
-        {
+        if ( $1 eq 'closed' ) {
             if (   $shutters->getStatus == $shutters->getVentilatePos
-                or $shutters->getStatus == $shutters->getComfortOpenPos )
+                or $shutters->getStatus == $shutters->getComfortOpenPos
+                or $shutters->getStatus == $shutters->getOpenPos )
             {
                 my $homemode = $shutters->getRoommatesStatus;
                 $homemode = $ascDev->getResidentsStatus
