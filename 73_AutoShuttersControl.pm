@@ -3033,9 +3033,9 @@ sub getOffsetStart {
     my $self = shift;
 
     return (
-          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 ) > 4
-        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 5 )
-        : 5
+          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 3 ) > 2
+        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 3 )
+        : 3
     );
 }
 
