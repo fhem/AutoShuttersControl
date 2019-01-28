@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.1';
+my $version = '0.4.0.2';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -770,7 +770,7 @@ sub EventProcessingWindowRec($@) {
     my $name = $hash->{NAME};
 
     if ( $events =~ m#state:\s(open|closed|tilted)#
-        and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+        and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         $shutters->setShuttersDev($shuttersDev);
 
@@ -799,7 +799,9 @@ sub EventProcessingWindowRec($@) {
 #             $shutters->setLastDrive('delayed drive - window closed');
 #             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
 #         }
-        if ( $1 eq 'closed' ) {
+        if (  $1 eq 'closed'
+          and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+        {
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
                 or $shutters->getStatus == $shutters->getOpenPos )
