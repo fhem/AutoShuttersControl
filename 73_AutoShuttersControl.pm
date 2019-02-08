@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.2';
+my $version = '0.4.0.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -773,6 +773,8 @@ sub EventProcessingWindowRec($@) {
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         $shutters->setShuttersDev($shuttersDev);
+        my $homemode = $shutters->getRoommatesStatus;
+        $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
         #### Hardware Lock der Rollläden
         $shutters->setHardLockOut('off')
@@ -800,7 +802,11 @@ sub EventProcessingWindowRec($@) {
 #             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
 #         }
         if (  $1 eq 'closed'
-          and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+          and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+          and ($shutters->getModeDown eq $homemode
+            or (    $shutters->getModeDown eq 'absent'
+                and $homemode eq 'gone' )
+            or $shutters->getModeDown eq 'always') )
         {
             if (   $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
