@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.3';
+my $version = '0.4.0.4';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -495,7 +495,8 @@ sub Set($$@) {
     }
     elsif ( lc $cmd eq 'partymode' ) {
         return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 )
+          if ( join( ' ', @args ) ne ReadingsVal($name,'partyMode',0) );
     }
     elsif ( lc $cmd eq 'hardlockout' ) {
         return "usage: $cmd" if ( @args > 1 );
