@@ -770,7 +770,7 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if ( $events =~ m#state:\s(open|closed|tilted)#
+    if ( $events =~ m#state:\s(open(ed)?|closed|tilted)#             # weitere mögliche Events  (opened / closed)
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         $shutters->setShuttersDev($shuttersDev);
@@ -781,7 +781,7 @@ sub EventProcessingWindowRec($@) {
         $shutters->setHardLockOut('off')
           if ( $1 eq 'closed' and $shutters->getShuttersPlace eq 'terrace' );
         $shutters->setHardLockOut('on')
-          if ( $1 eq 'open' and $shutters->getShuttersPlace eq 'terrace' );
+          if ( ($1 eq 'open' or $1 eq 'opened') and $shutters->getShuttersPlace eq 'terrace' );
 
         $shutters->setNoOffset(1);
 
@@ -853,7 +853,7 @@ sub EventProcessingWindowRec($@) {
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getVentilatePos );
         }
-        elsif ( $1 eq 'open'
+        elsif ( ($1 eq 'open' or $1 eq 'opened')
             and $shutters->getSubTyp eq 'threestate'
             and $ascDev->getAutoShuttersControlComfort eq 'on'
             and $queryShuttersPosWinRecComfort )
@@ -1621,7 +1621,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
         ),
         1
     );
-    readingsEndUpdate( $shuttersDevHash, 0 );
+    readingsEndUpdate( $shuttersDevHash, 1 );
 
     readingsBeginUpdate($hash);
     readingsBulkUpdateIfChanged(
@@ -2373,7 +2373,7 @@ sub CheckIfShuttersWindowRecOpen($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if ( $shutters->getWinStatus eq 'open' ) { return 2; }
+    if ( $shutters->getWinStatus eq 'open' or $shutters->getWinStatus eq 'opened' ) { return 2; }
     elsif ( $shutters->getWinStatus eq 'tilted'
         and $shutters->getSubTyp eq 'threestate' )
     {
@@ -3660,7 +3660,7 @@ sub getFreezeTemp {
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
+    $default = 3 if ( not defined($default) );
     return AttrVal( $name, 'ASC_freezeTemp', $default );
 }
 
