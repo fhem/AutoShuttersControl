@@ -1610,8 +1610,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
                 "%e.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime)
               )
             : 'AutoShuttersControl off'
-        ),
-        1
+        )
     );
     readingsBulkUpdate(
         $shuttersDevHash,
@@ -1621,10 +1620,9 @@ sub CreateSunRiseSetShuttersTimer($$) {
             ? strftime( "%e.%m.%Y - %H:%M",
                 localtime($shuttersSunriseUnixtime) )
             : 'AutoShuttersControl off'
-        ),
-        1
+        )
     );
-    readingsEndUpdate( $shuttersDevHash, 1 );
+    readingsEndUpdate( $shuttersDevHash, 0 );
 
     readingsBeginUpdate($hash);
     readingsBulkUpdateIfChanged(
