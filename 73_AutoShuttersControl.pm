@@ -81,10 +81,10 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
 ## Ist nur damit sich bei einem reload auch die Versionsnummer erneuert.
-    foreach my $d ( sort keys %{ $modules{AutoShuttersControl}{defptr} } ) {
-        my $hash = $modules{AutoShuttersControl}{defptr}{$d};
-        $hash->{VERSION} = $version;
-    }
+#     foreach my $d ( sort keys %{ $modules{AutoShuttersControl}{defptr} } ) {
+#         my $hash = $modules{AutoShuttersControl}{defptr}{$d};
+#         $hash->{VERSION} = $version;
+#     }
 }
 
 ## unserer packagename
