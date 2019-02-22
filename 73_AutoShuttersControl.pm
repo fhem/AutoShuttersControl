@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.6';
+my $version = '0.4.0.7-patch';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2053,9 +2053,21 @@ sub ExtractNotifyDevFromEvent($$$) {
 ## Ist Tag oder Nacht für den entsprechende Rolladen
 sub IsDay($$) {
     my ( $hash, $shuttersDev ) = @_;
+    $shutters->setShuttersDev($shuttersDev);
+    
+    my $respIsDay;
     my $name = $hash->{NAME};
-    return ( ShuttersSunrise( $hash, $shuttersDev, 'unix' ) >
+    my $isday = ( ShuttersSunrise( $hash, $shuttersDev, 'unix' ) >
           ShuttersSunset( $hash, $shuttersDev, 'unix' ) ? 1 : 0 );
+    
+    print 'IsDay: ' . $isday . "\n";
+
+    $respIsDay = ( ($shutters->getDown eq 'brightness' and $shutters->getBrightness > $shutters->getBrightnessMinVal and $isday) ? 1 : 0 );
+    print 'IsDayAbends: ' . $respIsDay . "\n";
+    $respIsDay = ( (($shutters->getUp eq 'brightness' and $shutters->getBrightness > $shutters->getBrightnessMaxVal and not $isday) or $respIsDay) ? 1 : 0 );
+    print 'IsDayMorgens: ' . $respIsDay . "\n";
+
+    return $respIsDay;
 }
 
 sub ShuttersSunrise($$$) {
