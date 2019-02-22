@@ -2054,15 +2054,17 @@ sub ExtractNotifyDevFromEvent($$$) {
 sub IsDay($$) {
     my ( $hash, $shuttersDev ) = @_;
     $shutters->setShuttersDev($shuttersDev);
-    
-    my $respIsDay;
+
     my $name = $hash->{NAME};
     my $isday = ( ShuttersSunrise( $hash, $shuttersDev, 'unix' ) >
           ShuttersSunset( $hash, $shuttersDev, 'unix' ) ? 1 : 0 );
+    my $respIsDay = $isday;
 
-    $respIsDay = ( ($shutters->getDown eq 'brightness' and $shutters->getBrightness > $shutters->getBrightnessMinVal and $isday) ? 1 : 0 );
+    $respIsDay = ( ($shutters->getBrightness > $shutters->getBrightnessMinVal and $isday) ? 1 : 0 )
+        if ( $shutters->getDown eq 'brightness' );
 
-    $respIsDay = ( (($shutters->getUp eq 'brightness' and $shutters->getBrightness > $shutters->getBrightnessMaxVal and not $isday) or $respIsDay) ? 1 : 0 );
+    $respIsDay = ( (($shutters->getBrightness > $shutters->getBrightnessMaxVal and not $isday) or $respIsDay) ? 1 : 0 )
+        if ( $shutters->getUp eq 'brightness' );
 
     return $respIsDay;
 }
