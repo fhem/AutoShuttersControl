@@ -2721,8 +2721,7 @@ sub getFreezeStatus {
         if ( $shutters->getAntiFreeze eq 'soft' ) {
             return 1;
         }
-        elsif ($shutters->getAntiFreeze eq $daytime
-            or $shutters->getAntiFreeze eq $daytime )
+        elsif ($shutters->getAntiFreeze eq $daytime )
         {
             return 2;
         }
