@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.7';
+my $version = '0.4.0.8-patchWind';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -69,6 +69,9 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_rainSensorDevice '
       . 'ASC_rainSensorReading '
       . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+      . 'ASC_windSensorDevice '
+      . 'ASC_windSensorReading '
+      . 'ASC_windSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
       . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
       . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
@@ -79,12 +82,6 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_expert:1 '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
-
-## Ist nur damit sich bei einem reload auch die Versionsnummer erneuert.
-#     foreach my $d ( sort keys %{ $modules{AutoShuttersControl}{defptr} } ) {
-#         my $hash = $modules{AutoShuttersControl}{defptr}{$d};
-#         $hash->{VERSION} = $version;
-#     }
 }
 
 ## unserer packagename
@@ -377,7 +374,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_windSensorDevice|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -421,6 +418,8 @@ sub EventProcessingGeneral($$$) {
               if ( $deviceAttr eq 'ASC_residentsDevice' );
             EventProcessingRain( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_rainSensorDevice' );
+            EventProcessingWind( $hash, $device, $events )
+              if ( $deviceAttr eq 'ASC_windSensorDevice' );
             EventProcessingTwilightDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_twilightDevice' );
 
@@ -442,7 +441,7 @@ sub EventProcessingGeneral($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -450,7 +449,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSe
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -1108,6 +1107,36 @@ sub EventProcessingRain($@) {
         if    ( $1 eq 'rain' ) { $val = 1000 }
         elsif ( $1 eq 'dry' )  { $val = 0 }
         else                   { $val = $1 }
+
+        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+            $shutters->setShuttersDev($shuttersDev);
+            if (    $val > 100
+                and $shutters->getStatus !=
+                $ascDev->getRainSensorShuttersClosedPos )
+            {
+                $shutters->setLastDrive('rain protection');
+                $shutters->setDriveCmd(
+                    $ascDev->getRainSensorShuttersClosedPos );
+            }
+            elsif ( $val == 0
+                and $shutters->getStatus ==
+                $ascDev->getRainSensorShuttersClosedPos )
+            {
+                $shutters->setLastDrive('rain un-protection');
+                $shutters->setDriveCmd( $shutters->getLastPos );
+            }
+        }
+    }
+}
+
+######### Under Construction
+sub EventProcessingWind($@) {
+    my ( $hash, $device, $events ) = @_;
+    my $name    = $device;
+    my $reading = $ascDev->getWindSensorReading;
+    my $val;
+
+    if ( $events =~ m#$reading:\s(\d+)# ) {
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
@@ -1867,6 +1896,9 @@ sub CreateNewNotifyDev($) {
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_rainSensorDevice', 'none' ),
         $name, 'ASC_rainSensorDevice' )
       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+    AddNotifyDev( $hash, AttrVal( $name, 'ASC_windSensorDevice', 'none' ),
+        $name, 'ASC_windSensorDevice' )
+      if ( AttrVal( $name, 'ASC_windSensorDevice', 'none' ) ne 'none' );
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
         $name, 'ASC_twilightDevice' )
       if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) ne 'none' );
@@ -3735,6 +3767,32 @@ sub getRainSensorShuttersClosedPos {
 
     return AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 );
 }
+
+sub getWindSensor {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'none' if ( not defined($default) );
+    return AttrVal( $name, 'ASC_windSensorDevice', $default );
+}
+
+sub getWindSensorReading {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'state' if ( not defined($default) );
+    return AttrVal( $name, 'ASC_windSensorReading', $default );
+}
+
+sub getWindSensorShuttersClosedPos {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return AttrVal( $name, 'ASC_windSensorShuttersClosedPos', 50 );
+}
+
 1;
 
 =pod
