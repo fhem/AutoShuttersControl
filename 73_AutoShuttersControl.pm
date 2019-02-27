@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.8-patchWind';
+my $version = '0.4.0.9-patchWind';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -842,7 +842,7 @@ sub EventProcessingWindowRec($@) {
         elsif (
             (
                 $1 eq 'tilted'
-                or ( $1 eq 'open' and $shutters->getSubTyp eq 'twostate' )
+                or ( ($1 eq 'open' or $1 eq 'opened') and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
             and $queryShuttersPosWinRecTilted
