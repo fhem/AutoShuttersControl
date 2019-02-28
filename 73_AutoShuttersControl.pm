@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.9-patchWind';
+my $version = '0.4.0.10-patchWind';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -69,9 +69,6 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_rainSensorDevice '
       . 'ASC_rainSensorReading '
       . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
-      . 'ASC_windSensorDevice '
-      . 'ASC_windSensorReading '
-      . 'ASC_windSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
       . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
       . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
@@ -197,6 +194,10 @@ my %userAttrList = (
     'ASC_BrightnessMinVal'            => -1,
     'ASC_BrightnessMaxVal'            => -1,
     'ASC_WiggleValue'                 => 5,
+    'ASC_Wind_SensorDevice'           => 'none',
+    'ASC_Wind_SensorReading'          => 'wind',
+    'ASC_Wind_minMaxSpeed'            => '30:50',
+    'ASC_Wind_Pos'                    => [ '', 0,   100 ],
 );
 
 my %posSetCmds = (
@@ -374,7 +375,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_windSensorDevice|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_Wind_SensorDevice|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -419,7 +420,7 @@ sub EventProcessingGeneral($$$) {
             EventProcessingRain( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_rainSensorDevice' );
             EventProcessingWind( $hash, $device, $events )
-              if ( $deviceAttr eq 'ASC_windSensorDevice' );
+              if ( $deviceAttr eq 'ASC_Wind_SensorDevice' );
             EventProcessingTwilightDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_twilightDevice' );
 
@@ -441,7 +442,7 @@ sub EventProcessingGeneral($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Wind_SensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -449,7 +450,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSe
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Wind_SensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -580,31 +581,10 @@ sub ShuttersDeviceScan($) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
-        delFromDevAttrList( $_, 'ASC_lock-out:soft,hard' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
-        delFromDevAttrList( $_, 'ASC_lock-outCmd:inhibit,blocked' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
-        delFromDevAttrList( $_,
-            'ASC_Pos_after_ComfortOpen:0,10,20,30,40,50,60,70,80,90,100' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
-
-        delFromDevAttrList( $_, 'ASC_Antifreeze:off,on' )
-          if ( AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'on'
-            or AttrVal( $_, 'ASC_Antifreeze', 'on' ) eq 'off' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.6
-
-        delFromDevAttrList( $_,
-'ASC_AntifreezePos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
-        );     # temporär muss später gelöscht werden ab Version 0.2.0.7
-
-        delFromDevAttrList( $_, 'ASC_LockOut_Cmd:inhibit,blocked' )
-          if ( AttrVal( $_, 'ASC_LockOut_Cmd', 'none' ) eq 'none' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.10
-
-        delFromDevAttrList( $_, 'ASC_Shading_Brightness_Sensor' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
-        delFromDevAttrList( $_, 'ASC_Shading_Brightness_Reading' )
-          ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
+#         delFromDevAttrList( $_, 'ASC_Shading_Brightness_Sensor' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
+#         delFromDevAttrList( $_, 'ASC_Shading_Brightness_Reading' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1112,7 +1092,7 @@ sub EventProcessingRain($@) {
             $shutters->setShuttersDev($shuttersDev);
             if (    $val > 100
                 and $shutters->getStatus !=
-                $ascDev->getRainSensorShuttersClosedPos )
+                    $ascDev->getRainSensorShuttersClosedPos )
             {
                 $shutters->setLastDrive('rain protection');
                 $shutters->setDriveCmd(
@@ -1120,7 +1100,7 @@ sub EventProcessingRain($@) {
             }
             elsif ( $val == 0
                 and $shutters->getStatus ==
-                $ascDev->getRainSensorShuttersClosedPos )
+                    $ascDev->getRainSensorShuttersClosedPos )
             {
                 $shutters->setLastDrive('rain un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
@@ -1131,33 +1111,38 @@ sub EventProcessingRain($@) {
 
 ######### Under Construction
 sub EventProcessingWind($@) {
-    my ( $hash, $device, $events ) = @_;
-    my $name    = $device;
-    my $reading = $ascDev->getWindSensorReading;
-    my $val;
+    my ( $hash, $shuttersDev, $events ) = @_;
+    my $name = $hash->{NAME};
+    $shutters->setShuttersDev($shuttersDev);
 
+    my $reading = $shutters->getWindSensorReading;
     if ( $events =~ m#$reading:\s(\d+)# ) {
-
+    
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            if (    $val > 100
-                and $shutters->getStatus !=
-                $ascDev->getRainSensorShuttersClosedPos )
+            
+            next if (  CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+              and $shutters->getShuttersPlace eq 'terrace' );
+
+            if (  $1 > $shutters->getWindMax
+              and $shutters->getStatus !=
+                  $shutters->getWindPos )
             {
-                $shutters->setLastDrive('rain protection');
+                $shutters->setLastDrive('wind protection');
                 $shutters->setDriveCmd(
-                    $ascDev->getRainSensorShuttersClosedPos );
+                    $shutters->getWindPos );
             }
-            elsif ( $val == 0
+            elsif ( $1 < $shutters->getWindMin
                 and $shutters->getStatus ==
-                $ascDev->getRainSensorShuttersClosedPos )
+                    $shutters->getWindPos )
             {
-                $shutters->setLastDrive('rain un-protection');
+                $shutters->setLastDrive('wind un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
             }
         }
     }
 }
+##########
 
 sub EventProcessingBrightness($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
@@ -1332,14 +1317,14 @@ sub EventProcessingTwilightDevice($@) {
     #
     #     Astro
     #     SunAz = azimuth = Sonnenwinkel
-    #     SunAlt = evaluation = Sonnenhöhe
+    #     SunAlt = elevation = Sonnenhöhe
 
-    if ( $events =~ m#(azimuth|evaluation|SunAz|SunAlt):\s(\d+.\d+)# ) {
+    if ( $events =~ m#(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)# ) {
         my $name = $device;
         my ( $azimuth, $elevation );
 
         $azimuth   = $2 if ( $1 eq 'azimuth'    or $1 eq 'SunAz' );
-        $elevation = $2 if ( $1 eq 'evaluation' or $1 eq 'SunAlt' );
+        $elevation = $2 if ( $1 eq 'elevation' or $1 eq 'SunAlt' );
 
         $azimuth = $ascDev->getAzimuth
           if ( not defined($azimuth) and not $azimuth );
@@ -1888,6 +1873,9 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ),
             $_, 'ASC_Brightness_Sensor' )
           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
+        AddNotifyDev( $hash, AttrVal( $_, 'ASC_Wind_SensorDevice', 'none' ),
+            $_, 'ASC_Wind_SensorDevice' )
+          if ( AttrVal( $_, 'ASC_Wind_SensorDevice', 'none' ) ne 'none' );
         $shuttersList = $shuttersList . ',' . $_;
     }
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDevice', 'none' ),
@@ -1896,9 +1884,6 @@ sub CreateNewNotifyDev($) {
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_rainSensorDevice', 'none' ),
         $name, 'ASC_rainSensorDevice' )
       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
-    AddNotifyDev( $hash, AttrVal( $name, 'ASC_windSensorDevice', 'none' ),
-        $name, 'ASC_windSensorDevice' )
-      if ( AttrVal( $name, 'ASC_windSensorDevice', 'none' ) ne 'none' );
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
         $name, 'ASC_twilightDevice' )
       if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) ne 'none' );
@@ -3170,6 +3155,45 @@ sub getRoommatesReading {
     return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Reading', $default );
 }
 
+sub _getWindSensor {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'none' if ( not defined($default) );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_SensorDevice', $default );
+}
+
+sub getWindSensorReading {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'wind' if ( not defined($default) );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_SensorReading', $default );
+}
+
+sub getWindPos {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_Pos', 0 );
+}
+
+sub getWindMax {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return (split(':',AttrVal( $self->{shuttersDev}, 'ASC_Wind_minMaxSpeed', 30)))[1];
+}
+
+sub getWindMin {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return (split(':',AttrVal( $self->{shuttersDev}, 'ASC_Wind_minMaxSpeed', 30)))[0];
+}
+
 sub getModeUp {
     my $self = shift;
 
@@ -3307,8 +3331,15 @@ BEGIN {
 sub getBrightness {
     my $self = shift;
 
-    return ReadingsVal( $shutters->_getBrightnessSensor,
+    return ReadingsNum( $shutters->_getBrightnessSensor,
         $shutters->getBrightnessReading, -1 );
+}
+
+sub getWindStatus {
+    my $self = shift;
+
+    return ReadingsVal( $shutters->_getWindSensor,
+        $shutters->getWindSensorReading, -1 );
 }
 
 sub getStatus {
@@ -3768,31 +3799,6 @@ sub getRainSensorShuttersClosedPos {
     return AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 );
 }
 
-sub getWindSensor {
-    my $self    = shift;
-    my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_windSensorDevice', $default );
-}
-
-sub getWindSensorReading {
-    my $self    = shift;
-    my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'state' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_windSensorReading', $default );
-}
-
-sub getWindSensorShuttersClosedPos {
-    my $self = shift;
-    my $name = $self->{name};
-
-    return AttrVal( $name, 'ASC_windSensorShuttersClosedPos', 50 );
-}
-
 1;
 
 =pod
@@ -3932,6 +3938,9 @@ sub getWindSensorShuttersClosedPos {
       <li>ASC_BrightnessMinVal - minimum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_BrightnessMaxVal - maximum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_ShuttersPlace - window/terrace, if this attribute is set to terrace and the residents device are in state "gone"and SelfDefence is active the shutter will be closed</li>
+      <li>ASC_Wind_SensorDevice - </li>
+      <li>ASC_Wind_SensorReading - </li>
+      <li>ASC_Wind_minMaxSpeed - </li>
     </ul>
   </ul>
 </ul>
@@ -4088,6 +4097,9 @@ sub getWindSensorShuttersClosedPos {
       <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
       <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
       <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
+      <li>ASC_Wind_SensorDevice - Name des FHEM Devices f&uuml;r die Windgeschwindigkeit</li>
+      <li>ASC_Wind_SensorReading - Name des Device Readings welches die Wind Informationen h&auml;lt</li>
+      <li>ASC_Wind_minMaxSpeed - min:max / Angabe von Minamaler und Maximaler Windgeschwindigkeit, durch doppel Punkt getrennt. Bsp.: schlie&szlig;en bei &uuml;ber max Wert und wieder auf vorherige Position fahren bei min Wert.</li>
     </ul>
   </ul>
 </ul>
