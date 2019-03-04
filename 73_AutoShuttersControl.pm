@@ -76,6 +76,7 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
       . 'ASC_shuttersDriveOffset '
       . 'ASC_twilightDevice '
+      . 'ASC_windSensor '
       . 'ASC_expert:1 '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
@@ -194,8 +195,6 @@ my %userAttrList = (
     'ASC_BrightnessMinVal'            => -1,
     'ASC_BrightnessMaxVal'            => -1,
     'ASC_WiggleValue'                 => 5,
-    'ASC_Wind_SensorDevice'           => 'none',
-    'ASC_Wind_SensorReading'          => 'wind',
     'ASC_Wind_minMaxSpeed'            => '30:50',
     'ASC_Wind_Pos'                    => [ '', 0,   100 ],
 );
@@ -337,10 +336,6 @@ sub Notify($$) {
           if ( $ascDev->getSunriseTimeWeHoliday eq 'none' );
         readingsSingleUpdate( $hash, 'selfDefense', 'off', 0 )
           if ( $ascDev->getSelfDefense eq 'none' );
-
-        CommandDeleteReading( undef, $name . ' lockOut' )
-          if ( ReadingsVal( $name, 'lockOut', 'none' ) ne 'none' )
-          ;    # temporär ab Version 0.2.2
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
         ShuttersDeviceScan($hash)
@@ -580,11 +575,11 @@ sub ShuttersDeviceScan($) {
     foreach (@list) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
-
-#         delFromDevAttrList( $_, 'ASC_Shading_Brightness_Sensor' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
-#         delFromDevAttrList( $_, 'ASC_Shading_Brightness_Reading' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.2.0.12
+          
+        delFromDevAttrList( $_, 'ASC_Wind_SensorDevice' )
+          ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
+        delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
+          ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -596,7 +591,6 @@ sub ShuttersDeviceScan($) {
         $shutters->setShading('out');
     }
 
-    #     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
 
     if ( $ascDev->getMonitoredDevs ne 'none' ) {
@@ -693,7 +687,9 @@ sub UserAttributs_Readings_ForShutters($$) {
 
 ## Fügt dem NOTIFYDEV Hash weitere Devices hinzu
 sub AddNotifyDev($@) {
+    ### Beispielaufruf: AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
     my ( $hash, $dev, $shuttersDev, $shuttersAttr ) = @_;
+    $dev = (split(':',$dev))[0];            ## Wir versuchen die Device Attribute anders zu setzen. DEVICE:READING
     my $name = $hash->{NAME};
 
     my $notifyDev = $hash->{NOTIFYDEV};
@@ -1115,7 +1111,7 @@ sub EventProcessingWind($@) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
-    my $reading = $shutters->getWindSensorReading;
+    my $reading = $ascDev->getWindSensorReading;
     if ( $events =~ m#$reading:\s(\d+)# ) {
     
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -3155,24 +3151,6 @@ sub getRoommatesReading {
     return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Reading', $default );
 }
 
-sub _getWindSensor {
-    my $self    = shift;
-    my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_SensorDevice', $default );
-}
-
-sub getWindSensorReading {
-    my $self    = shift;
-    my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'wind' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_SensorReading', $default );
-}
-
 sub getWindPos {
     my $self = shift;
     my $name = $self->{name};
@@ -3338,8 +3316,8 @@ sub getBrightness {
 sub getWindStatus {
     my $self = shift;
 
-    return ReadingsVal( $shutters->_getWindSensor,
-        $shutters->getWindSensorReading, -1 );
+    return ReadingsVal( $ascDev->_getWindSensor,
+        $ascDev->getWindSensorReading, -1 );
 }
 
 sub getStatus {
@@ -3799,6 +3777,24 @@ sub getRainSensorShuttersClosedPos {
     return AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 );
 }
 
+sub _getWindSensor {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'none' if ( not defined($default) );
+    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[0];
+}
+
+sub getWindSensorReading {
+    my $self    = shift;
+    my $name    = $self->{name};
+    my $default = $self->{defaultarg};
+
+    $default = 'wind' if ( not defined($default) );
+    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[0];
+}
+
 1;
 
 =pod
@@ -3938,9 +3934,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_BrightnessMinVal - minimum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_BrightnessMaxVal - maximum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_ShuttersPlace - window/terrace, if this attribute is set to terrace and the residents device are in state "gone"and SelfDefence is active the shutter will be closed</li>
-      <li>ASC_Wind_SensorDevice - </li>
-      <li>ASC_Wind_SensorReading - </li>
       <li>ASC_Wind_minMaxSpeed - </li>
+      <li>ASC_Wind_Pos - </li>
     </ul>
   </ul>
 </ul>
@@ -4041,6 +4036,7 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
       <li>ASC_twilightDevice - Device welches Informationen zum Sonnenstand liefert, wird unter anderem f&uuml;r die Beschattung verwendet.</li>
       <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
+      <li>ASC_windSensor - DEVICE:READING / Name des FHEM Devices und des Readings f&uuml;r die Windgeschwindigkeit</li>
     </ul><br>
     In den Rolll&auml;den Devices
     <ul>
@@ -4097,9 +4093,8 @@ sub getRainSensorShuttersClosedPos {
       <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
       <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
       <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
-      <li>ASC_Wind_SensorDevice - Name des FHEM Devices f&uuml;r die Windgeschwindigkeit</li>
-      <li>ASC_Wind_SensorReading - Name des Device Readings welches die Wind Informationen h&auml;lt</li>
-      <li>ASC_Wind_minMaxSpeed - min:max / Angabe von Minamaler und Maximaler Windgeschwindigkeit, durch doppel Punkt getrennt. Bsp.: schlie&szlig;en bei &uuml;ber max Wert und wieder auf vorherige Position fahren bei min Wert.</li>
+      <li>ASC_Wind_minMaxSpeed - min:max / Angabe von minimaler und maximaler Windgeschwindigkeit, durch doppel Punkt getrennt. Bsp.: schlie&szlig;en bei &uuml;ber max Wert und wieder auf vorherige Position fahren bei unter min Wert.</li>
+      <li>ASC_Wind_Pos - Position des Rollladen beim ausl&ouml;sen des max Wertes</li>
     </ul>
   </ul>
 </ul>
