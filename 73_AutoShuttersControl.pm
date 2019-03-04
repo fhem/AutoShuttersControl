@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.9';
+my $version = '0.4.0.10';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -886,22 +886,25 @@ sub EventProcessingRoommate($@) {
             and (  $shutters->getRoommatesStatus eq 'home'
                 or $shutters->getRoommatesStatus eq 'awoken' )
             and $ascDev->getAutoShuttersControlMorning eq 'on'
-
-            and (  $shutters->getModeUp eq 'always'
-                or $shutters->getModeUp eq 'home' )
-          )
+            and (  $shutters->getModeUp eq 'home'
+                    or $shutters->getModeUp eq 'always'
+                    or $shutters->getModeDown eq 'home'
+                    or $shutters->getModeDown eq 'always' )
+           )
         {
             Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_1: $shuttersDev und Events $events"
             );
             if (
-                (
+                 (
                        $shutters->getRoommatesLastStatus eq 'asleep'
                     or $shutters->getRoommatesLastStatus eq 'awoken'
-                )
-                and IsDay( $hash, $shuttersDev )
-                and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
-              )
+                 )
+                 and IsDay( $hash, $shuttersDev )
+                 and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                 and (  $shutters->getModeUp eq 'home'
+                    or $shutters->getModeUp eq 'always' )
+               )
             {
                 Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_2: $shuttersDev und Events $events"
@@ -912,20 +915,19 @@ sub EventProcessingRoommate($@) {
             }
 
             if (
-                (
+                 (
                        $shutters->getRoommatesLastStatus eq 'absent'
                     or $shutters->getRoommatesLastStatus eq 'gone'
                     or $shutters->getRoommatesLastStatus eq 'home'
-                )
-                and (  $shutters->getModeUp eq 'home'
-                    or $shutters->getModeUp eq 'always'
-                    or $shutters->getModeDown eq 'home'
-                    or $shutters->getModeDown eq 'always' )
-                and $shutters->getRoommatesStatus eq 'home'
-              )
+                 )
+                 and $shutters->getRoommatesStatus eq 'home'
+               )
             {
                 if ( not IsDay( $hash, $shuttersDev )
-                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                    and (  $shutters->getModeDown eq 'home'
+                        or $shutters->getModeDown eq 'always' )
+                   )
                 {
                     my $position;
                     $shutters->setLastDrive('roommate home');
@@ -945,7 +947,9 @@ sub EventProcessingRoommate($@) {
                 }
                 elsif ( IsDay( $hash, $shuttersDev )
                     and $shutters->getStatus == $shutters->getClosedPos
-                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) )
+                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                    and (  $shutters->getModeUp eq 'home'
+                        or $shutters->getModeUp eq 'always') )
                 {
                     $shutters->setLastDrive('roommate home');
                     ShuttersCommandSet( $hash, $shuttersDev,
