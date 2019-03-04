@@ -41,10 +41,19 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta3';
+my $version = '0.4.0.11beta6';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
+    
+    ### alte Attribute welche entfernt werden
+    my $oldAttr = 'ASC_temperatureSensor '
+                . 'ASC_temperatureReading '
+                . 'ASC_residentsDevice '
+                . 'ASC_residentsDeviceReading '
+                . 'ASC_rainSensorDevice '
+                . 'ASC_rainSensorReading '
+                . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 ';
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
@@ -56,19 +65,15 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{AttrFn}   = 'AutoShuttersControl::Attr';
     $hash->{AttrList} =
         'ASC_guestPresence:on,off '
-      . 'ASC_temperatureSensor '
-      . 'ASC_temperatureReading '
+      . 'ASC_tempSensor '
       . 'ASC_brightnessMinVal '
       . 'ASC_brightnessMaxVal '
       . 'ASC_autoShuttersControlMorning:on,off '
       . 'ASC_autoShuttersControlEvening:on,off '
       . 'ASC_autoShuttersControlShading:on,off '
       . 'ASC_autoShuttersControlComfort:on,off '
-      . 'ASC_residentsDevice '
-      . 'ASC_residentsDeviceReading '
-      . 'ASC_rainSensorDevice '
-      . 'ASC_rainSensorReading '
-      . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+      . 'ASC_residentsDev '
+      . 'ASC_rainSensor '
       . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
       . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
@@ -78,6 +83,7 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_twilightDevice '
       . 'ASC_windSensor '
       . 'ASC_expert:1 '
+      . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 }
@@ -370,20 +376,21 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_windSensor|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
+            print 'in Processinf rein' . "\n";
         }
-        elsif (
-            grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon)(\s.*|$)/,
-            @{$events}
-          )
-        {
-            EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
-        }
+#         elsif (
+#             grep
+# /^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon)(\s.*|$)/,
+#             @{$events}
+#           )
+#         {
+#             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
+#         }
     }
     elsif ( grep /^($posReading):\s\d+$/, @{$events} ) {
         EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
@@ -411,9 +418,9 @@ sub EventProcessingGeneral($$$) {
               if ( $deviceAttr eq 'ASC_Roommate_Device' )
               ;    # ist es ein Bewohner Device wird diese Funktion gestartet
             EventProcessingResidents( $hash, $device, $events )
-              if ( $deviceAttr eq 'ASC_residentsDevice' );
+              if ( $deviceAttr eq 'ASC_residentsDev' );
             EventProcessingRain( $hash, $device, $events )
-              if ( $deviceAttr eq 'ASC_rainSensorDevice' );
+              if ( $deviceAttr eq 'ASC_rainSensor' );
             EventProcessingWind( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_windSensor' );
             EventProcessingTwilightDevice( $hash, $device, $events )
@@ -437,7 +444,7 @@ sub EventProcessingGeneral($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -445,7 +452,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSe
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -590,6 +597,20 @@ sub ShuttersDeviceScan($) {
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
         $shutters->setShading('out');
     }
+    
+    ### Temporär und muss später entfernt werden
+    CommandAttr(undef,$name . ' ASC_tempSensor '.AttrVal($name,'ASC_temperatureSensor','none').':'.AttrVal($name,'ASC_temperatureReading','temperature')) if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_residentsDev '.AttrVal($name,'ASC_residentsDevice','none').':'.AttrVal($name,'ASC_residentsDeviceReading','state')) if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain')) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
+    
+    CommandDeleteAttr(undef,$name . ' ASC_temperatureSensor') if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_temperatureReading') if ( AttrVal($name,'ASC_temperatureReading','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_residentsDevice') if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_residentsDeviceReading') if ( AttrVal($name,'ASC_residentsDeviceReading','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_rainSensorDevice') if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_rainSensorReading') if ( AttrVal($name,'ASC_rainSensorReading','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100') if ( AttrVal($name,'ASC_rainSensorShuttersClosedPos','none') ne 'none' );
+
 
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
 
@@ -689,7 +710,9 @@ sub UserAttributs_Readings_ForShutters($$) {
 sub AddNotifyDev($@) {
     ### Beispielaufruf: AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
     my ( $hash, $dev, $shuttersDev, $shuttersAttr ) = @_;
+    print 'Devicedavor: ' . $dev . "\n";
     $dev = (split(':',$dev))[0];            ## Wir versuchen die Device Attribute anders zu setzen. DEVICE:READING
+    print 'Device danach: ' . $dev . "\n";
     my $name = $hash->{NAME};
 
     my $notifyDev = $hash->{NOTIFYDEV};
@@ -1886,13 +1909,16 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ),
             $_, 'ASC_Brightness_Sensor' )
           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
+        
+        $shuttersList = $shuttersList . ',' . $_; 
+
     }
-    AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDevice', 'none' ),
-        $name, 'ASC_residentsDevice' )
-      if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
-    AddNotifyDev( $hash, AttrVal( $name, 'ASC_rainSensorDevice', 'none' ),
-        $name, 'ASC_rainSensorDevice' )
-      if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+    AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDev', 'none' ),
+        $name, 'ASC_residentsDev' )
+      if ( AttrVal( $name, 'ASC_residentsDev', 'none' ) ne 'none' );
+    AddNotifyDev( $hash, AttrVal( $name, 'ASC_rainSensor', 'none' ),
+        $name, 'ASC_rainSensor' )
+      if ( AttrVal( $name, 'ASC_rainSensor', 'none' ) ne 'none' );
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
         $name, 'ASC_twilightDevice' )
       if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) ne 'none' );
@@ -3739,7 +3765,7 @@ sub _getTempSensor {
     my $default = $self->{defaultarg};
 
     $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_temperatureSensor', $default );
+    return  (split(':',AttrVal( $name, 'ASC_tempSensor', $default )))[0];
 }
 
 sub getTempReading {
@@ -3748,7 +3774,7 @@ sub getTempReading {
     my $default = $self->{defaultarg};
 
     $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_temperatureReading', $default );
+    return (split(':',AttrVal( $name, 'ASC_tempSensor', $default )))[1];
 }
 
 sub _getResidentsDev {
@@ -3757,7 +3783,7 @@ sub _getResidentsDev {
     my $default = $self->{defaultarg};
 
     $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_residentsDevice', $default );
+    return (split(':',AttrVal( $name, 'ASC_residentsDev', $default )))[0];
 }
 
 sub getResidentsReading {
@@ -3766,7 +3792,7 @@ sub getResidentsReading {
     my $default = $self->{defaultarg};
 
     $default = 'state' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_residentsDeviceReading', $default );
+    return (split(':',AttrVal( $name, 'ASC_residentsDev', $default )))[1];
 }
 
 sub getRainSensor {
@@ -3775,7 +3801,7 @@ sub getRainSensor {
     my $default = $self->{defaultarg};
 
     $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_rainSensorDevice', $default );
+    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[0];
 }
 
 sub getRainSensorReading {
@@ -3784,14 +3810,15 @@ sub getRainSensorReading {
     my $default = $self->{defaultarg};
 
     $default = 'state' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_rainSensorReading', $default );
+    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[1];
 }
 
 sub getRainSensorShuttersClosedPos {
     my $self = shift;
     my $name = $self->{name};
 
-    return AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 );
+    my $default = 50;
+    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[2];
 }
 
 sub _getWindSensor {
@@ -4041,15 +4068,11 @@ sub getWindSensorReading {
       <li>ASC_autoShuttersControlComfort - on/off - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine Offenposition f&auml;hrt, die  beim Rollladen &uuml;ber das Attribut ASC_ComfortOpen_Pos eingestellt wird.</li>
       <li>ASC_autoShuttersControlEvening - on/off - ob Abends die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <li>ASC_autoShuttersControlMorning - on/off - ob Morgens die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
-      <li>ASC_temperatureReading - Reading f&uuml;r die Aussentemperatur</li>
-      <li>ASC_temperatureSensor - Device f&uuml;r die Aussentemperatur</li>
-      <li>ASC_residentsDevice - Devicenamen des Residents Device der obersten Ebene</li>
-      <li>ASC_residentsDeviceReading - Status Reading vom Residents Device der obersten Ebene</li>
+      <li>ASC_tempSensor - DEVICENAME:READINGNAME / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
+      <li>ASC_residentsDev - DEVICENAME:READINGNAME / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
       <li>ASC_brightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
       <li>ASC_brightnessMaxVal - maximaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
-      <li>ASC_rainSensorDevice - Device, welches bei Regen getriggert werden soll</li>
-      <li>ASC_rainSensorReading - das ensprechende Reading zum Regendevice</li>
-      <li>ASC_rainSensorShuttersClosedPos - Position in pct, welche der Rollladen anfahren soll, wenn es Regnet</li>
+      <li>ASC_rainSensor - DEVICENAME:READINGNAME:CLOSEDPOS / der Inhalt ist eine Kombination aus Devicename, Readingname und der Regen geschlossen Position.</li>
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
       <li>ASC_twilightDevice - Device welches Informationen zum Sonnenstand liefert, wird unter anderem f&uuml;r die Beschattung verwendet.</li>
       <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
