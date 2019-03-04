@@ -858,7 +858,7 @@ sub EventProcessingRoommate($@) {
         
         my $getModeUp = $shutters->getModeUp;
         my $getModeDown = $shutters->getModeDown;
-        my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus
+        my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
 
         if (
             ( $1 eq 'home' or $1 eq 'awoken' )
@@ -976,14 +976,13 @@ sub EventProcessingResidents($@) {
 
     my $name    = $device;
     my $reading = $ascDev->getResidentsReading;
-    
-    my $getModeUp = $shutters->getModeUp;
-    my $getModeDow = $getModeDown;
     my $getResidentsLastStatus = $ascDev->getResidentsLastStatus;
 
     if ( $events =~ m#$reading:\s(absent)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+            my $getModeUp = $shutters->getModeUp;
+            my $getModeDown = $shutters->getModeDown;
             $shutters->setHardLockOut('off');
             if (
                     CheckIfShuttersWindowRecOpen($shuttersDev) != 0
@@ -1016,6 +1015,8 @@ sub EventProcessingResidents($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+            my $getModeUp = $shutters->getModeUp;
+            my $getModeDown = $shutters->getModeDown;
             $shutters->setHardLockOut('off');
             if ( $shutters->getShuttersPlace eq 'terrace' ) {
                 $shutters->setLastDrive('selfeDefense terrace');
@@ -1033,6 +1034,8 @@ sub EventProcessingResidents($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+            my $getModeUp = $shutters->getModeUp;
+            my $getModeDown = $shutters->getModeDown;
 
             if (
                     $shutters->getStatus != $shutters->getClosedPos
