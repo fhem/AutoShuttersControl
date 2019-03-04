@@ -312,7 +312,7 @@ sub Notify($$) {
     my $events  = deviceEvents( $dev, 1 );
     return if ( !$events );
 
-    Log3( $name, 4,
+    Log3( $name, 3,
             "AutoShuttersControl ($name) - Devname: "
           . $devname
           . " Name: "
@@ -4060,23 +4060,62 @@ sub getWindSensorReading {
   <ul>
   Im Modul Device
     <ul>
+      <a name="ASC_freezeTemp"></a>
       <li>ASC_freezeTemp - Temperatur, ab welcher der Frostschutz greifen soll und das Rollo nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
+      <a name="ASC_autoAstroModeEvening"></a>
       <li>ASC_autoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
+      <a name="ASC_autoAstroModeEveningHorizon"></a>
       <li>ASC_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
+      <a name="ASC_autoAstroModeMorning"></a>
       <li>ASC_autoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
+      <a name="ASC_autoAstroModeMorningHorizon"></a>
       <li>ASC_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
+      <a name="ASC_autoShuttersControlComfort"></a>
       <li>ASC_autoShuttersControlComfort - on/off - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine Offenposition f&auml;hrt, die  beim Rollladen &uuml;ber das Attribut ASC_ComfortOpen_Pos eingestellt wird.</li>
+      <a name="ASC_autoShuttersControlEvening"></a>
       <li>ASC_autoShuttersControlEvening - on/off - ob Abends die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <a name="ASC_autoShuttersControlMorning"></a>
       <li>ASC_autoShuttersControlMorning - on/off - ob Morgens die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <a name="ASC_tempSensor"></a>
       <li>ASC_tempSensor - DEVICENAME:READINGNAME / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
+      <a name="ASC_residentsDev"></a>
       <li>ASC_residentsDev - DEVICENAME:READINGNAME / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
+      <a name="ASC_brightnessMinVal"></a>
       <li>ASC_brightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
+      <a name="ASC_brightnessMaxVal"></a>
       <li>ASC_brightnessMaxVal - maximaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
+      <a name="ASC_rainSensor"></a>
       <li>ASC_rainSensor - DEVICENAME:READINGNAME:CLOSEDPOS / der Inhalt ist eine Kombination aus Devicename, Readingname und der Regen geschlossen Position.</li>
+      <a name="ASC_shuttersDriveOffset"></a>
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
+      <a name="ASC_twilightDevice"></a>
       <li>ASC_twilightDevice - Device welches Informationen zum Sonnenstand liefert, wird unter anderem f&uuml;r die Beschattung verwendet.</li>
+      <a name="ASC_expert"></a>
       <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
+      <a name="ASC_windSensor"></a>
       <li>ASC_windSensor - DEVICE:READING / Name des FHEM Devices und des Readings f&uuml;r die Windgeschwindigkeit</li>
+      <a name="ASC_autoShuttersControlShading"></a>
+      <li>ASC_autoShuttersControlShading - on/off aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
+
+
+      <a name="ASC_temperatureSenso"></a>
+      <li>ASC_temperatureSenso - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_temperatureReading"></a>
+      <li>ASC_temperatureReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_residentsDevice"></a>
+      <li>ASC_residentsDevice - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_residentsDeviceReading"></a>
+      <li>ASC_residentsDeviceReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorDevice"></a>
+      <li>ASC_rainSensorDevice - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorReading"></a>
+      <li>ASC_rainSensorReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorShuttersClosedPos"></a>
+      <li>ASC_rainSensorShuttersClosedPos - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      
+      
+      
+      
     </ul><br>
     In den Rolll&auml;den Devices
     <ul>
