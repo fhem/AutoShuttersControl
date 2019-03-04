@@ -370,7 +370,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_Wind_SensorDevice|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDevice|.*ASC_rainSensorDevice|.*ASC_windSensor|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -415,7 +415,7 @@ sub EventProcessingGeneral($$$) {
             EventProcessingRain( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_rainSensorDevice' );
             EventProcessingWind( $hash, $device, $events )
-              if ( $deviceAttr eq 'ASC_Wind_SensorDevice' );
+              if ( $deviceAttr eq 'ASC_windSensor' );
             EventProcessingTwilightDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_twilightDevice' );
 
@@ -437,7 +437,7 @@ sub EventProcessingGeneral($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Wind_SensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -445,7 +445,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSe
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_Wind_SensorDevice|ASC_Brightness_Sensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDevice|ASC_rainSensorDevice|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -1886,10 +1886,6 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ),
             $_, 'ASC_Brightness_Sensor' )
           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_Wind_SensorDevice', 'none' ),
-            $_, 'ASC_Wind_SensorDevice' )
-          if ( AttrVal( $_, 'ASC_Wind_SensorDevice', 'none' ) ne 'none' );
-        $shuttersList = $shuttersList . ',' . $_;
     }
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDevice', 'none' ),
         $name, 'ASC_residentsDevice' )
@@ -1900,6 +1896,10 @@ sub CreateNewNotifyDev($) {
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_twilightDevice', 'none' ),
         $name, 'ASC_twilightDevice' )
       if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) ne 'none' );
+    AddNotifyDev( $hash, AttrVal( $name, 'ASC_windSensor', 'none' ),
+        $name, 'ASC_windSensor' )
+      if ( AttrVal( $name, 'ASC_windSensor', 'none' ) ne 'none' );
+      
     $hash->{NOTIFYDEV} = $hash->{NOTIFYDEV} . $shuttersList;
 }
 
@@ -3809,7 +3809,7 @@ sub getWindSensorReading {
     my $default = $self->{defaultarg};
 
     $default = 'wind' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[0];
+    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[1];
 }
 
 1;
