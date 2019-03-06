@@ -312,7 +312,7 @@ sub Notify($$) {
     my $events  = deviceEvents( $dev, 1 );
     return if ( !$events );
 
-    Log3( $name, 3,
+    Log3( $name, 4,
             "AutoShuttersControl ($name) - Devname: "
           . $devname
           . " Name: "
@@ -381,7 +381,6 @@ sub Notify($$) {
           )
         {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
-            print 'in Processinf rein' . "\n";
         }
 #         elsif (
 #             grep
@@ -601,7 +600,7 @@ sub ShuttersDeviceScan($) {
     ### Temporär und muss später entfernt werden
     CommandAttr(undef,$name . ' ASC_tempSensor '.AttrVal($name,'ASC_temperatureSensor','none').':'.AttrVal($name,'ASC_temperatureReading','temperature')) if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_residentsDev '.AttrVal($name,'ASC_residentsDevice','none').':'.AttrVal($name,'ASC_residentsDeviceReading','state')) if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
-    CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain')) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain').':'.AttrVal($name,'ASC_rainSensorShuttersClosedPos',50)) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
     
     CommandDeleteAttr(undef,$name . ' ASC_temperatureSensor') if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_temperatureReading') if ( AttrVal($name,'ASC_temperatureReading','none') ne 'none' );
@@ -609,7 +608,7 @@ sub ShuttersDeviceScan($) {
     CommandDeleteAttr(undef,$name . ' ASC_residentsDeviceReading') if ( AttrVal($name,'ASC_residentsDeviceReading','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_rainSensorDevice') if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_rainSensorReading') if ( AttrVal($name,'ASC_rainSensorReading','none') ne 'none' );
-    CommandDeleteAttr(undef,$name . ' ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100') if ( AttrVal($name,'ASC_rainSensorShuttersClosedPos','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_rainSensorShuttersClosedPos') if ( AttrVal($name,'ASC_rainSensorShuttersClosedPos','none') ne 'none' );
 
 
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
@@ -710,15 +709,20 @@ sub UserAttributs_Readings_ForShutters($$) {
 sub AddNotifyDev($@) {
     ### Beispielaufruf: AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
     my ( $hash, $dev, $shuttersDev, $shuttersAttr ) = @_;
-    print 'Devicedavor: ' . $dev . "\n";
-    $dev = (split(':',$dev))[0];            ## Wir versuchen die Device Attribute anders zu setzen. DEVICE:READING
-    print 'Device danach: ' . $dev . "\n";
+    
+    $dev = (split(':',$dev))[0];
+    my ($key, $value) = split(':',(split(' ',$dev))[0],2);      ## Wir versuchen die Device Attribute anders zu setzen. device=DEVICE reading=READING
+    $dev = $key;
+#     if ( not defined($value) )
+#     { $dev = (split(':',$dev))[0] } ## Notfall falls noch kein device=DEVICE existiert SOLL NUR TEMPORÄR SEIN
+#     else { $dev = $value }
+    
     my $name = $hash->{NAME};
-
+    
     my $notifyDev = $hash->{NOTIFYDEV};
-    $notifyDev = "" if ( !$notifyDev );
-    my %hash;
+    $notifyDev = '' if ( !$notifyDev );
 
+    my %hash;
     %hash = map { ( $_ => 1 ) }
       split( ",", "$notifyDev,$dev" );
 
@@ -1118,23 +1122,28 @@ sub EventProcessingRain($@) {
     my $val;
 
     if ( $events =~ m#$reading:\s(\d+|rain|dry)# ) {
-        if    ( $1 eq 'rain' ) { $val = 1000 }
-        elsif ( $1 eq 'dry' )  { $val = 0 }
+        my $val;
+        my $triggerMsx = $ascDev->getRainTriggerMax;
+        my $triggerMin = $ascDev->getRainTriggerMin;
+        my $closedPos = $ascDev->getRainSensorShuttersClosedPos;
+        
+        if    ( $1 eq 'rain' ) { $val = $triggermax + 1 }
+        elsif ( $1 eq 'dry' )  { $val = $triggermin }
         else                   { $val = $1 }
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            if (    $val > 100
+            if (    $val > $triggerMax
                 and $shutters->getStatus !=
-                    $ascDev->getRainSensorShuttersClosedPos )
+                    $closedPos )
             {
                 $shutters->setLastDrive('rain protection');
                 $shutters->setDriveCmd(
-                    $ascDev->getRainSensorShuttersClosedPos );
+                    $closedPos );
             }
-            elsif ( $val == 0
+            elsif ( ($val == 0 or $val < $triggerMax)
                 and $shutters->getStatus ==
-                    $ascDev->getRainSensorShuttersClosedPos )
+                    $closedPos )
             {
                 $shutters->setLastDrive('rain un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
@@ -2076,6 +2085,13 @@ sub AutoSearchTwilightDev($) {
               . ( devspec2array('TYPE=(Astro|Twilight)') )[0] )
           if ( AttrVal( $name, 'ASC_twilightDevice', 'none' ) eq 'none' );
     }
+}
+
+sub GetAttrValues($@) {
+    my ($dev,$attribut)   = @_;
+    my @val = split(':',join(':',split(' ',AttrVal($dev,$attribut,'none'))));
+
+    return \@val;
 }
 
 # Hilfsfunktion welche meinen ReadingString zum finden der getriggerten Devices und der Zurdnung was das Device überhaupt ist und zu welchen Rolladen es gehört aus liest und das Device extraiert
@@ -3657,7 +3673,8 @@ use GPUtils qw(GP_Import);
 BEGIN {
     GP_Import(
         qw(
-          AttrVal)
+          AttrVal
+          gettimeofday)
     );
 }
 
@@ -3764,79 +3781,126 @@ sub _getTempSensor {
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return  (split(':',AttrVal( $name, 'ASC_tempSensor', $default )))[0];
+    return $self->{ASC_tempSensor}->{device} if ( exists($self->{ASC_tempSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME}) < 2);
+    $self->{ASC_tempSensor}->{LASTGETTIME} = int(gettimeofday());
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($name,'ASC_tempSensor','none');
+
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ASC_tempSensor}->{device} = @{$pairsrefarray}[0];
+    $self->{ASC_tempSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'temperature');
+
+    return $self->{ASC_tempSensor}->{device};
 }
 
 sub getTempReading {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'none' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_tempSensor', $default )))[1];
+    
+    return $self->{ASC_tempSensor}->{reading} if ( exists($self->{ASC_tempSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getTempSensor;
+    return $self->{ASC_tempSensor}->{reading};
 }
 
 sub _getResidentsDev {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
+    
+    return $self->{ASC_residentsDev}->{device} if ( exists($self->{ASC_residentsDev}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME}) < 2);
+    $self->{ASC_residentsDev}->{LASTGETTIME} = int(gettimeofday());
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($name,'ASC_residentsDev','none');
 
-    $default = 'none' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_residentsDev', $default )))[0];
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ASC_residentsDev}->{device} = @{$pairsrefarray}[0];
+    $self->{ASC_residentsDev}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'state');
+
+    return $self->{ASC_residentsDev}->{device};
 }
 
 sub getResidentsReading {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
-
-    $default = 'state' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_residentsDev', $default )))[1];
+    
+    return $self->{ASC_residentsDev}->{reading} if ( exists($self->{ASC_residentsDev}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME}) < 2);
+    $ascDev->_getResidentsDev;
+    return $self->{ASC_residentsDev}->{reading};
 }
 
-sub getRainSensor {
+sub _getRainSensor {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[0];
+    return $self->{ASC_rainSensor}->{device} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
+    $self->{ASC_rainSensor}->{LASTGETTIME} = int(gettimeofday());
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($name,'ASC_rainSensor','none');
+
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ASC_rainSensor}->{device} = @{$pairsrefarray}[0];
+    $self->{ASC_rainSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'state');
+    $self->{ASC_rainSensor}->{triggermax} = ( defined(@{$pairsrefarray}[2]) ? @{$pairsrefarray}[2] : 1000);
+    $self->{ASC_rainSensor}->{triggermin} = ( defined(@{$pairsrefarray}[3]) ? $self->{ASC_rainSensor}->{triggermax} - @{$pairsrefarray}[3] : $self->{ASC_rainSensor}->{triggermax} - 900);
+    $self->{ASC_rainSensor}->{shuttersClosedPos} = ( defined(@{$pairsrefarray}[4]) ? @{$pairsrefarray}[4] : 0);
+    
+    return $self->{ASC_rainSensor}->{device};
 }
 
 sub getRainSensorReading {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
+    
+    return $self->{ASC_rainSensor}->{reading} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getRainSensor;
+    return $self->{ASC_rainSensor}->{reading};
+}
 
-    $default = 'state' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[1];
+sub getRainTriggerMax {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return $self->{ASC_rainSensor}->{reading} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getRainSensor;
+    return $self->{ASC_rainSensor}->{reading};
+}
+
+sub getRainTriggerMin {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return $self->{ASC_rainSensor}->{reading} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getRainSensor;
+    return $self->{ASC_rainSensor}->{reading};
 }
 
 sub getRainSensorShuttersClosedPos {
     my $self = shift;
     my $name = $self->{name};
 
-    my $default = 50;
-    return (split(':',AttrVal( $name, 'ASC_rainSensor', $default )))[2];
+    return $self->{ASC_rainSensor}->{reading} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getRainSensor;
+    return $self->{ASC_rainSensor}->{reading};
 }
 
 sub _getWindSensor {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
+    
+    return $self->{ASC_windSensor}->{device} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
+    $self->{ASC_windSensor}->{LASTGETTIME} = int(gettimeofday());
+    my ($scalanum,$pairsrefarray) = AutoShuttersControl::GetAttrValues($name,'ASC_windSensor','none');
+    
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ASC_windSensor}->{device} = @{$pairsrefarray}[0];
+    $self->{ASC_windSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'wind');
 
-    $default = 'none' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[0];
+    return $self->{ASC_windSensor}->{device};
 }
 
 sub getWindSensorReading {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'wind' if ( not defined($default) );
-    return (split(':',AttrVal( $name, 'ASC_windSensor', $default )))[1];
+    return $self->{ASC_windSensor}->{reading} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
+    $ascDev->_getWindSensor;
+    return $self->{ASC_windSensor}->{reading};
 }
 
 1;
@@ -4085,7 +4149,7 @@ sub getWindSensorReading {
       <a name="ASC_brightnessMaxVal"></a>
       <li>ASC_brightnessMaxVal - maximaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
       <a name="ASC_rainSensor"></a>
-      <li>ASC_rainSensor - DEVICENAME:READINGNAME:CLOSEDPOS / der Inhalt ist eine Kombination aus Devicename, Readingname und der Regen geschlossen Position.</li>
+      <li>ASC_rainSensor - DEVICENAME:READINGNAME [MAXTRIGGER[:HYSTERESE] CLOSEDPOS] / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
       <a name="ASC_shuttersDriveOffset"></a>
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
       <a name="ASC_twilightDevice"></a>
@@ -4093,7 +4157,7 @@ sub getWindSensorReading {
       <a name="ASC_expert"></a>
       <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
       <a name="ASC_windSensor"></a>
-      <li>ASC_windSensor - DEVICE:READING / Name des FHEM Devices und des Readings f&uuml;r die Windgeschwindigkeit</li>
+      <li>ASC_windSensor - DEVICE[:READING] / Name des FHEM Devices und des Readings f&uuml;r die Windgeschwindigkeit</li>
       <a name="ASC_autoShuttersControlShading"></a>
       <li>ASC_autoShuttersControlShading - on/off aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
 
