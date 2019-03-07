@@ -201,7 +201,7 @@ my %userAttrList = (
     'ASC_BrightnessMinVal'            => -1,
     'ASC_BrightnessMaxVal'            => -1,
     'ASC_WiggleValue'                 => 5,
-    'ASC_WindParameters'              => [ '', '50:20 100', '50:20 0' ],
+    'ASC_WindParameters'              => [ '', '-1', '-1' ],
 );
 
 my %posSetCmds = (
@@ -262,8 +262,6 @@ sub Define($$) {
       if ( $ascDev->getAutoShuttersControlMorning eq 'none' );
     CommandAttr( undef, $name . ' ASC_autoShuttersControlEvening on' )
       if ( $ascDev->getAutoShuttersControlEvening eq 'none' );
-    CommandAttr( undef, $name . ' ASC_temperatureReading temperature' )
-      if ( $ascDev->getTempReading eq 'none' );
     CommandAttr( undef, $name . ' ASC_freezeTemp 3' )
       if ( $ascDev->getFreezeTemp eq 'none' );
     CommandAttr( undef,
