@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta9';
+my $version = '0.4.0.11beta17';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -169,8 +169,7 @@ my %userAttrList = (
     'ASC_BlockingTime_afterManual'               => 1200,
     'ASC_BlockingTime_beforNightClose'           => 3600,
     'ASC_BlockingTime_beforDayOpen'              => 3600,
-    'ASC_Brightness_Sensor'                      => 'none',
-    'ASC_Brightness_Reading'                     => 'brightness',
+    'ASC_BrightnessSensor'                       => 'none',
     'ASC_Shading_Direction'                      => 180,
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'        => 'off',
@@ -198,8 +197,6 @@ my %userAttrList = (
     'ASC_Roommate_Device'             => 'none',
     'ASC_Roommate_Reading'            => 'state',
     'ASC_Self_Defense_Exclude:on,off' => 'off',
-    'ASC_BrightnessMinVal'            => -1,
-    'ASC_BrightnessMaxVal'            => -1,
     'ASC_WiggleValue'                 => 5,
     'ASC_WindParameters'              => [ '', '-1', '-1' ],
 );
@@ -379,14 +376,6 @@ sub Notify($$) {
         {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
-#         elsif (
-#             grep
-# /^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon)(\s.*|$)/,
-#             @{$events}
-#           )
-#         {
-#             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
-#         }
     }
     elsif ( grep /^($posReading):\s\d+$/, @{$events} ) {
         EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
@@ -578,7 +567,8 @@ sub ShuttersDeviceScan($) {
     foreach (@list) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
-          
+
+
         delFromDevAttrList( $_, 'ASC_Wind_SensorDevice' )
           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
         delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
@@ -587,7 +577,7 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
         delFromDevAttrList( $_, 'ASC_Wind_Pos' )
           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
-          
+
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -598,12 +588,12 @@ sub ShuttersDeviceScan($) {
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
         $shutters->setShading('out');
     }
-    
+
     ### Temporär und muss später entfernt werden
     CommandAttr(undef,$name . ' ASC_tempSensor '.AttrVal($name,'ASC_temperatureSensor','none').':'.AttrVal($name,'ASC_temperatureReading','temperature')) if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_residentsDev '.AttrVal($name,'ASC_residentsDevice','none').':'.AttrVal($name,'ASC_residentsDeviceReading','state')) if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain').':'.AttrVal($name,'ASC_rainSensorShuttersClosedPos',50)) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
-    
+
     CommandDeleteAttr(undef,$name . ' ASC_temperatureSensor') if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_temperatureReading') if ( AttrVal($name,'ASC_temperatureReading','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_residentsDevice') if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
@@ -692,8 +682,8 @@ sub UserAttributs_Readings_ForShutters($$) {
                         not
                         defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } ) );
                 }
-                ## Oder das Attribut wird wieder gelöscht.
             }
+            ## Oder das Attribut wird wieder gelöscht.
             elsif ( $cmd eq 'del' ) {
                 $shutters->setShuttersDev($_);
 
@@ -715,12 +705,9 @@ sub AddNotifyDev($@) {
     $dev = (split(':',$dev))[0];
     my ($key, $value) = split(':',(split(' ',$dev))[0],2);      ## Wir versuchen die Device Attribute anders zu setzen. device=DEVICE reading=READING
     $dev = $key;
-#     if ( not defined($value) )
-#     { $dev = (split(':',$dev))[0] } ## Notfall falls noch kein device=DEVICE existiert SOLL NUR TEMPORÄR SEIN
-#     else { $dev = $value }
-    
+
     my $name = $hash->{NAME};
-    
+
     my $notifyDev = $hash->{NOTIFYDEV};
     $notifyDev = '' if ( !$notifyDev );
 
@@ -1756,6 +1743,21 @@ sub RenewSunRiseSetShuttersTimer($) {
         RemoveInternalTimer( $shutters->getInTimerFuncHash );
         $shutters->setInTimerFuncHash(undef);
         CreateSunRiseSetShuttersTimer( $hash, $_ );
+
+
+        ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
+        CommandAttr(undef, $_ . ' ASC_BrightnessSensor '.AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700)) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
+        
+        delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
+        ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+        delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
+        ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+        delFromDevAttrList( $_, 'ASC_BrightnessMinVal' )
+        ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+        delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
+        ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+
+
     }
 }
 
@@ -1918,13 +1920,13 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_WindowRec', 'none' ),
             $_, 'ASC_WindowRec' )
           if ( AttrVal( $_, 'ASC_WindowRec', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ),
-            $_, 'ASC_Brightness_Sensor' )
-          if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
-        
-        $shuttersList = $shuttersList . ',' . $_; 
+        AddNotifyDev( $hash, AttrVal( $_, 'ASC_BrightnessSensor', 'none' ),
+            $_, 'ASC_BrightnessSensor' )
+          if ( AttrVal( $_, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
 
+        $shuttersList = $shuttersList . ',' . $_; 
     }
+
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDev', 'none' ),
         $name, 'ASC_residentsDev' )
       if ( AttrVal( $name, 'ASC_residentsDev', 'none' ) ne 'none' );
@@ -3053,18 +3055,27 @@ sub getShadingMode {
 
 sub _getBrightnessSensor {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Brightness_Sensor', $default );
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device} if ( exists($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) < 2);
+    $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME} = int(gettimeofday());
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_BrightnessSensor','none');
+
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device} = @{$pairsrefarray}[0];
+    $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'brightness');
+    $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermin} = ( defined(@{$pairsrefarray}[2]) ? @{$pairsrefarray}[2] : '500');
+    $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermax} = ( defined(@{$pairsrefarray}[3]) ? @{$pairsrefarray}[3] : '700');
+
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device};
 }
 
 sub getBrightnessReading {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'brightness' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Brightness_Reading', $default );
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{reading} if ( exists($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) < 2);
+    $shutters->_getBrightnessSensor;
+
+    return ( defined($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{reading}) ? $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{reading} : 'brightness' );
 }
 
 sub getDirection {
@@ -3227,8 +3238,7 @@ sub getWindPos {
 sub getWindMax {
     my $self = shift;
     my $name = $self->{name};
-    
-    
+
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} if ( exists($self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) < 2);
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME} = int(gettimeofday());
     my $pairsrefarray = AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_WindParameters','none');
@@ -3359,13 +3369,19 @@ sub getTimeUpWeHoliday {
 sub getBrightnessMinVal {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_BrightnessMinVal', -1 );
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermin} if ( exists($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) < 2);
+    $shutters->_getBrightnessSensor;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermin};
 }
 
 sub getBrightnessMaxVal {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_BrightnessMaxVal', -1 );
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermax} if ( exists($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) < 2);
+    $shutters->_getBrightnessSensor;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermax};
 }
 
 ## Subklasse Readings von ASC_Shutters ##
@@ -3818,7 +3834,7 @@ sub getTempReading {
     
     return $self->{ASC_tempSensor}->{reading} if ( exists($self->{ASC_tempSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME}) < 2);
     $ascDev->_getTempSensor;
-    return $self->{ASC_tempSensor}->{reading};
+    return ( defined($self->{ASC_tempSensor}->{reading}) ? $self->{ASC_tempSensor}->{reading} : 'temperature' );
 }
 
 sub _getResidentsDev {
@@ -3842,7 +3858,7 @@ sub getResidentsReading {
     
     return $self->{ASC_residentsDev}->{reading} if ( exists($self->{ASC_residentsDev}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME}) < 2);
     $ascDev->_getResidentsDev;
-    return $self->{ASC_residentsDev}->{reading};
+    return ( defined($self->{ASC_residentsDev}->{reading}) ? $self->{ASC_residentsDev}->{reading} : 'state' );
 }
 
 sub _getRainSensor {
@@ -3869,7 +3885,7 @@ sub getRainSensorReading {
     
     return $self->{ASC_rainSensor}->{reading} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
     $ascDev->_getRainSensor;
-    return $self->{ASC_rainSensor}->{reading};
+    return ( defined($self->{ASC_rainSensor}->{reading}) ? $self->{ASC_rainSensor}->{reading} : 'rain' );
 }
 
 sub getRainTriggerMax {
@@ -3920,7 +3936,7 @@ sub getWindSensorReading {
 
     return $self->{ASC_windSensor}->{reading} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
     $ascDev->_getWindSensor;
-    return $self->{ASC_windSensor}->{reading};
+    return ( defined($self->{ASC_windSensor}->{reading}) ? $self->{ASC_windSensor}->{reading} : 'wind' );
 }
 
 1;
@@ -4196,10 +4212,8 @@ sub getWindSensorReading {
       <li>ASC_rainSensorReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
       <a name="ASC_rainSensorShuttersClosedPos"></a>
       <li>ASC_rainSensorShuttersClosedPos - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
-      
-      
-      
-      
+
+
     </ul><br>
     In den Rolll&auml;den Devices
     <ul>
