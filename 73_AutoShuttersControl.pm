@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta6';
+my $version = '0.4.0.11beta9';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -201,8 +201,7 @@ my %userAttrList = (
     'ASC_BrightnessMinVal'            => -1,
     'ASC_BrightnessMaxVal'            => -1,
     'ASC_WiggleValue'                 => 5,
-    'ASC_Wind_minMaxSpeed'            => '30:50',
-    'ASC_Wind_Pos'                    => [ '', 0,   100 ],
+    'ASC_WindParameters'              => [ '', '50:20 100', '50:20 0' ],
 );
 
 my %posSetCmds = (
@@ -586,6 +585,11 @@ sub ShuttersDeviceScan($) {
           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
         delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
+        delFromDevAttrList( $_, 'ASC_Wind_minMaxSpeed' )
+          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
+        delFromDevAttrList( $_, 'ASC_Wind_Pos' )
+          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
+          
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1123,12 +1127,12 @@ sub EventProcessingRain($@) {
 
     if ( $events =~ m#$reading:\s(\d+|rain|dry)# ) {
         my $val;
-        my $triggerMsx = $ascDev->getRainTriggerMax;
+        my $triggerMax = $ascDev->getRainTriggerMax;
         my $triggerMin = $ascDev->getRainTriggerMin;
         my $closedPos = $ascDev->getRainSensorShuttersClosedPos;
         
-        if    ( $1 eq 'rain' ) { $val = $triggermax + 1 }
-        elsif ( $1 eq 'dry' )  { $val = $triggermin }
+        if    ( $1 eq 'rain' ) { $val = $triggerMax + 1 }
+        elsif ( $1 eq 'dry' )  { $val = $triggerMin }
         else                   { $val = $1 }
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -1164,6 +1168,7 @@ sub EventProcessingWind($@) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             
+            next if ( $shutters->getWindMax < 0 );
             next if (  CheckIfShuttersWindowRecOpen($shuttersDev) != 0
               and $shutters->getShuttersPlace eq 'terrace' );
 
@@ -2982,7 +2987,8 @@ use GPUtils qw(GP_Import);
 BEGIN {
     GP_Import(
         qw(
-          AttrVal)
+          AttrVal
+          gettimeofday)
     );
 }
 
@@ -3214,21 +3220,37 @@ sub getWindPos {
     my $self = shift;
     my $name = $self->{name};
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Wind_Pos', 0 );
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} if ( exists($self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) < 2);
+    $shutters->getWindMax;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos};
 }
 
 sub getWindMax {
     my $self = shift;
     my $name = $self->{name};
+    
+    
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} if ( exists($self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) < 2);
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME} = int(gettimeofday());
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_WindParameters','none');
+    
+    return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = @{$pairsrefarray}[0];
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermin} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : '20');
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} = ( defined(@{$pairsrefarray}[2]) ? @{$pairsrefarray}[2] : '50');
 
-    return (split(':',AttrVal( $self->{shuttersDev}, 'ASC_Wind_minMaxSpeed', 30)))[1];
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax};
 }
 
 sub getWindMin {
     my $self = shift;
     my $name = $self->{name};
 
-    return (split(':',AttrVal( $self->{shuttersDev}, 'ASC_Wind_minMaxSpeed', 30)))[0];
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermin} if ( exists($self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) < 2);
+    $shutters->getWindMax;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermin};
 }
 
 sub getModeUp {
@@ -3837,7 +3859,7 @@ sub _getRainSensor {
     $self->{ASC_rainSensor}->{device} = @{$pairsrefarray}[0];
     $self->{ASC_rainSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'state');
     $self->{ASC_rainSensor}->{triggermax} = ( defined(@{$pairsrefarray}[2]) ? @{$pairsrefarray}[2] : 1000);
-    $self->{ASC_rainSensor}->{triggermin} = ( defined(@{$pairsrefarray}[3]) ? $self->{ASC_rainSensor}->{triggermax} - @{$pairsrefarray}[3] : $self->{ASC_rainSensor}->{triggermax} - 900);
+    $self->{ASC_rainSensor}->{triggermin} = ( defined(@{$pairsrefarray}[3]) ? $self->{ASC_rainSensor}->{triggermax} - @{$pairsrefarray}[3] : $self->{ASC_rainSensor}->{triggermax} - $self->{ASC_rainSensor}->{triggermax});
     $self->{ASC_rainSensor}->{shuttersClosedPos} = ( defined(@{$pairsrefarray}[4]) ? @{$pairsrefarray}[4] : 0);
     
     return $self->{ASC_rainSensor}->{device};
@@ -3885,8 +3907,8 @@ sub _getWindSensor {
     
     return $self->{ASC_windSensor}->{device} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
     $self->{ASC_windSensor}->{LASTGETTIME} = int(gettimeofday());
-    my ($scalanum,$pairsrefarray) = AutoShuttersControl::GetAttrValues($name,'ASC_windSensor','none');
-    
+    my $pairsrefarray = AutoShuttersControl::GetAttrValues($name,'ASC_windSensor','none');
+
     return @{$pairsrefarray}[0] if( @{$pairsrefarray}[0] eq 'none' );
     $self->{ASC_windSensor}->{device} = @{$pairsrefarray}[0];
     $self->{ASC_windSensor}->{reading} = ( defined(@{$pairsrefarray}[1]) ? @{$pairsrefarray}[1] : 'wind');
@@ -4141,15 +4163,15 @@ sub getWindSensorReading {
       <a name="ASC_autoShuttersControlMorning"></a>
       <li>ASC_autoShuttersControlMorning - on/off - ob Morgens die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
       <a name="ASC_tempSensor"></a>
-      <li>ASC_tempSensor - DEVICENAME:READINGNAME / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
+      <li>ASC_tempSensor - DEVICENAME[:READINGNAME] / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
       <a name="ASC_residentsDev"></a>
-      <li>ASC_residentsDev - DEVICENAME:READINGNAME / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
+      <li>ASC_residentsDev - DEVICENAME[:READINGNAME] / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
       <a name="ASC_brightnessMinVal"></a>
       <li>ASC_brightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
       <a name="ASC_brightnessMaxVal"></a>
       <li>ASC_brightnessMaxVal - maximaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
       <a name="ASC_rainSensor"></a>
-      <li>ASC_rainSensor - DEVICENAME:READINGNAME [MAXTRIGGER[:HYSTERESE] CLOSEDPOS] / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
+      <li>ASC_rainSensor - DEVICENAME[:READINGNAME] [MAXTRIGGER[:HYSTERESE] CLOSEDPOS] / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
       <a name="ASC_shuttersDriveOffset"></a>
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
       <a name="ASC_twilightDevice"></a>
@@ -4236,8 +4258,7 @@ sub getWindSensorReading {
       <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
       <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
       <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
-      <li>ASC_Wind_minMaxSpeed - min:max / Angabe von minimaler und maximaler Windgeschwindigkeit, durch doppel Punkt getrennt. Bsp.: schlie&szlig;en bei &uuml;ber max Wert und wieder auf vorherige Position fahren bei unter min Wert.</li>
-      <li>ASC_Wind_Pos - Position des Rollladen beim ausl&ouml;sen des max Wertes</li>
+      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben.</li>
     </ul>
   </ul>
 </ul>
