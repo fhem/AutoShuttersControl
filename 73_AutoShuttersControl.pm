@@ -53,7 +53,9 @@ sub AutoShuttersControl_Initialize($) {
                 . 'ASC_residentsDeviceReading '
                 . 'ASC_rainSensorDevice '
                 . 'ASC_rainSensorReading '
-                . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 ';
+                . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+                . 'ASC_brightnessMinVal '
+                . 'ASC_brightnessMaxVal ';
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
@@ -66,8 +68,7 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{AttrList} =
         'ASC_guestPresence:on,off '
       . 'ASC_tempSensor '
-      . 'ASC_brightnessMinVal '
-      . 'ASC_brightnessMaxVal '
+      . 'ASC_brightness '
       . 'ASC_autoShuttersControlMorning:on,off '
       . 'ASC_autoShuttersControlEvening:on,off '
       . 'ASC_autoShuttersControlShading:on,off '
@@ -593,6 +594,7 @@ sub ShuttersDeviceScan($) {
     CommandAttr(undef,$name . ' ASC_tempSensor '.AttrVal($name,'ASC_temperatureSensor','none').':'.AttrVal($name,'ASC_temperatureReading','temperature')) if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_residentsDev '.AttrVal($name,'ASC_residentsDevice','none').':'.AttrVal($name,'ASC_residentsDeviceReading','state')) if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain').':'.AttrVal($name,'ASC_rainSensorShuttersClosedPos',50)) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_brightness '.AttrVal($name,'ASC_brightnessMinVal',500).':'.AttrVal($name,'ASC_brightnessMaxVal',800)) if ( AttrVal($name,'ASC_brightnessMinVal','none') ne 'none' );
 
     CommandDeleteAttr(undef,$name . ' ASC_temperatureSensor') if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_temperatureReading') if ( AttrVal($name,'ASC_temperatureReading','none') ne 'none' );
@@ -601,6 +603,8 @@ sub ShuttersDeviceScan($) {
     CommandDeleteAttr(undef,$name . ' ASC_rainSensorDevice') if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_rainSensorReading') if ( AttrVal($name,'ASC_rainSensorReading','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_rainSensorShuttersClosedPos') if ( AttrVal($name,'ASC_rainSensorShuttersClosedPos','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_brightnessMinVal') if ( AttrVal($name,'ASC_brightnessMinVal','none') ne 'none' );
+    CommandDeleteAttr(undef,$name . ' ASC_brightnessMaxVal') if ( AttrVal($name,'ASC_brightnessMaxVal','none') ne 'none' );
 
 
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
@@ -3757,9 +3761,6 @@ sub getBrightnessMinVal {
     my $name    = $self->{name};
     my $default = $self->{defaultarg};
 
-    $default = 8000 if ( not defined($default) );
-    return AttrVal( $name, 'ASC_brightnessMinVal', $default );
-    
     return $self->{ASC_brightness}->{triggermin} if ( exists($self->{ASC_brightness}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME}) < 2);
     $self->{ASC_brightness}->{LASTGETTIME} = int(gettimeofday());
     $ascDev->getBrightnessMaxVal;
@@ -3779,8 +3780,8 @@ sub getBrightnessMaxVal {
     ## erwartetes Ergebnis
     # max:min
 
-    $self->{ASC_brightness}->{triggermin} = ( $triggermin ne 'none' ? $triggermin : -1 );
-    $self->{ASC_brightness}->{triggermax} = ( $triggermax ne 'none' ? $triggermax : -1 );
+    $self->{ASC_brightness}->{triggermin} = ( $triggermin ne 'none' ? $triggermin : 500 );
+    $self->{ASC_brightness}->{triggermax} = ( $triggermax ne 'none' ? $triggermax : 800 );
 
     return $self->{ASC_brightness}->{triggermax};
 }
@@ -4232,10 +4233,8 @@ sub getWindSensorReading {
       <li>ASC_tempSensor - DEVICENAME[:READINGNAME] / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
       <a name="ASC_residentsDev"></a>
       <li>ASC_residentsDev - DEVICENAME[:READINGNAME] / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
-      <a name="ASC_brightnessMinVal"></a>
-      <li>ASC_brightnessMinVal - minimaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
-      <a name="ASC_brightnessMaxVal"></a>
-      <li>ASC_brightnessMaxVal - maximaler Lichtwert, bei dem Schaltbedingungen gepr&uuml;ft werden sollen</li>
+      <a name="ASC_brightness"></a>
+      <li>ASC_brightness - min:max minimaler und maximaler Lichtwert, bei dem Schaltbedingungen für Sunset und Sunrise gepr&uuml;ft werden sollen. min steht dabei f&uuml;r Sunset und max f&uuml;r Sunrise. Diese globale Einstellung kann durch die min max Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
       <a name="ASC_rainSensor"></a>
       <li>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] CLOSEDPOS / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
       <a name="ASC_shuttersDriveOffset"></a>
@@ -4264,6 +4263,10 @@ sub getWindSensorReading {
       <li>ASC_rainSensorReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
       <a name="ASC_rainSensorShuttersClosedPos"></a>
       <li>ASC_rainSensorShuttersClosedPos - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_brightnessMinVal"></a>
+      <li>ASC_brightnessMinVal - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_brightnessMaxVal"></a>
+      <li>ASC_brightnessMaxVal - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
 
 
     </ul><br>
