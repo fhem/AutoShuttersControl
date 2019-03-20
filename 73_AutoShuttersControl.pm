@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta26';
+my $version = '0.4.0.11beta37';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -68,7 +68,7 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{AttrList} =
         'ASC_guestPresence:on,off '
       . 'ASC_tempSensor '
-      . 'ASC_brightness '
+      . 'ASC_brightnessDriveUpDown '
       . 'ASC_autoShuttersControlMorning:on,off '
       . 'ASC_autoShuttersControlEvening:on,off '
       . 'ASC_autoShuttersControlShading:on,off '
@@ -593,8 +593,8 @@ sub ShuttersDeviceScan($) {
     ### Temporär und muss später entfernt werden
     CommandAttr(undef,$name . ' ASC_tempSensor '.AttrVal($name,'ASC_temperatureSensor','none').':'.AttrVal($name,'ASC_temperatureReading','temperature')) if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandAttr(undef,$name . ' ASC_residentsDev '.AttrVal($name,'ASC_residentsDevice','none').':'.AttrVal($name,'ASC_residentsDeviceReading','state')) if ( AttrVal($name,'ASC_residentsDevice','none') ne 'none' );
-    CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain').':'.AttrVal($name,'ASC_rainSensorShuttersClosedPos',50)) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
-    CommandAttr(undef,$name . ' ASC_brightness '.AttrVal($name,'ASC_brightnessMinVal',500).':'.AttrVal($name,'ASC_brightnessMaxVal',800)) if ( AttrVal($name,'ASC_brightnessMinVal','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_rainSensor '.AttrVal($name,'ASC_rainSensorDevice','none').':'.AttrVal($name,'ASC_rainSensorReading','rain').' 100 '.AttrVal($name,'ASC_rainSensorShuttersClosedPos',50)) if ( AttrVal($name,'ASC_rainSensorDevice','none') ne 'none' );
+    CommandAttr(undef,$name . ' ASC_brightnessDriveUpDown '.AttrVal($name,'ASC_brightnessMinVal',500).':'.AttrVal($name,'ASC_brightnessMaxVal',800)) if ( AttrVal($name,'ASC_brightnessMinVal','none') ne 'none' );
 
     CommandDeleteAttr(undef,$name . ' ASC_temperatureSensor') if ( AttrVal($name,'ASC_temperatureSensor','none') ne 'none' );
     CommandDeleteAttr(undef,$name . ' ASC_temperatureReading') if ( AttrVal($name,'ASC_temperatureReading','none') ne 'none' );
@@ -2534,11 +2534,11 @@ sub IsWe() {
     my $we = ( ( $wday == 0 || $wday == 6 ) ? 1 : 0 );
 
     if ( !$we ) {
-        foreach my $h2we ( split( ",", AttrVal( "global", "holiday2we", "" ) ) )
+        foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
         {
             my ( $a, $b ) =
-              ReplaceEventMap( $h2we, [ $h2we, Value($h2we) ], 0 );
-            $we = 1 if ( $b && $b ne "none" );
+              ReplaceEventMap( $h2we, [ $h2we, ReadingsVal($h2we,'state',0) ], 0 );
+            $we = 1 if ( $b && $b ne 'none' );
         }
     }
     return $we;
@@ -2554,27 +2554,14 @@ sub IsWeTomorrow() {
     );
 
     if ( !$we ) {
-        foreach my $h2we ( split( ",", AttrVal( "global", "holiday2we", "" ) ) )
+        foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
         {
             my ( $a, $b ) = ReplaceEventMap( $h2we,
-                [ $h2we, ReadingsVal( $h2we, "tomorrow", "none" ) ], 0 );
-            $we = 1 if ( $b && $b ne "none" );
+                [ $h2we, ReadingsVal( $h2we, 'tomorrow', 0 ) ], 0 );
+            $we = 1 if ( $b && $b ne 'none' );
         }
     }
     return $we;
-}
-
-sub IsHoliday($) {
-    my $hash = shift;
-    my $name = $hash->{NAME};
-
-    return (
-        ReadingsVal(
-            AttrVal( $name, 'ASC_timeUpHolidayDevice',  'none' ),
-            AttrVal( $name, 'ASC_timeUpHolidayReading', 'state' ),
-            0
-        ) == 1 ? 1 : 0
-    );
 }
 
 sub SetCmdFn($) {
@@ -3278,10 +3265,10 @@ sub getWindMax {
     ## Erwartetes Ergebnis
     # max:hyst pos
     
-    return $max if( $max eq 'none' );
+    return 3 if( $max eq 'none' );
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max;
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} = ( $hyst ne 'none' ? ($max - $hyst) : ($max-20) );
-    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} = ( $pos ne 'none' ? $pos : 50 );
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} = ( $pos ne 'none' ? $pos : $shutters->getOpenPos );
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax};
 }
@@ -3759,7 +3746,6 @@ sub getShuttersOffset {
 sub getBrightnessMinVal {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
     return $self->{ASC_brightness}->{triggermin} if ( exists($self->{ASC_brightness}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME}) < 2);
     $self->{ASC_brightness}->{LASTGETTIME} = int(gettimeofday());
@@ -3771,11 +3757,10 @@ sub getBrightnessMinVal {
 sub getBrightnessMaxVal {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
     return $self->{ASC_brightness}->{triggermax} if ( exists($self->{ASC_brightness}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME}) < 2);
     $self->{ASC_brightness}->{LASTGETTIME} = int(gettimeofday());
-    my ($triggermin,$triggermax) = AutoShuttersControl::GetAttrValues($name,'ASC_brightness','none');
+    my ($triggermin,$triggermax) = AutoShuttersControl::GetAttrValues($name,'ASC_brightnessDriveUpDown','none');
     
     ## erwartetes Ergebnis
     # max:min
@@ -3862,7 +3847,6 @@ sub getFreezeTemp {
 sub _getTempSensor {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
     return $self->{ASC_tempSensor}->{device} if ( exists($self->{ASC_tempSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME}) < 2);
     $self->{ASC_tempSensor}->{LASTGETTIME} = int(gettimeofday());
@@ -4234,9 +4218,9 @@ sub getWindSensorReading {
       <a name="ASC_residentsDev"></a>
       <li>ASC_residentsDev - DEVICENAME[:READINGNAME] / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
       <a name="ASC_brightness"></a>
-      <li>ASC_brightness - min:max minimaler und maximaler Lichtwert, bei dem Schaltbedingungen für Sunset und Sunrise gepr&uuml;ft werden sollen. min steht dabei f&uuml;r Sunset und max f&uuml;r Sunrise. Diese globale Einstellung kann durch die min max Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
+      <li>ASC_brightnessDriveUpDown - WERT-ABENDS:WERT-MORGENS, Werte bei dem Schaltbedingungen für Sunset und Sunrise gepr&uuml;ft werden sollen. Diese globale Einstellung kann durch die WERT-ABENDS:WERT-MORGENS Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
       <a name="ASC_rainSensor"></a>
-      <li>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] CLOSEDPOS / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
+      <li>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS] / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
       <a name="ASC_shuttersDriveOffset"></a>
       <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
       <a name="ASC_twilightDevice"></a>
@@ -4322,7 +4306,7 @@ sub getWindSensorReading {
       <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll</li>
       <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll</li>
       <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz</li>
-      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] DRIVEPOSITION / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben.</li>
+      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben.</li>
     </ul>
   </ul>
 </ul>
