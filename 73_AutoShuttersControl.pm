@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta43';
+my $version = '0.4.0.11beta44';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1998,6 +1998,8 @@ sub GetShuttersInformation($) {
     $ret .= "<td><b>Position</b></td>";
     $ret .= "<td> </td>";
     $ret .= "<td><b>Last Position</b></td>";
+    $ret .= "<td> </td>";
+    $ret .= "<td><b>Shading Info</b></td>";
     $ret .= '</tr>';
 
     my $linecount = 1;
@@ -2035,6 +2037,8 @@ sub GetShuttersInformation($) {
         $ret .= "<td>" . $shutters->getStatus . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getLastPos . "</td>";
+        $ret .= "<td> </td>";
+        $ret .= "<td>" . $shutters->getShading . "</td>";
         $ret .= '</tr>';
         $linecount++;
     }
@@ -2081,21 +2085,6 @@ sub GetMonitoredDevs($) {
         }
     }
 
-    ###### create Links
-    my $aHref;
-
-# create define Link
-#     $aHref="<a href=\"".$::FW_httpheader->{host}."/fhem?cmd=set+".$::FW_CSRF."\">Create new NOTIFYDEV structure</a>";
-#     $aHref="<a href=\"/fhem?cmd=set+\">Create new NOTIFYDEV structure</a>";
-#     $aHref="<a href=\"".$headerHost[0]."/fhem?cmd=define+".makeDeviceName($dataset->{station}{name})."+Aqicn+".$dataset->{uid}.$FW_CSRF."\">Create Station Device</a>";
-
-    #     $ret .= '<tr class="odd"> </tr>';
-    #     $ret .= '<tr class="even"> </tr>';
-    #     $ret .= "<td> </td>";
-    #     $ret .= "<td> </td>";
-    #     $ret .= "<td> </td>";
-    #     $ret .= "<td> </td>";
-    #     $ret .= "<td>".$aHref."</td>";
     $ret .= '</table></td></tr>';
     $ret .= '</table></html>';
 
