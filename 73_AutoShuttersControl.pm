@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta42';
+my $version = '0.4.0.11beta43';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1441,8 +1441,6 @@ sub ShadingProcessing($@) {
         or $elevation == -1
         or $brightness == -1
         or $outTemp == -100
-        or $outTemp < $shutters->getShadingMinOutsideTemperature
-        or not IsDay( $hash, $shuttersDev )
         or ( int( gettimeofday() ) - $shutters->getShadingTimestamp ) <
         ( $shutters->getShadingWaitingPeriod / 2 )
         or not IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) );
@@ -1451,6 +1449,17 @@ sub ShadingProcessing($@) {
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Nach dem return" );
+    
+    if ( ($outTemp < $shutters->getShadingMinOutsideTemperature - 3
+      or not IsDay( $hash, $shuttersDev )) and $shutters->getShading )
+    {
+        $shutters->setShading('out');
+        $shutters->setLastDrive('shading out');
+        
+        ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos );
+        Log3( $name, 4,
+"AutoShuttersControl ($name) - Shading Processing - Es ist Sonnenuntergang vorbei oder die Aussentemperatur unterhalb der Shading Temperatur " );
+    }
 
 # minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
     my $winPosMin = $winPos - $angleMinus;
