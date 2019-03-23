@@ -1170,7 +1170,7 @@ sub EventProcessingWind($@) {
     if ( $events =~ m#$reading:\s(\d+)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            $shutters->setWindProtection('unprotection') if ( not defined($shutters->getWindPos) );
+            $shutters->setWindProtection('unprotection') if ( not defined($shutters->getWindProtection) );
             next if ( $shutters->getWindMax < 0 );
             next if (  CheckIfShuttersWindowRecOpen($shuttersDev) != 0
               and $shutters->getShuttersPlace eq 'terrace' );
