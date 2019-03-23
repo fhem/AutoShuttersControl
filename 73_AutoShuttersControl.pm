@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta37';
+my $version = '0.4.0.11beta42';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1170,24 +1170,25 @@ sub EventProcessingWind($@) {
     if ( $events =~ m#$reading:\s(\d+)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+            $shutters->setWindProtection('unprotection') if ( not defined($shutters->getWindPos) );
             next if ( $shutters->getWindMax < 0 );
             next if (  CheckIfShuttersWindowRecOpen($shuttersDev) != 0
               and $shutters->getShuttersPlace eq 'terrace' );
 
             if (  $1 > $shutters->getWindMax
-              and $shutters->getStatus !=
-                  $shutters->getWindPos )
+              and $shutters->getWindProtection eq 'unprotection' )
             {
                 $shutters->setLastDrive('wind protection');
                 $shutters->setDriveCmd(
                     $shutters->getWindPos );
+                $shutters->setWindProtection('protection');
             }
             elsif ( $1 < $shutters->getWindMin
-                and $shutters->getStatus ==
-                    $shutters->getWindPos )
+                and $shutters->getWindProtection eq 'protection' )
             {
                 $shutters->setLastDrive('wind un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
+                $shutters->setWindProtection('unprotection');
             }
         }
     }
@@ -2973,12 +2974,28 @@ sub setShading {
     return 0;
 }
 
+sub setWindProtection {       # Werte protection, unprotection
+    my ( $self, $value ) = @_;
+
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
+      if ( defined($value) );
+    return 0;
+}
+
 sub getShading {    # Werte für value = in, out, in reserved, out reserved
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{Shading}{VAL}
       if (  defined( $self->{ $self->{shuttersDev} }{Shading} )
         and defined( $self->{ $self->{shuttersDev} }{Shading}{VAL} ) );
+}
+
+sub getWindProtection {       # Werte protection, unprotection
+    my $self = shift;
+    
+    return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
+      if (  defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters} )
+        and defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} ) );
 }
 
 sub getShadingTimestamp {
