@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta44';
+my $version = '0.4.0.11beta46';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -371,7 +371,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_Brightness_Sensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownTime_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -413,24 +413,24 @@ sub EventProcessingGeneral($$$) {
               if ( $deviceAttr eq 'ASC_twilightDevice' );
 
             $shutters->setShuttersDev($device)
-              if ( $deviceAttr eq 'ASC_Brightness_Sensor' );
+              if ( $deviceAttr eq 'ASC_BrightnessSensor' );
 
             if (
-                $deviceAttr eq 'ASC_Brightness_Sensor'
+                $deviceAttr eq 'ASC_BrightnessSensor'
                 and (  $shutters->getDown eq 'brightness'
                     or $shutters->getUp eq 'brightness' )
               )
             {
                 EventProcessingBrightness( $hash, $device, $events );
             }
-            elsif ( $deviceAttr eq 'ASC_Brightness_Sensor' ) {
+            elsif ( $deviceAttr eq 'ASC_BrightnessSensor' ) {
                 EventProcessingShadingBrightness( $hash, $device, $events );
             }
         }
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -438,7 +438,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSenso
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_Brightness_Sensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -1336,8 +1336,15 @@ sub EventProcessingShadingBrightness($@) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
+    
+    Log3( $name, 4,
+        "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness");
 
     if ( $events =~ m#$reading:\s(\d+)# ) {
+        Log3( $name, 4,
+            "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness
+            Brightness: " . $1);
+            
         my $homemode = $shutters->getRoommatesStatus;
         $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
@@ -1406,6 +1413,9 @@ sub EventProcessingTwilightDevice($@) {
                 )
                 and IsDay( $hash, $shuttersDev )
               );
+              $shutters->setShading('out')
+                if ( not IsDay( $hash, $shuttersDev )
+                    and $shutters->getShading ne 'out' );
         }
     }
 }
@@ -2038,7 +2048,8 @@ sub GetShuttersInformation($) {
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getLastPos . "</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getShading . "</td>";
+        $ret .= "<td>" . $shutters->getShading . ' - ' . strftime( "%H:%M:%S",
+            localtime($shutters->getShadingTimestamp) ) . "</td>";
         $ret .= '</tr>';
         $linecount++;
     }
@@ -4125,8 +4136,8 @@ sub getWindSensorReading {
       <li>ASC_LockOut - soft/hard/off sets the lock out mode. With global activated lock out mode (set ASC-Device lockOut soft) and window sensor open, the shutter stays up. This is true only, if commands are given by ASC module. Is global set to hard, the shutter is blocked by hardware if possible. In this case a locally mounted switch can't be used either.</li>
       <li>ASC_LockOut_Cmd - inhibit/blocked/protection set command for the shutter-device for hardware interlock. Possible if "ASC_LockOut" is set to hard</li>
       <li>ASC_Self_Defense_Exclude - on/off to exclude this shutter from active Self Defense. Shutter will not be closed if window is open and residents are absent.</li>
-      <li>ASC_Brightness_Sensor - Sensor device used for brightness. ATTENTION! Is used also for ASC_Down - brightness</li>
-      <li>ASC_Brightness_Reading - matching reading which fixes the brightness value of ASC_Brightness_Sensor</li>
+      <li>ASC_BrightnessSensor - Sensor device used for brightness. ATTENTION! Is used also for ASC_Down - brightness</li>
+      <li>ASC_Brightness_Reading - matching reading which fixes the brightness value of ASC_BrightnessSensor</li>
       <li>ASC_BrightnessMinVal - minimum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_BrightnessMaxVal - maximum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
       <li>ASC_ShuttersPlace - window/terrace, if this attribute is set to terrace and the residents device are in state "gone"and SelfDefence is active the shutter will be closed</li>
