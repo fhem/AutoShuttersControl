@@ -41,7 +41,7 @@ package main;
 use strict;
 use warnings;
 
-my $version = '0.4.0.11beta46';
+my $version = '0.4.0.11beta47';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1461,7 +1461,7 @@ sub ShadingProcessing($@) {
           . " Nach dem return" );
     
     if ( ($outTemp < $shutters->getShadingMinOutsideTemperature - 3
-      or not IsDay( $hash, $shuttersDev )) and $shutters->getShading )
+      or not IsDay( $hash, $shuttersDev )) and $shutters->getShading ne 'out' )
     {
         $shutters->setShading('out');
         $shutters->setLastDrive('shading out');
