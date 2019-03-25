@@ -2539,38 +2539,40 @@ sub TimeMin2Sec($) {
 }
 
 sub IsWe() {
-    my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
-      localtime( gettimeofday() );
-    my $we = ( ( $wday == 0 || $wday == 6 ) ? 1 : 0 );
-
-    if ( !$we ) {
-        foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
-        {
-            my ( $a, $b ) =
-              ReplaceEventMap( $h2we, [ $h2we, ReadingsVal($h2we,'state',0) ], 0 );
-            $we = 1 if ( $b && $b ne 'none' );
-        }
-    }
+#     my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
+#       localtime( gettimeofday() );
+#     my $we = ( ( $wday == 0 || $wday == 6 ) ? 1 : 0 );
+# 
+#     if ( !$we ) {
+#         foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
+#         {
+#             my ( $a, $b ) =
+#               ReplaceEventMap( $h2we, [ $h2we, ReadingsVal($h2we,'state',0) ], 0 );
+#             $we = 1 if ( $b && $b ne 'none' );
+#         }
+#     }
+    my $we = main::IsWe();
     return $we;
 }
 
 sub IsWeTomorrow() {
-    my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
-      localtime( gettimeofday() );
-    my $we = (
-        ( ( ( $wday + 1 == 7 ? 0 : $wday + 1 ) ) == 0 || ( $wday + 1 ) == 6 )
-        ? 1
-        : 0
-    );
-
-    if ( !$we ) {
-        foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
-        {
-            my ( $a, $b ) = ReplaceEventMap( $h2we,
-                [ $h2we, ReadingsVal( $h2we, 'tomorrow', 0 ) ], 0 );
-            $we = 1 if ( $b && $b ne 'none' );
-        }
-    }
+#     my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
+#       localtime( gettimeofday() );
+#     my $we = (
+#         ( ( ( $wday + 1 == 7 ? 0 : $wday + 1 ) ) == 0 || ( $wday + 1 ) == 6 )
+#         ? 1
+#         : 0
+#     );
+# 
+#     if ( !$we ) {
+#         foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
+#         {
+#             my ( $a, $b ) = ReplaceEventMap( $h2we,
+#                 [ $h2we, ReadingsVal( $h2we, 'tomorrow', 0 ) ], 0 );
+#             $we = 1 if ( $b && $b ne 'none' );
+#         }
+#     }
+    my $we = main::IsWe('tomorrow');
     return $we;
 }
 
