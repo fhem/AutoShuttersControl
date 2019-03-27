@@ -40,6 +40,7 @@ package main;
 
 use strict;
 use warnings;
+use FHEM::Meta;
 
 my $version = '0.4.0.11beta47';
 
@@ -59,12 +60,12 @@ sub AutoShuttersControl_Initialize($) {
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = 'AutoShuttersControl::Set';
-    $hash->{GetFn}    = 'AutoShuttersControl::Get';
-    $hash->{DefFn}    = 'AutoShuttersControl::Define';
-    $hash->{NotifyFn} = 'AutoShuttersControl::Notify';
-    $hash->{UndefFn}  = 'AutoShuttersControl::Undef';
-    $hash->{AttrFn}   = 'AutoShuttersControl::Attr';
+    $hash->{SetFn}    = 'FHEM::AutoShuttersControl::Set';
+    $hash->{GetFn}    = 'FHEM::AutoShuttersControl::Get';
+    $hash->{DefFn}    = 'FHEM::AutoShuttersControl::Define';
+    $hash->{NotifyFn} = 'FHEM::AutoShuttersControl::Notify';
+    $hash->{UndefFn}  = 'FHEM::AutoShuttersControl::Undef';
+    $hash->{AttrFn}   = 'FHEM::AutoShuttersControl::Attr';
     $hash->{AttrList} =
         'ASC_guestPresence:on,off '
       . 'ASC_tempSensor '
@@ -87,14 +88,17 @@ sub AutoShuttersControl_Initialize($) {
       . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
+    
+    return FHEM::Meta::InitMod( __FILE__, $hash );
 }
 
 ## unserer packagename
-package AutoShuttersControl;
+package FHEM::AutoShuttersControl;
 
 use strict;
 use warnings;
 use POSIX;
+use FHEM::Meta;
 
 use GPUtils qw(:all)
   ;    # wird für den Import der FHEM Funktionen aus der fhem.pl benötigt
@@ -221,6 +225,7 @@ sub Define($$) {
     my ( $hash, $def ) = @_;
     my @a = split( '[ \t][ \t]*', $def );
 
+    return $@ unless ( FHEM::Meta::SetInternals($hash) );
     return 'only one AutoShuttersControl instance allowed'
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
@@ -354,10 +359,10 @@ sub Notify($$) {
                 WriteReadingsShuttersList($hash);
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
                 InternalTimer( gettimeofday() + 3,
-                    'AutoShuttersControl::RenewSunRiseSetShuttersTimer',
+                    'FHEM::AutoShuttersControl::RenewSunRiseSetShuttersTimer',
                     $hash );
                 InternalTimer( gettimeofday() + 5,
-                    'AutoShuttersControl::AutoSearchTwilightDev', $hash );
+                    'FHEM::AutoShuttersControl::AutoSearchTwilightDev', $hash );
             }
         }
         elsif ( grep /^partyMode:.off$/, @{$events} ) {
@@ -1761,10 +1766,10 @@ sub CreateSunRiseSetShuttersTimer($$) {
     }
 
     InternalTimer( $shuttersSunsetUnixtime,
-        'AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
+        'FHEM::AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
       if ( $ascDev->getAutoShuttersControlEvening eq 'on' );
     InternalTimer( $shuttersSunriseUnixtime,
-        'AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash )
+        'FHEM::AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash )
       if ( $ascDev->getAutoShuttersControlMorning eq 'on' );
 
     $ascDev->setStateReading('created new drive timer');
@@ -1849,7 +1854,7 @@ sub wiggle($$) {
         }
     }
 
-    InternalTimer( gettimeofday() + 60, 'AutoShuttersControl::SetCmdFn', \%h );
+    InternalTimer( gettimeofday() + 60, 'FHEM::AutoShuttersControl::SetCmdFn', \%h );
 }
 ####
 
@@ -2713,9 +2718,9 @@ sub setDriveCmd {
 
     InternalTimer(
         gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
-        'AutoShuttersControl::SetCmdFn', \%h )
+        'FHEM::AutoShuttersControl::SetCmdFn', \%h )
       if ( $offSet > 0 and not $shutters->getNoOffset );
-    AutoShuttersControl::SetCmdFn( \%h )
+    FHEM::AutoShuttersControl::SetCmdFn( \%h )
       if ( $offSet == 0 or $shutters->getNoOffset );
     $shutters->setNoOffset(0);
 
@@ -3102,7 +3107,7 @@ sub _getBrightnessSensor {
 
     return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device} if ( exists($self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME}) < 2);
     $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{LASTGETTIME} = int(gettimeofday());
-    my ($device,$reading,$min,$max) = AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_BrightnessSensor','none');
+    my ($device,$reading,$min,$max) = FHEM::AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_BrightnessSensor','none');
     
     ### erwartetes Ergebnis
     # DEVICE:READING MIN:MAX
@@ -3288,7 +3293,7 @@ sub getWindMax {
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} if ( exists($self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) and (gettimeofday() - $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}) < 2);
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME} = int(gettimeofday());
-    my ($max,$hyst,$pos) = AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_WindParameters','none');
+    my ($max,$hyst,$pos) = FHEM::AutoShuttersControl::GetAttrValues($self->{shuttersDev},'ASC_WindParameters','none');
     
     ## Erwartetes Ergebnis
     # max:hyst pos
@@ -3788,7 +3793,7 @@ sub getBrightnessMaxVal {
 
     return $self->{ASC_brightness}->{triggermax} if ( exists($self->{ASC_brightness}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME}) < 2);
     $self->{ASC_brightness}->{LASTGETTIME} = int(gettimeofday());
-    my ($triggermin,$triggermax) = AutoShuttersControl::GetAttrValues($name,'ASC_brightnessDriveUpDown','none');
+    my ($triggermin,$triggermax) = FHEM::AutoShuttersControl::GetAttrValues($name,'ASC_brightnessDriveUpDown','none');
     
     ## erwartetes Ergebnis
     # max:min
@@ -3878,7 +3883,7 @@ sub _getTempSensor {
 
     return $self->{ASC_tempSensor}->{device} if ( exists($self->{ASC_tempSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME}) < 2);
     $self->{ASC_tempSensor}->{LASTGETTIME} = int(gettimeofday());
-    my ($device,$reading) = AutoShuttersControl::GetAttrValues($name,'ASC_tempSensor','none');
+    my ($device,$reading) = FHEM::AutoShuttersControl::GetAttrValues($name,'ASC_tempSensor','none');
     
     ## erwartetes Ergebnis
     # DEVICE:READING
@@ -3905,7 +3910,7 @@ sub _getResidentsDev {
     
     return $self->{ASC_residentsDev}->{device} if ( exists($self->{ASC_residentsDev}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME}) < 2);
     $self->{ASC_residentsDev}->{LASTGETTIME} = int(gettimeofday());
-    my ($device,$reading) = AutoShuttersControl::GetAttrValues($name,'ASC_residentsDev','none');
+    my ($device,$reading) = FHEM::AutoShuttersControl::GetAttrValues($name,'ASC_residentsDev','none');
 
     return $device if( $device eq 'none' );
     $self->{ASC_residentsDev}->{device} = $device;
@@ -3929,7 +3934,7 @@ sub _getRainSensor {
 
     return $self->{ASC_rainSensor}->{device} if ( exists($self->{ASC_rainSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME}) < 2);
     $self->{ASC_rainSensor}->{LASTGETTIME} = int(gettimeofday());
-    my ($device,$reading,$max,$hyst,$pos) = AutoShuttersControl::GetAttrValues($name,'ASC_rainSensor','none');
+    my ($device,$reading,$max,$hyst,$pos) = FHEM::AutoShuttersControl::GetAttrValues($name,'ASC_rainSensor','none');
     
     ## erwartetes Ergebnis
     # DEVICE:READING MAX:HYST
@@ -3986,7 +3991,7 @@ sub _getWindSensor {
     
     return $self->{ASC_windSensor}->{device} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
     $self->{ASC_windSensor}->{LASTGETTIME} = int(gettimeofday());
-    my ($device,$reading) = AutoShuttersControl::GetAttrValues($name,'ASC_windSensor','none');
+    my ($device,$reading) = FHEM::AutoShuttersControl::GetAttrValues($name,'ASC_windSensor','none');
 
     return $device if( $device eq 'none' );
     $self->{ASC_windSensor}->{device} = $device;
@@ -4008,7 +4013,7 @@ sub getWindSensorReading {
 
 =pod
 =item device
-=item summary       Modul 
+=item summary       Module for controlling shutters depending on various conditions
 =item summary_DE    Modul zur Automatischen Rolladensteuerung auf Basis bestimmter Ereignisse
 
 =begin html
@@ -4340,5 +4345,50 @@ sub getWindSensorReading {
 </ul>
 
 =end html_DE
+
+=for :application/json;q=META.json 73_AutoShuttersControl.pm
+{
+  "abstract": "Module for controlling shutters depending on various conditions",
+  "x_lang": {
+    "de": {
+      "abstract": "Modul zur Automatischen Rolladensteuerung auf Basis bestimmter Ereignisse"
+    }
+  },
+  "keywords": [
+    "fhem-mod-device",
+    "fhem-core",
+    "Shutter",
+    "Automation",
+    "Rollladen",
+    "Rollo",
+    "Control"
+  ],
+  "release_status": "under develop",
+  "license": "GPL_2",
+  "author": [
+    "Marko Oldenburg <leongaultier@gmail.com>"
+  ],
+  "x_fhem_maintainer": [
+    "CoolTux"
+  ],
+  "x_fhem_maintainer_github": [
+    "LeonGaultier"
+  ],
+  "prereqs": {
+    "runtime": {
+      "requires": {
+        "FHEM": 5.00918799,
+        "perl": 5.016, 
+        "Meta": 0,
+        "JSON": 0
+      },
+      "recommends": {
+      },
+      "suggests": {
+      }
+    }
+  }
+}
+=end :application/json;q=META.json
 
 =cut
