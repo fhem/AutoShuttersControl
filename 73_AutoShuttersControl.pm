@@ -42,7 +42,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta47';
+my $version = '0.4.0.11beta48';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -85,6 +85,7 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_twilightDevice '
       . 'ASC_windSensor '
       . 'ASC_expert:1 '
+      . 'ASC_blockAscDrivesAfterManual:0,1 '
       . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
@@ -909,7 +910,7 @@ sub EventProcessingRoommate($@) {
                     or $getModeUp eq 'always'
                     or $getModeDown eq 'home'
                     or $getModeDown eq 'always' )
-           )
+           and IsAfterShuttersManualBlocking($shuttersDev) )
         {
             Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_1: $shuttersDev und Events $events"
@@ -983,6 +984,7 @@ sub EventProcessingRoommate($@) {
             )
             and ( $1 eq 'gotosleep' or $1 eq 'asleep' )
             and $ascDev->getAutoShuttersControlEvening eq 'on'
+            and IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
             my $position;
@@ -1148,7 +1150,8 @@ sub EventProcessingRain($@) {
             $shutters->setShuttersDev($shuttersDev);
             if (    $val > $triggerMax
                 and $shutters->getStatus !=
-                    $closedPos )
+                    $closedPos
+                and IsAfterShuttersManualBlocking($shuttersDev) )
             {
                 $shutters->setLastDrive('rain protection');
                 $shutters->setDriveCmd(
@@ -1156,7 +1159,8 @@ sub EventProcessingRain($@) {
             }
             elsif ( ($val == 0 or $val < $triggerMax)
                 and $shutters->getStatus ==
-                    $closedPos )
+                    $closedPos
+                and IsAfterShuttersManualBlocking($shuttersDev) )
             {
                 $shutters->setLastDrive('rain un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
@@ -1244,6 +1248,7 @@ sub EventProcessingBrightness($@) {
             )
             and $1 > $brightnessMaxVal
             and $shutters->getUp eq 'brightness'
+            and not $shutters->getSunrise
           )
         {
             Log3( $name, 4,
@@ -1274,6 +1279,8 @@ sub EventProcessingBrightness($@) {
                         and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
                   )
                 {
+                    $shutters->setSunrise(1);
+                    $shutters->setSunset(0);
                     ShuttersCommandSet( $hash, $shuttersDev,
                         $shutters->getOpenPos );
                 }
@@ -1292,6 +1299,7 @@ sub EventProcessingBrightness($@) {
             )
             and $1 < $brightnessMinVal
             and $shutters->getDown eq 'brightness'
+            and not $shutters->getSunset
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
@@ -1325,6 +1333,8 @@ sub EventProcessingBrightness($@) {
                 or $shutters->getModeDown eq 'always'
               )
             {
+                $shutters->setSunrise(0);
+                $shutters->setSunset(1);
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
             else {
@@ -1458,7 +1468,8 @@ sub ShadingProcessing($@) {
         or $outTemp == -100
         or ( int( gettimeofday() ) - $shutters->getShadingTimestamp ) <
         ( $shutters->getShadingWaitingPeriod / 2 )
-        or not IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) );
+        or not IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+        or not IsAfterShuttersManualBlocking($shuttersDev) );
 
     Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
@@ -1563,7 +1574,8 @@ sub EventProcessingPartyMode($) {
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
         if ( not IsDay( $hash, $shuttersDev )
-            and $shutters->getModeDown ne 'off' )
+            and $shutters->getModeDown ne 'off'
+            and IsAfterShuttersManualBlocking($shuttersDev) )
         {
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getSubTyp eq 'threestate' )
@@ -1592,7 +1604,8 @@ sub EventProcessingPartyMode($) {
                 );
             }
         }
-        elsif ( IsDay( $hash, $shuttersDev ) ) {
+        elsif ( IsDay( $hash, $shuttersDev )
+            and IsAfterShuttersManualBlocking($shuttersDev) ) {
             $shutters->setLastDrive('drive after party mode');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
         }
@@ -1893,6 +1906,7 @@ sub SunSetShuttersAfterTimerFn($) {
                 : 'night close'
             )
         );
+        $shutters->setSunset(1);
         ShuttersCommandSet(
             $hash,
             $shuttersDev,
@@ -1940,6 +1954,7 @@ sub SunRiseShuttersAfterTimerFn($) {
           )
         {
             $shutters->setLastDrive('day open');
+            $shutters->setSunrise(1);
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos );
         }
     }
@@ -2181,10 +2196,10 @@ sub IsDay($$) {
           ShuttersSunset( $hash, $shuttersDev, 'unix' ) ? 1 : 0 );
     my $respIsDay = $isday;
 
-    $respIsDay = ( ($shutters->getBrightness > $shutters->getBrightnessMinVal and $isday) ? 1 : 0 )
+    $respIsDay = ( (($shutters->getBrightness > $shutters->getBrightnessMinVal and $isday) or $shutters->getSunset) ? 1 : 0 )
         if ( $shutters->getDown eq 'brightness' );
 
-    $respIsDay = ( (($shutters->getBrightness > $shutters->getBrightnessMaxVal and not $isday) or $respIsDay) ? 1 : 0 )
+    $respIsDay = ( (($shutters->getBrightness > $shutters->getBrightnessMaxVal and not $isday) or $respIsDay or $shutters->getSunrise) ? 1 : 0 )
         if ( $shutters->getUp eq 'brightness' );
 
     return $respIsDay;
@@ -2293,6 +2308,7 @@ sub ShuttersSunrise($$$) {
                             )
                         ) + 1
                     );
+                    $shuttersSunriseUnixtime += 86400 if ($shutters->getSunrise);
                 }
             }
             else {
@@ -2429,7 +2445,20 @@ sub IsAfterShuttersManualBlocking($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if ( ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
+    if (  $ascDev->getblockAscDrivesAfterManual
+      and $shutters->getStatus != $shutters->getOpenPos
+      and $shutters->getStatus != $shutters->getClosedPos
+      and $shutters->getStatus != $shutters->getWindPos
+      and $shutters->getStatus != $shutters->getShadingPos
+      and $shutters->getStatus != $shutters->getComfortOpenPos
+      and $shutters->getStatus != $shutters->getVentilatePos
+      and $shutters->getStatus != $shutters->getAntiFreezePos
+      and $shutters->getLastDrive eq 'manual'
+      )
+    {
+        return 0;
+    }
+    elsif ( ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual )
     {
         return 0;
@@ -2734,10 +2763,24 @@ sub setSunsetUnixTime {
     return 0;
 }
 
+sub setSunset {
+    my ( $self, $value ) = @_;
+
+    $self->{ $self->{shuttersDev} }{sunset} = $value;
+    return 0;
+}
+
 sub setSunriseUnixTime {
     my ( $self, $unixtime ) = @_;
 
     $self->{ $self->{shuttersDev} }{sunrisetime} = $unixtime;
+    return 0;
+}
+
+sub setSunrise {
+    my ( $self, $value ) = @_;
+
+    $self->{ $self->{shuttersDev} }{sunrise} = $value;
     return 0;
 }
 
@@ -2922,10 +2965,22 @@ sub getSunsetUnixTime {
     return $self->{ $self->{shuttersDev} }{sunsettime};
 }
 
+sub getSunset {
+    my $self = shift;
+
+    return ( defined($self->{ $self->{shuttersDev} }{sunset}) ? $self->{ $self->{shuttersDev} }{sunset} : 0 );
+}
+
 sub getSunriseUnixTime {
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{sunrisetime};
+}
+
+sub getSunrise {
+    my $self = shift;
+
+    return ( defined($self->{ $self->{shuttersDev} }{sunrise}) ? $self->{ $self->{shuttersDev} }{sunrise} : 0 );
 }
 
 sub getRoommatesStatus {
@@ -4007,6 +4062,13 @@ sub getWindSensorReading {
     return $self->{ASC_windSensor}->{reading} if ( exists($self->{ASC_windSensor}->{LASTGETTIME}) and (gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME}) < 2);
     $ascDev->_getWindSensor;
     return ( defined($self->{ASC_windSensor}->{reading}) ? $self->{ASC_windSensor}->{reading} : 'wind' );
+}
+
+sub getblockAscDrivesAfterManual {
+    my $self    = shift;
+    my $name    = $self->{name};
+    
+    return AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
 }
 
 1;
