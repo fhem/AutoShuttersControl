@@ -42,7 +42,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta53';
+my $version = '0.4.0.11beta57';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -679,6 +679,8 @@ sub UserAttributs_Readings_ForShutters($$) {
             addToDevAttrList( $_, $attrib )
               ; ## fhem.pl bietet eine Funktion um ein userAttr Attribut zu befüllen. Wir schreiben also in den Attribut userAttr alle unsere Attribute rein. Pro Rolladen immer ein Attribut pro Durchlauf
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
+            ## CommandAttr hat nicht funktioniert. Führte zu Problemen
+                    ## https://github.com/LeonGaultier/fhem-AutoShuttersControl/commit/e33d3cc7815031b087736c1054b98c57817e7083
             if ( $cmd eq 'add' ) {
                 if ( ref($attribValue) ne 'ARRAY' ) {
                     $attr{$_}{ ( split( ':', $attrib ) )[0] } = $attribValue
@@ -813,8 +815,6 @@ sub EventProcessingWindowRec($@) {
                 and (  $homemode ne 'asleep'
                     or $homemode ne 'gotosleep'
                     or $homemode eq 'none' )
-#                 and ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-#                   and $shutters->getShuttersPlace eq 'terrace')
                 )
             {
                 $shutters->setLastDrive('window day closed');
@@ -825,8 +825,6 @@ sub EventProcessingWindowRec($@) {
             elsif (  not IsDay( $hash, $shuttersDev )
                   or $homemode eq 'asleep'
                   or $homemode eq 'gotosleep'
-#                 and ( not CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-#                   and not $shutters->getShuttersPlace eq 'terrace')
                 )
             {
                 $shutters->setLastDrive('window night closed');
@@ -2746,7 +2744,6 @@ sub makeReadingName($) {
     );
     my $charHashkeys = join( "|", keys(%charHash) );
 
-    $name = "UNDEFINED" if ( !defined($name) );
     return $name if ( $name =~ m/^\./ );
     $name =~ s/($charHashkeys)/$charHash{$1}/gi;
     $name =~ s/[^a-z0-9._\-\/]/_/gi;
@@ -2762,39 +2759,11 @@ sub TimeMin2Sec($) {
 }
 
 sub IsWe() {
-#     my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
-#       localtime( gettimeofday() );
-#     my $we = ( ( $wday == 0 || $wday == 6 ) ? 1 : 0 );
-# 
-#     if ( !$we ) {
-#         foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
-#         {
-#             my ( $a, $b ) =
-#               ReplaceEventMap( $h2we, [ $h2we, ReadingsVal($h2we,'state',0) ], 0 );
-#             $we = 1 if ( $b && $b ne 'none' );
-#         }
-#     }
     my $we = main::IsWe();
     return $we;
 }
 
 sub IsWeTomorrow() {
-#     my ( undef, undef, undef, undef, undef, undef, $wday, undef, undef ) =
-#       localtime( gettimeofday() );
-#     my $we = (
-#         ( ( ( $wday + 1 == 7 ? 0 : $wday + 1 ) ) == 0 || ( $wday + 1 ) == 6 )
-#         ? 1
-#         : 0
-#     );
-# 
-#     if ( !$we ) {
-#         foreach my $h2we ( split( ',', AttrVal( 'global', 'holiday2we', '' ) ) )
-#         {
-#             my ( $a, $b ) = ReplaceEventMap( $h2we,
-#                 [ $h2we, ReadingsVal( $h2we, 'tomorrow', 0 ) ], 0 );
-#             $we = 1 if ( $b && $b ne 'none' );
-#         }
-#     }
     my $we = main::IsWe('tomorrow');
     return $we;
 }
