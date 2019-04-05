@@ -42,7 +42,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta57';
+my $version = '0.4.0.11beta58';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2732,7 +2732,7 @@ sub CheckIfShuttersWindowRecOpen($) {
 }
 
 sub makeReadingName($) {
-    my ($name) = @_;
+    my ($rname) = @_;
     my %charHash = (
         "ä" => "ae",
         "Ä" => "Ae",
@@ -2744,10 +2744,10 @@ sub makeReadingName($) {
     );
     my $charHashkeys = join( "|", keys(%charHash) );
 
-    return $name if ( $name =~ m/^\./ );
-    $name =~ s/($charHashkeys)/$charHash{$1}/gi;
-    $name =~ s/[^a-z0-9._\-\/]/_/gi;
-    return $name;
+    return $rname if ( $rname =~ m/^\./ );
+    $rname =~ s/($charHashkeys)/$charHash{$1}/gi;
+    $rname =~ s/[^a-z0-9._\-\/]/_/gi;
+    return $rname;
 }
 
 sub TimeMin2Sec($) {
