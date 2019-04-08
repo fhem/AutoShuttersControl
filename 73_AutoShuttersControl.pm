@@ -35,6 +35,11 @@
 
 ### Notizen
 # - Feststellen ob ein Rolladen fährt oder nicht
+# !!!!! - Innerhalb einer Shutterschleife kein CommandAttr verwenden. Bring Fehler!!! Kommen Raumnamen in die Shutterliste !!!!!!
+#
+
+
+
 
 package main;
 
@@ -42,7 +47,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta58';
+my $version = '0.4.0.11beta60';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1968,7 +1973,9 @@ sub RenewSunRiseSetShuttersTimer($) {
 
 
         ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
-        CommandAttr(undef, $_ . ' ASC_BrightnessSensor '.AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700)) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
+#         CommandAttr(undef, $_ . ' ASC_BrightnessSensor '.AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700)) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
+        
+        $attr{$_}{'ASC_BrightnessSensor'} = AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
         
         delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
         ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
