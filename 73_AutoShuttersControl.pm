@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta60';
+my $version = '0.4.0.11beta61';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2519,32 +2519,16 @@ sub ShuttersSunrise($$$) {
                         )
                       )
                     {
-                        $shuttersSunriseUnixtime += 86400
+                        $shuttersSunriseUnixtime =
+                          ( $shuttersSunriseUnixtime + 86400 )
                           if ( $shuttersSunriseUnixtime <
                             ( $oldFuncHash->{sunrisetime} + 180 )
                             and $oldFuncHash->{sunrisetime} < gettimeofday() );
                     }
                 }
-
-                $shuttersSunriseUnixtime += 86400
-                  if (  $shutters->getSunrise
-                    and int( gettimeofday() / 86400 ) == int(
-                            (
-                                computeAlignTime(
-                                    '24:00',
-                                    sunrise_abs(
-                                        $autoAstroMode,
-                                        0,
-                                        $shutters->getTimeUpEarly,
-                                        $shutters->getTimeUpLate
-                                    )
-                                ) + 1
-                            ) / 86400
-                        )
-                  );
             }
             elsif ( defined($oldFuncHash) and ref($oldFuncHash) eq 'HASH' ) {
-                $shuttersSunriseUnixtime += 86400
+                $shuttersSunriseUnixtime = ( $shuttersSunriseUnixtime + 86400 )
                   if ( $shuttersSunriseUnixtime <
                     ( $oldFuncHash->{sunrisetime} + 180 )
                     and $oldFuncHash->{sunrisetime} < gettimeofday() );
@@ -2588,11 +2572,6 @@ sub ShuttersSunrise($$$) {
                     $shuttersSunriseUnixtime =
                       computeAlignTime( '24:00',
                         $shutters->getTimeUpWeHoliday );
-                    $shuttersSunriseUnixtime += 86400
-                      if (  $shutters->getSunrise
-                        and int( gettimeofday() / 86400 ) == int(
-                            computeAlignTime( '24:00',
-                                $shutters->getTimeUpWeHoliday ) / 86400) );
                 }
             }
             else {
