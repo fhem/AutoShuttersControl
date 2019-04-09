@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.4.0.11beta61';
+my $version = '0.4.0.11beta67';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2473,16 +2473,108 @@ sub ShuttersSunrise($$$) {
                     }
                 }
                 else {
-                    $shuttersSunriseUnixtime = (
-                        computeAlignTime(
-                            '24:00',
-                            sunrise_abs(
-                                $autoAstroMode, 0,
-                                $shutters->getTimeUpWeHoliday
-                            )
-                        ) + 1
-                    );
-                }
+                    if (
+                        IsWe()
+                        and (  int( gettimeofday() / 86400 ) == int(
+                              (
+                                  computeAlignTime(
+                                      '24:00',
+                                      sunrise_abs(
+                                          $autoAstroMode, 0,
+                                          $shutters->getTimeUpWeHoliday
+                                      )
+                                  ) + 1
+                              ) / 86400
+                          )
+                          or int( gettimeofday() / 86400 ) != int(
+                              (
+                                  computeAlignTime(
+                                      '24:00',
+                                      sunrise_abs(
+                                          $autoAstroMode, 0,
+                                          $shutters->getTimeUpWeHoliday
+                                      )
+                                  ) + 1
+                              ) / 86400
+                          )
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime = (
+                            computeAlignTime(
+                                '24:00',
+                                sunrise_abs(
+                                    $autoAstroMode, 0,
+                                    $shutters->getTimeUpWeHoliday
+                                )
+                            ) + 1
+                        );
+                    }
+                    elsif (
+                        int( gettimeofday() / 86400 ) == int(
+                            (
+                                computeAlignTime(
+                                    '24:00',
+                                    sunrise_abs(
+                                        $autoAstroMode,
+                                        0,
+                                        $shutters->getTimeUpEarly,
+                                        $shutters->getTimeUpLate
+                                    )
+                                ) + 1
+                            ) / 86400
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime = (
+                            computeAlignTime(
+                                '24:00',
+                                sunrise_abs(
+                                    $autoAstroMode, 0,
+                                    $shutters->getTimeUpEarly,
+                                    $shutters->getTimeUpLate
+                                )
+                            ) + 1
+                        );
+                    }
+                    else {
+                        if (
+                             int( gettimeofday() / 86400 ) == int(
+                                (
+                                    computeAlignTime(
+                                        '24:00',
+                                        sunrise_abs(
+                                            $autoAstroMode, 0,
+                                            $shutters->getTimeUpWeHoliday
+                                        )
+                                    ) + 1
+                                ) / 86400
+                             )
+                          )
+                        {
+                            $shuttersSunriseUnixtime = (
+                                computeAlignTime(
+                                    '24:00',
+                                    sunrise_abs(
+                                        $autoAstroMode, 0,
+                                        $shutters->getTimeUpWeHoliday
+                                    )
+                                ) + 86401
+                            );
+                        }
+                        else {
+                            $shuttersSunriseUnixtime = (
+                                computeAlignTime(
+                                    '24:00',
+                                    sunrise_abs(
+                                        $autoAstroMode, 0,
+                                        $shutters->getTimeUpWeHoliday
+                                    )
+                                ) + 1
+                            );
+                        }
+                    }
+                }   
             }
             else {
                 $shuttersSunriseUnixtime = (
