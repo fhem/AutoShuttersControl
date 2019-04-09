@@ -1705,7 +1705,8 @@ sub ShadingProcessing($@) {
     if (   $azimuth < $winPosMin
         or $azimuth > $winPosMax
         or $elevation < $shutters->getShadingMinElevation
-        or $brightness < $shutters->getShadingStateChangeCloudy )
+        or $brightness < $shutters->getShadingStateChangeCloudy
+        or $outTemp < $shutters->getShadingMinOutsideTemperature )
     {
         $shutters->setShadingStatus('out reserved')
           if ( $shutters->getShadingStatus eq 'in'
@@ -1739,7 +1740,8 @@ sub ShadingProcessing($@) {
     elsif ( $azimuth > $winPosMin
         and $azimuth < $winPosMax
         and $elevation > $shutters->getShadingMinElevation
-        and $brightness > $shutters->getShadingStateChangeSunny )
+        and $brightness > $shutters->getShadingStateChangeSunny
+        and $outTemp > $shutters->getShadingMinOutsideTemperature )
     {
         $shutters->setShadingStatus('in reserved')
           if ( $shutters->getShadingStatus eq 'out'
