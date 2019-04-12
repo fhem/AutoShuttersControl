@@ -2181,23 +2181,29 @@ sub SunSetShuttersAfterTimerFn($) {
         and IsAfterShuttersManualBlocking($shuttersDev)
       )
     {
-        $shutters->setLastDrive(
-            (
-                $funcHash->{privacyMode} == 1
-                ? 'privacy position'
-                : 'night close'
-            )
+        my $queryShuttersPosPrivacyDown = (
+              $shutters->getShuttersPosCmdValueNegate
+            ? $shutters->getStatus > $shutters->getPrivacyDownPos
+            : $shutters->getStatus < $shutters->getPrivacyDownPos
         );
-        $shutters->setSunset(1);
-        ShuttersCommandSet(
-            $hash,
-            $shuttersDev,
-            (
-                  $funcHash->{privacyMode} == 1
-                ? $shutters->getPrivacyDownPos
-                : $posValue
-            )
-        );
+        
+        if (  $funcHash->{privacyMode} == 1
+          and not $queryShuttersPosPrivacyDown )
+        {
+            $shutters->setLastDrive('privacy position');
+            ShuttersCommandSet(
+                $hash,
+                $shuttersDev,
+                $shutters->getPrivacyDownPos );
+        }
+        elsif ( $funcHash->{privacyMode} == 0 ) {
+            $shutters->setSunset(1);
+            $shutters->setLastDrive('night close');
+            ShuttersCommandSet(
+                $hash,
+                $shuttersDev,
+                $posValue );
+        }
     }
 
     CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
