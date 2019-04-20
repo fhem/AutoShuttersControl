@@ -837,7 +837,7 @@ sub EventProcessingWindowRec($@) {
 
         if (
                 $1 eq 'closed'
-            and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+            and IsAfterShuttersTimeBlocking($shuttersDev)
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
                 or $shutters->getStatus == $shutters->getOpenPos )
@@ -848,7 +848,7 @@ sub EventProcessingWindowRec($@) {
               if ( $homemode eq 'none' );
 
             if (
-                    IsDay( $hash, $shuttersDev )
+                    IsDay($shuttersDev)
                 and $shutters->getStatus != $shutters->getOpenPos
                 and (  $homemode ne 'asleep'
                     or $homemode ne 'gotosleep'
@@ -860,7 +860,7 @@ sub EventProcessingWindowRec($@) {
                 $shutters->setDriveCmd( $shutters->getLastPos );
             }
 
-            elsif (not IsDay( $hash, $shuttersDev )
+            elsif (not IsDay($shuttersDev)
                 or $homemode eq 'asleep'
                 or $homemode eq 'gotosleep' )
             {
@@ -950,8 +950,8 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'asleep'
                     or $getRoommatesLastStatus eq 'awoken'
                 )
-                and IsDay( $hash, $shuttersDev )
-                and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                and IsDay($shuttersDev)
+                and IsAfterShuttersTimeBlocking($shuttersDev)
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
               )
@@ -974,8 +974,8 @@ sub EventProcessingRoommate($@) {
               )
             {
                 if (
-                        not IsDay( $hash, $shuttersDev )
-                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                        not IsDay($shuttersDev)
+                    and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeDown eq 'home'
                         or $getModeDown eq 'always' )
                   )
@@ -997,9 +997,9 @@ sub EventProcessingRoommate($@) {
                     ShuttersCommandSet( $hash, $shuttersDev, $position );
                 }
                 elsif (
-                        IsDay( $hash, $shuttersDev )
+                        IsDay($shuttersDev)
                     and $shutters->getStatus == $shutters->getClosedPos
-                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                    and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeUp eq 'home'
                         or $getModeUp eq 'always' )
                     and not $shutters->getIfInShading
@@ -1039,7 +1039,7 @@ sub EventProcessingRoommate($@) {
         }
         elsif ( $getModeDown eq 'absent'
             and $1 eq 'absent'
-            and not IsDay( $hash, $shuttersDev ) )
+            and not IsDay($shuttersDev) )
         {
             $shutters->setLastDrive('roommate absent');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
@@ -1069,8 +1069,8 @@ sub EventProcessingResidents($@) {
                            $getModeDown eq 'absent'
                         or $getModeDown eq 'always'
                     )
-                    and not IsDay( $hash, $shuttersDev )
-                    and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                    and not IsDay($shuttersDev)
+                    and IsAfterShuttersTimeBlocking($shuttersDev)
                 )
               )
             {
@@ -1115,13 +1115,13 @@ sub EventProcessingResidents($@) {
 
             if (
                     $shutters->getStatus != $shutters->getClosedPos
-                and not IsDay( $hash, $shuttersDev )
+                and not IsDay($shuttersDev)
                 and $shutters->getRoommatesStatus eq 'none'
                 and (  $getModeDown eq 'home'
                     or $getModeDown eq 'always' )
                 and (  $getResidentsLastStatus ne 'asleep'
                     or $getResidentsLastStatus ne 'awoken' )
-                and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                and IsAfterShuttersTimeBlocking($shuttersDev)
               )
             {
                 $shutters->setLastDrive('residents home');
@@ -1146,11 +1146,11 @@ sub EventProcessingResidents($@) {
             }
             elsif (
                     $shutters->getStatus == $shutters->getClosedPos
-                and IsDay( $hash, $shuttersDev )
+                and IsDay($shuttersDev)
                 and $shutters->getRoommatesStatus eq 'none'
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
-                and IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+                and IsAfterShuttersTimeBlocking($shuttersDev)
                 and not $shutters->getIfInShading
               )
             {
@@ -1497,7 +1497,7 @@ sub EventProcessingShadingBrightness($@) {
                    $shutters->getShadingMode eq 'always'
                 or $shutters->getShadingMode eq $homemode
             )
-            and IsDay( $hash, $shuttersDev )
+            and IsDay($shuttersDev)
           )
         {
             ShadingProcessing(
@@ -1564,7 +1564,7 @@ sub EventProcessingTwilightDevice($@) {
                        $shutters->getShadingMode eq 'always'
                     or $shutters->getShadingMode eq $homemode
                 )
-                and IsDay( $hash, $shuttersDev )
+                and IsDay($shuttersDev)
               )
             {
                 ShadingProcessing(
@@ -1586,7 +1586,7 @@ sub EventProcessingTwilightDevice($@) {
             }
 
             $shutters->setShadingStatus('out')
-              if ( not IsDay( $hash, $shuttersDev )
+              if ( not IsDay($shuttersDev)
                 and $shutters->getShadingStatus ne 'out' );
         }
     }
@@ -1621,9 +1621,7 @@ sub ShadingProcessing($@) {
           . ', Winkel Rechts: '
           . $anglePlus
           . ', Ist es nach der Zeitblockadezeit: '
-          . (
-            IsAfterShuttersTimeBlocking( $hash, $shuttersDev ) ? 'JA' : 'NEIN'
-          )
+          . ( IsAfterShuttersTimeBlocking($shuttersDev) ? 'JA' : 'NEIN' )
           . ', Ist es nach der manuellen Blockadezeit: '
           . ( IsAfterShuttersManualBlocking($shuttersDev) ? 'JA' : 'NEIN' )
           . ', Ist es nach der Hälfte der Beschattungswartezeit: '
@@ -1634,7 +1632,7 @@ sub ShadingProcessing($@) {
     );
 
     $shutters->setShadingStatus('out')
-      if ( not IsDay( $hash, $shuttersDev )
+      if ( not IsDay($shuttersDev)
         and $shutters->getShadingStatus ne 'out' );
 
     Log3( $name, 4,
@@ -1656,7 +1654,7 @@ sub ShadingProcessing($@) {
         or $outTemp == -100
         or ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
         ( $shutters->getShadingWaitingPeriod / 2 )
-        or not IsAfterShuttersTimeBlocking( $hash, $shuttersDev )
+        or not IsAfterShuttersTimeBlocking($shuttersDev)
         or not IsAfterShuttersManualBlocking($shuttersDev) );
 
     Log3( $name, 4,
@@ -1676,7 +1674,7 @@ sub ShadingProcessing($@) {
     if (
         (
             $outTemp < $shutters->getShadingMinOutsideTemperature - 3
-            or not IsDay( $hash, $shuttersDev )
+            or not IsDay($shuttersDev)
         )
         and $shutters->getShadingStatus ne 'out'
         and $getStatus != $getShadingPos
@@ -1836,7 +1834,7 @@ sub EventProcessingPartyMode($) {
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
-        if (    not IsDay( $hash, $shuttersDev )
+        if (    not IsDay($shuttersDev)
             and $shutters->getModeDown ne 'off'
             and IsAfterShuttersManualBlocking($shuttersDev) )
         {
@@ -1867,7 +1865,7 @@ sub EventProcessingPartyMode($) {
                 );
             }
         }
-        elsif ( IsDay( $hash, $shuttersDev )
+        elsif ( IsDay($shuttersDev)
             and IsAfterShuttersManualBlocking($shuttersDev) )
         {
             $shutters->setLastDrive('drive after party mode');
@@ -1970,10 +1968,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
 
     return if ( IsDisabled($name) );
 
-    my $shuttersSunriseUnixtime =
-      ShuttersSunrise( $hash, $shuttersDev, 'unix' ) + 1;
-    my $shuttersSunsetUnixtime =
-      ShuttersSunset( $hash, $shuttersDev, 'unix' ) + 1;
+    my $shuttersSunriseUnixtime = ShuttersSunrise( $shuttersDev, 'unix' ) + 1;
+    my $shuttersSunsetUnixtime = ShuttersSunset( $shuttersDev, 'unix' ) + 1;
 
     $shutters->setSunriseUnixTime($shuttersSunriseUnixtime);
     $shutters->setSunsetUnixTime($shuttersSunsetUnixtime);
@@ -2477,16 +2473,13 @@ sub ExtractNotifyDevFromEvent($$$) {
 }
 
 ## Ist Tag oder Nacht für den entsprechende Rolladen
-sub IsDay($$) {
-    my ( $hash, $shuttersDev ) = @_;
+sub IsDay($) {
+    my ($shuttersDev) = @_;
     $shutters->setShuttersDev($shuttersDev);
 
-    my $name = $hash->{NAME};
-    my $isday = ( ShuttersSunrise( $hash, $shuttersDev, 'unix' ) >
-          ShuttersSunset( $hash, $shuttersDev, 'unix' ) ? 1 : 0 );
+    my $isday = ( ShuttersSunrise( $shuttersDev, 'unix' ) >
+          ShuttersSunset( $shuttersDev, 'unix' ) ? 1 : 0 );
     my $respIsDay = $isday;
-    
-    printf 'IsDay ist: ' . $respIsDay . "\n";
 
     $respIsDay = (
         (
@@ -2497,8 +2490,6 @@ sub IsDay($$) {
               or $shutters->getSunset
         ) ? 0 : 1
     ) if ( $shutters->getDown eq 'brightness' );
-    
-    printf 'IsDay Sunset ist: ' . $respIsDay . "\n";
 
     $respIsDay = (
         (
@@ -2510,16 +2501,13 @@ sub IsDay($$) {
               or $shutters->getSunrise
         ) ? 1 : 0
     ) if ( $shutters->getUp eq 'brightness' );
-    
-    printf 'IsDay Sunrise ist: ' . $respIsDay . "\n";
 
     return $respIsDay;
 }
 
-sub ShuttersSunrise($$$) {
-    my ( $hash, $shuttersDev, $tm ) =
+sub ShuttersSunrise($$) {
+    my ( $shuttersDev, $tm ) =
       @_;    # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
-    my $name = $hash->{NAME};
     my $autoAstroMode;
     $shutters->setShuttersDev($shuttersDev);
 
@@ -2824,17 +2812,17 @@ sub ShuttersSunrise($$$) {
     }
 }
 
-sub IsAfterShuttersTimeBlocking($$) {
-    my ( $hash, $shuttersDev ) = @_;
+sub IsAfterShuttersTimeBlocking($) {
+    my ($shuttersDev) = @_;
     $shutters->setShuttersDev($shuttersDev);
 
     if (
         ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual
-        or ( not IsDay( $hash, $shuttersDev )
+        or ( not IsDay($shuttersDev)
             and $shutters->getSunriseUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforDayOpen )
-        or ( IsDay( $hash, $shuttersDev )
+        or ( IsDay($shuttersDev)
             and $shutters->getSunsetUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforNightClose )
       )
@@ -2870,10 +2858,9 @@ sub IsAfterShuttersManualBlocking($) {
     else { return 1 }
 }
 
-sub ShuttersSunset($$$) {
-    my ( $hash, $shuttersDev, $tm ) =
+sub ShuttersSunset($$) {
+    my ( $shuttersDev, $tm ) =
       @_;    # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
-    my $name = $hash->{NAME};
     my $autoAstroMode;
     $shutters->setShuttersDev($shuttersDev);
 
