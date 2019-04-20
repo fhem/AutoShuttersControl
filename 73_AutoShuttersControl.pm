@@ -2485,6 +2485,8 @@ sub IsDay($$) {
     my $isday = ( ShuttersSunrise( $hash, $shuttersDev, 'unix' ) >
           ShuttersSunset( $hash, $shuttersDev, 'unix' ) ? 1 : 0 );
     my $respIsDay = $isday;
+    
+    printf 'IsDay ist: ' . $respIsDay . "\n";
 
     $respIsDay = (
         (
@@ -2493,8 +2495,10 @@ sub IsDay($$) {
                   and $isday
             )
               or $shutters->getSunset
-        ) ? 1 : 0
+        ) ? 0 : 1
     ) if ( $shutters->getDown eq 'brightness' );
+    
+    printf 'IsDay Sunset ist: ' . $respIsDay . "\n";
 
     $respIsDay = (
         (
@@ -2506,6 +2510,8 @@ sub IsDay($$) {
               or $shutters->getSunrise
         ) ? 1 : 0
     ) if ( $shutters->getUp eq 'brightness' );
+    
+    printf 'IsDay Sunrise ist: ' . $respIsDay . "\n";
 
     return $respIsDay;
 }
