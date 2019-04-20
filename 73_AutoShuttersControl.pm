@@ -2185,23 +2185,18 @@ sub SunSetShuttersAfterTimerFn($) {
             ? $shutters->getStatus > $shutters->getPrivacyDownPos
             : $shutters->getStatus < $shutters->getPrivacyDownPos
         );
-        
-        if (  $funcHash->{privacyMode} == 1
-          and not $queryShuttersPosPrivacyDown )
+
+        if ( $funcHash->{privacyMode} == 1
+            and not $queryShuttersPosPrivacyDown )
         {
             $shutters->setLastDrive('privacy position');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
+            ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getPrivacyDownPos );
         }
         elsif ( $funcHash->{privacyMode} == 0 ) {
             $shutters->setSunset(1);
             $shutters->setLastDrive('night close');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                $posValue );
+            ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
     }
 
@@ -3394,7 +3389,8 @@ sub getSunset {
     return (
         defined( $self->{ $self->{shuttersDev} }{sunset} )
         ? $self->{ $self->{shuttersDev} }{sunset}
-        : 0 );
+        : 0
+    );
 }
 
 sub getSunriseUnixTime {
@@ -3409,7 +3405,8 @@ sub getSunrise {
     return (
         defined( $self->{ $self->{shuttersDev} }{sunrise} )
         ? $self->{ $self->{shuttersDev} }{sunrise}
-        : 0 );
+        : 0
+    );
 }
 
 sub getRoommatesStatus {
@@ -4365,7 +4362,6 @@ sub getBrightnessMinVal {
     return $self->{ASC_brightness}->{triggermin}
       if ( exists( $self->{ASC_brightness}->{LASTGETTIME} )
         and ( gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME} ) < 2 );
-    $self->{ASC_brightness}->{LASTGETTIME} = int( gettimeofday() );
     $ascDev->getBrightnessMaxVal;
 
     return $self->{ASC_brightness}->{triggermin};
@@ -4379,6 +4375,7 @@ sub getBrightnessMaxVal {
       if ( exists( $self->{ASC_brightness}->{LASTGETTIME} )
         and ( gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME} ) < 2 );
     $self->{ASC_brightness}->{LASTGETTIME} = int( gettimeofday() );
+
     my ( $triggermax, $triggermin ) =
       FHEM::AutoShuttersControl::GetAttrValues( $name,
         'ASC_brightnessDriveUpDown', 'none' );
@@ -4635,7 +4632,8 @@ sub getWindSensorReading {
     return (
         defined( $self->{ASC_windSensor}->{reading} )
         ? $self->{ASC_windSensor}->{reading}
-        : 'wind' );
+        : 'wind'
+    );
 }
 
 sub getblockAscDrivesAfterManual {
