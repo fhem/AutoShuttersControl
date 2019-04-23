@@ -857,7 +857,13 @@ sub EventProcessingWindowRec($@) {
             {
                 $shutters->setLastDrive('window day closed');
                 $shutters->setNoOffset(1);
-                $shutters->setDriveCmd( ($shutters->getLastPos != $shutters->getClosedPos ? $shutters->getLastPos : $shutters->getOpenPos) );
+                $shutters->setDriveCmd(
+                    (
+                          $shutters->getLastPos != $shutters->getClosedPos
+                        ? $shutters->getLastPos
+                        : $shutters->getOpenPos
+                    )
+                );
             }
 
             elsif (not IsDay($shuttersDev)
