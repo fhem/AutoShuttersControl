@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.5.99.2';
+my $version = '0.5.99.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2480,27 +2480,67 @@ sub IsDay($) {
     my $isday = ( ShuttersSunrise( $shuttersDev, 'unix' ) >
           ShuttersSunset( $shuttersDev, 'unix' ) ? 1 : 0 );
     my $respIsDay = $isday;
+    
+    
+    ASC_Debug( 'FnIsDay: '
+              . $shuttersDev
+              . ' Allgemein: '
+              . $respIsDay );
 
-    $respIsDay = (
-        (
-            (
-                      $shutters->getBrightness > $shutters->getBrightnessMinVal
-                  and $isday
-            )
-              or $shutters->getSunset
-        ) ? 0 : 1
-    ) if ( $shutters->getDown eq 'brightness' );
+    if ( $shutters->getDown eq 'brightness'
+      or $shutters->getUp eq 'brightness' )
+    {
+        my $brightnessMinVal;
+        if ( $shutters->getBrightnessMinVal > -1 ) {
+            $brightnessMinVal = $shutters->getBrightnessMinVal;
+        }
+        else {
+            $brightnessMinVal = $ascDev->getBrightnessMinVal;
+        }
 
-    $respIsDay = (
-        (
+        my $brightnessMaxVal;
+        if ( $shutters->getBrightnessMaxVal > -1 ) {
+            $brightnessMaxVal = $shutters->getBrightnessMaxVal;
+        }
+        else {
+            $brightnessMaxVal = $ascDev->getBrightnessMaxVal;
+        }
+        
+        $respIsDay = (
             (
-                $shutters->getBrightness > $shutters->getBrightnessMaxVal
-                  and not $isday
-            )
-              or $respIsDay
-              or $shutters->getSunrise
-        ) ? 1 : 0
-    ) if ( $shutters->getUp eq 'brightness' );
+                (
+                        $shutters->getBrightness > $brightnessMinVal
+                    and $isday
+                )
+                or $shutters->getSunset
+            ) ? 1 : 0
+        ) if ( $shutters->getDown eq 'brightness' );
+        
+        ASC_Debug( 'FnIsDay: '
+                  . $shuttersDev
+                  . ' getDownBrightness: ' . $respIsDay
+                  . ' Brightness: ' . $shutters->getBrightness
+                  . ' BrightnessMin: ' . $brightnessMinVal
+                  . ' Sunset: ' . $shutters->getSunset );
+
+        $respIsDay = (
+            (
+                (
+                    $shutters->getBrightness > $brightnessMaxVal
+                    and not $isday
+                )
+                or $respIsDay
+                or $shutters->getSunrise
+            ) ? 1 : 0
+        ) if ( $shutters->getUp eq 'brightness' );
+        
+        ASC_Debug( 'FnIsDay: '
+                  . $shuttersDev
+                  . ' getUpBrightness: ' . $respIsDay
+                  . ' Brightness: ' . $shutters->getBrightness
+                  . ' BrightnessMax: ' . $brightnessMaxVal
+                  . ' Sunset: ' . $shutters->getSunrise );
+    }
 
     return $respIsDay;
 }
