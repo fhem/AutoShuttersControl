@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.5.99.4';
+my $version = '0.5.99.5';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1818,8 +1818,8 @@ sub ShadingProcessing($@) {
         }
 
         Log3( $name, 4,
-"AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
-              . $shutters->getShadingStatus );
+            "AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
+            . $shutters->getShadingStatus );
 
         ASC_Debug(
                 'ShadingProcessing: '
