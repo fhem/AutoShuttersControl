@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.5.99.5';
+my $version = '0.5.99.12';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -151,63 +151,64 @@ BEGIN {
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 my %userAttrList = (
-    'ASC_Mode_Up:absent,always,off,home'                            => 'always',
-    'ASC_Mode_Down:absent,always,off,home'                          => 'always',
-    'ASC_Up:time,astro,brightness'                                  => 'astro',
-    'ASC_Down:time,astro,brightness'                                => 'astro',
-    'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => 'none',
+    'ASC_Mode_Up:absent,always,off,home'                            => '-',
+    'ASC_Mode_Down:absent,always,off,home'                          => '-',
+    'ASC_Up:time,astro,brightness'                                  => '-',
+    'ASC_Down:time,astro,brightness'                                => '-',
+    'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
 'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
-      => 'none',
-    'ASC_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => 'none',
+      => '-',
+    'ASC_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
 'ASC_AutoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
-      => 'none',
+      => '-',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
-    'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
+    'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100,   0 ],
     'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
-    'ASC_Time_Up_Early'                          => '04:30',
-    'ASC_Time_Up_Late'                           => '09:00',
-    'ASC_Time_Up_WE_Holiday'                     => '08:30',
-    'ASC_Time_Down_Early'                        => '15:30',
-    'ASC_Time_Down_Late'                         => '22:30',
-    'ASC_PrivacyDownTime_beforNightClose'        => -1,
-    'ASC_PrivacyDown_Pos'                        => 50,
-    'ASC_WindowRec'                              => 'none',
-    'ASC_Ventilate_Window_Open:on,off'           => 'on',
-    'ASC_LockOut:soft,hard,off'                  => 'off',
-    'ASC_LockOut_Cmd:inhibit,blocked,protection' => 'none',
-    'ASC_BlockingTime_afterManual'               => 1200,
-    'ASC_BlockingTime_beforNightClose'           => 3600,
-    'ASC_BlockingTime_beforDayOpen'              => 3600,
-    'ASC_BrightnessSensor'                       => 'none',
-    'ASC_Shading_Direction'                      => 180,
+    'ASC_Time_Up_Early'                          => '-',
+    'ASC_Time_Up_Late'                           => '-',
+    'ASC_Time_Up_WE_Holiday'                     => '-',
+    'ASC_Time_Down_Early'                        => '-',
+    'ASC_Time_Down_Late'                         => '-',
+    'ASC_PrivacyDownTime_beforNightClose'        => '-',
+    'ASC_PrivacyDown_Pos'                        => '-',
+    'ASC_WindowRec'                              => '-',
+    'ASC_Ventilate_Window_Open:on,off'           => '-',
+    'ASC_LockOut:soft,hard,off'                  => '-',
+    'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
+    'ASC_BlockingTime_afterManual'               => '-',
+    'ASC_BlockingTime_beforNightClose'           => '-',
+    'ASC_BlockingTime_beforDayOpen'              => '-',
+    'ASC_BrightnessSensor'                       => '-',
+    'ASC_Shading_Direction'                      => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' => [ '', 80, 20 ],
-    'ASC_Shading_Mode:absent,always,off,home'        => 'off',
-    'ASC_Shading_Angle_Left'                         => 75,
-    'ASC_Shading_Angle_Right'                        => 75,
-    'ASC_Shading_StateChange_Sunny'                  => 35000,
-    'ASC_Shading_StateChange_Cloudy'                 => 20000,
-    'ASC_Shading_Min_Elevation'                      => 25.0,
-    'ASC_Shading_Min_OutsideTemperature'             => 18,
-    'ASC_Shading_WaitingPeriod'                      => 1200,
+    'ASC_Shading_Mode:absent,always,off,home'        => '-',
+    'ASC_Shading_Angle_Left'                         => '-',
+    'ASC_Shading_Angle_Right'                        => '-',
+    'ASC_Shading_StateChange_Sunny'                  => '-',
+    'ASC_Shading_StateChange_Cloudy'                 => '-',
+    'ASC_Shading_Min_Elevation'                      => '-',
+    'ASC_Shading_Min_OutsideTemperature'             => '-',
+    'ASC_Shading_WaitingPeriod'                      => '-',
 
-    #     'ASC_Shading_Fast_Open:on,off'                     => 'none',
-    #     'ASC_Shading_Fast_Close:on,off'                    => 'none',
-    'ASC_Drive_Offset'                                     => -1,
-    'ASC_Drive_OffsetStart'                                => -1,
-    'ASC_WindowRec_subType:twostate,threestate'            => 'twostate',
-    'ASC_ShuttersPlace:window,terrace'                     => 'window',
+    #     'ASC_Shading_Fast_Open:on,off'                     => '-',
+    #     'ASC_Shading_Fast_Close:on,off'                    => '-',
+    'ASC_Drive_Offset'                                     => '-',
+    'ASC_Drive_OffsetStart'                                => '-',
+    'ASC_WindowRec_subType:twostate,threestate'            => '-',
+    'ASC_ShuttersPlace:window,terrace'                     => '-',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'     => [ '', 70, 30 ],
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 20, 80 ],
-    'ASC_GuestRoom:on,off'                                 => 'none',
-    'ASC_Antifreeze:off,soft,hard,am,pm'                   => 'off',
+    'ASC_GuestRoom:on,off'                                 => '-',
+    'ASC_Antifreeze:off,soft,hard,am,pm'                   => '-',
 'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
       => [ '', 85, 15 ],
-    'ASC_Partymode:on,off'            => 'off',
-    'ASC_Roommate_Device'             => 'none',
-    'ASC_Roommate_Reading'            => 'state',
-    'ASC_Self_Defense_Exclude:on,off' => 'off',
-    'ASC_WiggleValue'                 => 5,
-    'ASC_WindParameters'              => [ '', '-1', '-1' ],
+    'ASC_Partymode:on,off'            => '-',
+    'ASC_Roommate_Device'             => '-',
+    'ASC_Roommate_Reading'            => '-',
+    'ASC_Self_Defense_Exclude:on,off' => '-',
+    'ASC_WiggleValue'                 => '-',
+    'ASC_WindParameters'              => '-',
+    'ASC_DriveUpMaxDuration'          => '-',
 );
 
 my %posSetCmds = (
@@ -269,8 +270,6 @@ sub Define($$) {
       if ( $ascDev->getAutoShuttersControlMorning eq 'none' );
     CommandAttr( undef, $name . ' ASC_autoShuttersControlEvening on' )
       if ( $ascDev->getAutoShuttersControlEvening eq 'none' );
-    CommandAttr( undef, $name . ' ASC_freezeTemp 3' )
-      if ( $ascDev->getFreezeTemp eq 'none' );
     CommandAttr( undef,
         $name
           . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense.inactive:status_open day.open:scene_day night.close:scene_night shading.in:weather_sun shading.out:weather_cloudy'
@@ -717,15 +716,17 @@ sub UserAttributs_Readings_ForShutters($$) {
                 if ( ref($attribValue) ne 'ARRAY' ) {
                     $attr{$_}{ ( split( ':', $attrib ) )[0] } = $attribValue
                       if (
-                        not
-                        defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } ) );
+                          not
+                          defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } )
+                        and $attribValue ne '-' );
                 }
                 else {
                     $attr{$_}{ ( split( ':', $attrib ) )[0] } =
                       $attribValue->[ AttrVal( $_, 'ASC', 2 ) ]
                       if (
-                        not
-                        defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } ) );
+                          not
+                          defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } )
+                        and $attrib eq 'ASC_Pos_Reading' );
                 }
             }
             ## Oder das Attribut wird wieder gelöscht.
@@ -1176,7 +1177,6 @@ sub EventProcessingRain($@) {
     my ( $hash, $device, $events ) = @_;
     my $name    = $device;
     my $reading = $ascDev->getRainSensorReading;
-    print 'Regenreading: ' . $reading . "\n";
 
     if ( $events =~ m#$reading:\s(\d+|rain|dry)# ) {
         my $val;
@@ -1208,7 +1208,6 @@ sub EventProcessingRain($@) {
     }
 }
 
-######### Under Construction
 sub EventProcessingWind($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
@@ -1218,9 +1217,23 @@ sub EventProcessingWind($@) {
     if ( $events =~ m#$reading:\s(\d+)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+
+            ASC_Debug( 'EventProcessingWind: '
+                . $shutters->getShuttersDev
+                . ' - WindProtection1: '
+                . $shutters->getWindProtection
+                . ' WindMax1: '
+                . $shutters->getWindMax
+                . ' WindMin1: '
+                . $shutters->getWindMin
+                . ' Bekommender Wert1: '
+                . $1
+            );
+
             $shutters->setWindProtection('unprotection')
-              if ( not defined( $shutters->getWindProtection ) );
-            next if ( $shutters->getWindMax < 0 );
+                if ( not defined( $shutters->getWindProtection )
+                  or not $shutters->getWindProtection );
+
             next
               if ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $shutters->getShuttersPlace eq 'terrace' );
@@ -1239,6 +1252,18 @@ sub EventProcessingWind($@) {
                 $shutters->setDriveCmd( $shutters->getLastPos );
                 $shutters->setWindProtection('unprotection');
             }
+            
+            ASC_Debug( 'EventProcessingWind: '
+                . $shutters->getShuttersDev
+                . ' - WindProtection2: '
+                . $shutters->getWindProtection
+                . ' WindMax2: '
+                . $shutters->getWindMax
+                . ' WindMin2: '
+                . $shutters->getWindMin
+                . ' Bekommender Wert2: '
+                . $1
+            );
         }
     }
 }
@@ -1887,7 +1912,7 @@ sub EventProcessingShutters($@) {
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
         $ascDev->setPosReading;
-        if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) > 60
+        if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) > $shutters->getDriveUpMaxDuration
             and $shutters->getLastPos != $shutters->getStatus )
         {
             $shutters->setLastDrive('manual');
@@ -2427,9 +2452,9 @@ sub AutoSearchTwilightDev($) {
 }
 
 sub GetAttrValues($@) {
-    my ( $dev, $attribut ) = @_;
+    my ( $dev, $attribut, $default ) = @_;
 
-    my @values = split( ' ', AttrVal( $dev, $attribut, 'none' ) );
+    my @values = split( ' ', AttrVal( $dev, $attribut, (defined($default) ? $default : 'none') ) );
     my ( $value1, $value2 ) = split( ':', $values[0] );
     my ( $value3, $value4 ) = split( ':', $values[1] )
       if ( defined( $values[1] ) );
@@ -3211,8 +3236,7 @@ sub setDriveCmd {
 
     $offSet = $shutters->getOffset       if ( $shutters->getOffset > -1 );
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset < 0 );
-    $offSetStart = $shutters->getOffsetStart
-      if ( $shutters->getOffsetStart > -1 );
+    $offSetStart = $shutters->getOffsetStart;
 
     if ( $offSetStart > 0 and not $shutters->getNoOffset ) {
         InternalTimer(
@@ -3609,7 +3633,7 @@ sub getASC {
 sub getAntiFreezePos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Antifreeze_Pos', 50 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Antifreeze_Pos', $userAttrList{ASC_Antifreeze_Pos}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getShuttersPlace {
@@ -3646,18 +3670,14 @@ sub getWiggleValue {
 ### Begin Beschattung
 sub getShadingPos {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 10 if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Pos', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Pos', $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getShadingMode {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'off' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'off' );
 }
 
 sub _getBrightnessSensor {
@@ -3721,46 +3741,46 @@ sub getBrightnessReading {
 sub getDirection {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Direction', -1 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Direction', 180 );
 }
 
 sub getShadingAngleLeft {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Left', -1 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Left', 75 );
 }
 
 sub getShadingAngleRight {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Right', -1 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Right', 75 );
 }
 
 sub getShadingMinOutsideTemperature {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_OutsideTemperature',
-        2 );
+        18 );
 }
 
 sub getShadingMinElevation {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_Elevation', 15.0 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_Elevation', 25.0 );
 }
 
 sub getShadingStateChangeSunny {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Sunny',
-        5000 );
+        35000 );
 }
 
 sub getShadingStateChangeCloudy {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Cloudy',
-        2000 );
+        20000 );
 }
 
 sub getShadingWaitingPeriod {
@@ -3773,16 +3793,16 @@ sub getShadingWaitingPeriod {
 sub getOffset {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', 0 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', -1 );
 }
 
 sub getOffsetStart {
     my $self = shift;
 
     return (
-          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 3 ) > 2
-        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', 3 )
-        : 3
+          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 ) > 0
+        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 )
+        : -1
     );
 }
 
@@ -3816,31 +3836,31 @@ sub getPosCmd {
 sub getOpenPos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos', 0 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos', $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getVentilatePos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Pos', 80 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Pos', $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getClosedPos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos', 100 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos', $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getVentilateOpen {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Window_Open', 'off' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Window_Open', 'on' );
 }
 
 sub getComfortOpenPos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_ComfortOpen_Pos', 50 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_ComfortOpen_Pos', $userAttrList{'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}[AttrVal( $self->{shuttersDev}, 'ASC', 2 )] );
 }
 
 sub getPartyMode {
@@ -3851,18 +3871,14 @@ sub getPartyMode {
 
 sub getRoommates {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Device', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Device', 'none' );
 }
 
 sub getRoommatesReading {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'state' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Reading', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Roommate_Reading', 'state' );
 }
 
 sub getWindPos {
@@ -3900,15 +3916,13 @@ sub getWindMax {
       int( gettimeofday() );
     my ( $max, $hyst, $pos ) =
       FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
-        'ASC_WindParameters', 'none' );
+        'ASC_WindParameters', '50:20' );
 
     ## Erwartetes Ergebnis
     # max:hyst pos
 
-    return 3 if ( $max eq 'none' );
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max;
-    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} =
-      ( $hyst ne 'none' ? ( $max - $hyst ) : ( $max - 20 ) );
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} = $hyst;
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} =
       ( $pos ne 'none' ? $pos : $shutters->getOpenPos );
 
@@ -3936,13 +3950,13 @@ sub getWindMin {
 sub getModeUp {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Mode_Up', 'off' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Mode_Up', 'always' );
 }
 
 sub getModeDown {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Mode_Down', 'off' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Mode_Down', 'always' );
 }
 
 sub getLockOut {
@@ -3965,34 +3979,30 @@ sub getAntiFreeze {
 
 sub getAutoAstroModeMorning {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
     return AttrVal( $self->{shuttersDev}, 'ASC_AutoAstroModeMorning',
-        $default );
+        'none' );
 }
 
 sub getAutoAstroModeEvening {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
     return AttrVal( $self->{shuttersDev}, 'ASC_AutoAstroModeEvening',
-        $default );
+        'none' );
 }
 
 sub getAutoAstroModeMorningHorizon {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_AutoAstroModeMorningHorizon',
-        0 );
+        'none' );
 }
 
 sub getAutoAstroModeEveningHorizon {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_AutoAstroModeEveningHorizon',
-        0 );
+        'none' );
 }
 
 sub getUp {
@@ -4010,32 +4020,32 @@ sub getDown {
 sub getTimeUpEarly {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Early', '04:30:00' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Early', '05:00' );
 }
 
 sub getTimeUpLate {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Late', '09:00:00' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Late', '08:30' );
 }
 
 sub getTimeDownEarly {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Early', '15:30:00' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Early', '16:00' );
 }
 
 sub getTimeDownLate {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Late', '22:00:00' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Late', '22:00' );
 }
 
 sub getTimeUpWeHoliday {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_WE_Holiday',
-        '04:00:00' );
+        '08:00' );
 }
 
 sub getBrightnessMinVal {
@@ -4074,6 +4084,12 @@ sub getBrightnessMaxVal {
 
     return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
       ->{triggermax};
+}
+
+sub getDriveUpMaxDuration {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_DriveUpMaxDuration',60 );
 }
 
 ## Subklasse Readings von ASC_Shutters ##
@@ -4115,7 +4131,6 @@ sub getStatus {
 
 sub getDelayCmd {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
     return $self->{ $self->{shuttersDev} }{delayCmd};
 }
@@ -4142,18 +4157,14 @@ BEGIN {
 
 sub getSubTyp {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'twostate' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_WindowRec_subType', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_WindowRec_subType', 'twostate' );
 }
 
 sub _getWinDev {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $self->{shuttersDev}, 'ASC_WindowRec', $default );
+    return AttrVal( $self->{shuttersDev}, 'ASC_WindowRec', 'none' );
 }
 
 ## Subklasse Readings von Klasse ASC_Window ##
@@ -4174,10 +4185,8 @@ BEGIN {
 
 sub getWinStatus {
     my $self    = shift;
-    my $default = $self->{defaultarg};
 
-    $default = 'closed' if ( not defined($default) );
-    return ReadingsVal( $shutters->_getWinDev, 'state', $default );
+    return ReadingsVal( $shutters->_getWinDev, 'state', 'closed' );
 }
 
 ## Klasse ASC_Roommate ##
@@ -4311,28 +4320,22 @@ sub setLastPosReading {
 sub getPartyMode {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return ReadingsVal( $name, 'partyMode', $default );
+    return ReadingsVal( $name, 'partyMode', 'none' );
 }
 
 sub getHardLockOut {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return ReadingsVal( $name, 'hardLockOut', $default );
+    return ReadingsVal( $name, 'hardLockOut', 'none' );
 }
 
 sub getSunriseTimeWeHoliday {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return ReadingsVal( $name, 'sunriseTimeWeHoliday', $default );
+    return ReadingsVal( $name, 'sunriseTimeWeHoliday', 'none' );
 }
 
 sub getMonitoredDevs {
@@ -4441,15 +4444,13 @@ sub getBrightnessMaxVal {
 
     my ( $triggermax, $triggermin ) =
       FHEM::AutoShuttersControl::GetAttrValues( $name,
-        'ASC_brightnessDriveUpDown', 'none' );
+        'ASC_brightnessDriveUpDown', '800:500' );
 
     ## erwartetes Ergebnis
     # max:min
 
-    $self->{ASC_brightness}->{triggermin} =
-      ( $triggermin ne 'none' ? $triggermin : 500 );
-    $self->{ASC_brightness}->{triggermax} =
-      ( $triggermax ne 'none' ? $triggermax : 800 );
+    $self->{ASC_brightness}->{triggermin} = $triggermin;
+    $self->{ASC_brightness}->{triggermax} = $triggermax;
 
     return $self->{ASC_brightness}->{triggermax};
 }
@@ -4464,10 +4465,8 @@ sub _getTwilightDevice {
 sub getAutoAstroModeEvening {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_autoAstroModeEvening', $default );
+    return AttrVal( $name, 'ASC_autoAstroModeEvening', 'none' );
 }
 
 sub getAutoAstroModeEveningHorizon {
@@ -4480,10 +4479,8 @@ sub getAutoAstroModeEveningHorizon {
 sub getAutoAstroModeMorning {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_autoAstroModeMorning', $default );
+    return AttrVal( $name, 'ASC_autoAstroModeMorning', 'none' );
 }
 
 sub getAutoAstroModeMorningHorizon {
@@ -4496,19 +4493,15 @@ sub getAutoAstroModeMorningHorizon {
 sub getAutoShuttersControlMorning {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_autoShuttersControlMorning', $default );
+    return AttrVal( $name, 'ASC_autoShuttersControlMorning', 'none' );
 }
 
 sub getAutoShuttersControlEvening {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return AttrVal( $name, 'ASC_autoShuttersControlEvening', $default );
+    return AttrVal( $name, 'ASC_autoShuttersControlEvening', 'none' );
 }
 
 sub getAutoShuttersControlComfort {
@@ -4521,10 +4514,8 @@ sub getAutoShuttersControlComfort {
 sub getFreezeTemp {
     my $self    = shift;
     my $name    = $self->{name};
-    my $default = $self->{defaultarg};
 
-    $default = 3 if ( not defined($default) );
-    return AttrVal( $name, 'ASC_freezeTemp', $default );
+    return AttrVal( $name, 'ASC_freezeTemp', 3 );
 }
 
 sub _getTempSensor {
@@ -4716,146 +4707,6 @@ sub getblockAscDrivesAfterManual {
 =begin html
 
 <a name="AutoShuttersControl"></a>
-<h3>Automatic shutter control - ASC</h3>
-<ul>
-  <u><b>AutoShuttersControl in short ASC,controls automatically your shutters following defined rules. i.e. sunrise, sunset or any window event</b></u>
-  <br>
-  This modul shall control all shutters which are supervised by this Modul following the configuration of attributes in the shutter device. With fitting configuration a shutter will drive up if a resident gets awake and the sun has risen already. It is also possible by tilting a window to bring a closed shutter into airing position.
-  <br><br>
-  <a name="AutoShuttersControlDefine"></a>
-  <b>Define</b>
-  <ul><br>
-    <code>define &lt;name&gt; AutoShuttersControl</code>
-    <br><br>
-    Example:
-    <ul><br>
-      <code>define myASControl AutoShuttersControl</code><br>
-    </ul>
-    <br>
-    This command creates a AutoShuttersControl device named myASControl.<br>
-    After creating the device, all shutter devices which shall be controlled have to get set the attribut AutoShuttersControl with value 1 or 2.<br>
-    Value 1 means "Inverse or shutter e.g.: shutter up 0,shutter down 100 and the command for percentual movement is position",2 = "Homematic Style e.g.: shutter up 100,shutter down 0 and the command for percentual movement istpct.<br>
-    If the attribute is set, you may start automatic scan for your devices .
-  </ul>
-  <br><br>
-  <a name="AutoShuttersControlReadings"></a>
-  <b>Readings</b>
-  <ul>
-    Im Modul Device
-    <ul>
-      <li>..._nextAstroTimeEvent - time of the next astro event,sunrise,sunset or fixed time per shuttername</li>
-      <li>..._PosValue - actual position of shutter</li>
-      <li>..._lastPosValue - last position of shutter</li>
-      <li>..._lastDelayPosValue - last drive command which is executed at the next permitted event (example: delay because Partymode)</li>
-      <li>partyMode - on/off activates the global partymode, all shutters with the attribute ASC_Partymode set to on will not be moved. The last command which had been send by a window event or resident state, will be send again if ASC-Device partyMode is set to off</li>
-      <li>lockOut - on/off to activate the lock out mode for the selected shutter. (see description of attributes for die shutterdevices)</li>
-      <li>room_... - list of all shutters found in respective rooms, e.g.: room_sleepingroom,terrasse</li>
-      <li>state - state of the devices active,enabled,disabled</li>
-      <li>sunriseTimeWeHoliday - on/off respects the attribute ASC_Time_Up_WE_Holiday </li>
-      <li>userAttrList - list of user attributea which will be send to shutters</li>
-    </ul><br>
-    Inside the shutter devices
-    <ul>
-      <li>ASC_Time_DriveUp - sunrise time for this shutter</li>
-      <li>ASC_Time_DriveDown - sunset time for this shutter</li>
-      <li>ASC_ShuttersLastDrive - last reason for the shutter to move</li>
-    </ul>
-  </ul>
-  <br><br>
-  <a name="AutoShuttersControlSet"></a>
-  <b>Set</b>
-  <ul>
-    <li>partyMode - on/off activates the global party mode. see reading partyMode</li>
-    <li>lockOut - on/off activates the global lock out mode. see reading lockOut</li>
-    <li>renewSetSunriseSunsetTimer - refreshes the timer for sunset, sunrise and the internal timers.</li>
-    <li>scanForShutters - searches all FHEM devices with attribute "ASC" 1/2</li>
-    <li>sunriseTimeWeHoliday - on/off activates/deactivates respecting attribute ASC_Time_Up_WE_Holiday</li>
-    <li>createNewNotifyDev - recreates the internal structure for NOTIFYDEV - attribute ASC_expert has value 1.</li>
-    <li>selfDefense - on/off,activates/deactivates the mode self defense. If the resident device says absent and selfDefense is active, each shutter for open windows will be closed.</li>
-    <li>wiggle - moves any shutter (for deterrence purposes) by 5% up, and after 1 minute down again to last position.</li> 
-  </ul>
-  <br><br>
-  <a name="AutoShuttersControlGet"></a>
-  <b>Get</b>
-  <ul>
-    <li>showShuttersInformations - shows an overview of all times/timers</li>
-    <li>showNotifyDevsInformations - shows an overview of all notify devices. Is used for control - attribute ASC_expert has value 1</li>
-  </ul>
-  <br><br>
-  <a name="AutoShuttersControlAttributes"></a>
-  <b>Attributes</b>
-  <ul>
-  In module device
-    <ul>
-      <li>ASC_freezeTemp - temperature which inhibits movement of shutter. The last drive command will be stored.</li>
-      <li>ASC_autoAstroModeEvening - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
-      <li>ASC_autoAstroModeEveningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeEvening.</li>
-      <li>ASC_autoAstroModeMorning - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
-      <li>ASC_autoAstroModeMorningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeMorning.</li>
-      <li>ASC_autoShuttersControlComfort - on/off turns on comfort function. Means a shutter with threestate sensor moves to a wide open position. The open position is set at shutter with the attribute ASC_ComfortOpen_Pos.</li>
-      <li>ASC_autoShuttersControlEvening - on/off if the shutters shall be controlled by time in the evening.</li>
-      <li>ASC_autoShuttersControlMorning - on/off if the shutters shall be controlled by time in the morning.</li>
-      <li>ASC_temperatureReading - Reading for outside temperature.</li>
-      <li>ASC_temperatureSensor - Device for outside temperature.</li>
-      <li>ASC_residentsDevice - devicename of the residents device</li>
-      <li>ASC_residentsDeviceReading - state of the residents device</li>
-      <li>ASC_brightnessMinVal - minimum brightness value to activate check of conditions</li>
-      <li>ASC_brightnessMaxVal - maximum brightness value to activate check of conditions</li>
-      <li>ASC_rainSensorDevice - device which triggers when it is raining</li>
-      <li>ASC_rainSensorReading - reading of rain sensor device</li>
-      <li>ASC_rainSensorShuttersClosedPos - position to be reached if it is raining.</li>
-      <li>ASC_shuttersDriveOffset - maximum delay time in seconds for drivetimes, 0 means no delay</li>
-      <li>ASC_twilightDevice - Device which provides information about the position of the sun, is used for shading, among other things</li>
-    </ul><br>
-    In the shutter devices
-    <ul>
-      <li>AutoShuttersControl - 0/1/2 0 = "no creation of the attributes during the first scan or no attention to a drive command",1 = "Inverse or shutter e.g.: shutter upn 0,shutter down 100 and the command to travel is position",2 = "Homematic Style e.g.: shutter up 100,shutter down 0 and the command to travel is pct</li>
-      <li>ASC_Antifreeze - soft/hard/off antifreeze if soft the shutters frive into the ASC_Antifreeze_Pos and if hard / am / pm is not driven or not driven within the appropriate time of day</li>
-      <li>ASC_Antifreeze_Pos - Position to be approached when the move command closes completely, but the frost protection is active</li>
-      <li>ASC_AutoAstroModeEvening - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
-      <li>ASC_AutoAstroModeEveningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeEvening.</li>
-      <li>ASC_AutoAstroModeMorning - actual REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
-      <li>ASC_AutoAstroModeMorningHorizon - heighth above horizon if HORIZON is selected at attribute ASC_autoAstroModeMorning.</li>
-      <li>ASC_Closed_Pos - in 10th steps from 0 to 100, default value is pending on attribute ASC</li>
-      <li>ASC_Down - astro/time/brightness with astro sunset will be calculated, with time the value of ASC_Time_Down_Early will be used and with brightness ASC_Time_Down_Early and ASC_Time_Down_Late has to be defined corectly. The timer uses ASC_Time_Down_Late time, during this time ASC_Time_Down_Early and ASC_Time_Down_Late are respected also, to control ASC_brightnessMinVal. If reached the shutter will travel down.</li>
-      <li>ASC_Mode_Down - always/home/absent/off automatic is used: always/home/absent/off (if no roommate defined and absent is set no control will happen)</li>
-      <li>ASC_Mode_Up - always/home/absent/off automatic is used: always/home/absent/off (if no roommate defined and absent is set no control will happen)</li>
-      <li>ASC_Drive_Offset - maximum random delay in seconds for calculating drivetimes, 0 means no delay, -1 means the corresponding attribute of the ASC device shall be taken into account.</li>
-      <li>ASC_Open_Pos -  in 10th steps from 0 bis 100, default value is pending from attribute ASC</li>
-      <li>ASC_Partymode -  on/off  turns the partymode on or off. In case of setting ASC-DEVICE to partyMode on, all drive commands of the shutters which have the attribute set to on, will be stored for later usage.</li>
-      <li>ASC_Pos_Reading - name of the reading which represents the position of the shutter in percent, is used at unknown device types for set command.</li>
-      <li>ASC_ComfortOpen_Pos - in 10th steps from 0 bis 100, default value is pending from attribute ASC</li>
-      <li>ASC_Roommate_Reading - the reading of the roommate device which represents the state</li>
-      <li>ASC_Roommate_Device - comma seperated names of the roommate device/s representing the habitants of the room of the shutter. Senseless in in any rooms besides sleepingroom and childrens room.</li>
-      <li>ASC_Time_Down_Early - Sunset earliest time to travel down</li>
-      <li>ASC_Time_Down_Late - Sunset latest time to travel down</li>
-      <li>ASC_Time_Up_Early - Sunrise earliest time to travel up</li>
-      <li>ASC_Time_Up_Late - Sunrise latest time to travel up</li>
-      <li>ASC_Time_Up_WE_Holiday - Sunrise earliest time to travel up at weekend and/or holiday (holiday2we is respected).</li>
-      <li>ASC_Up - astro/time/brightness with astro sunrise is calculated, with time the value of ASC_Time_Up_Early is used and with brightness ASC_Time_Up_Early and ASC_Time_Up_Late has to be set correctly. The Timer starts after ASC_Time_Up_Late, but during this time ASC_Time_Up_Early and ASC_Time_Up_Late are used, in combination with the attribute ASC_brightnessMinVal reached, if yes the shutter will travel down</li>
-      <li>ASC_Ventilate_Pos -  in 10th steps from 0 bis 100, default value is pending from attribute ASC</li>
-      <li>ASC_Ventilate_Window_Open - drive to airing position if the window is tilted or opened and actual position is below airing position</li>
-      <li>ASC_WindowRec - name of the window sensor mounted to window</li>
-      <li>ASC_WindowRec_subType - type of the used window sensor: twostate (optical oder magnetic) or threestate (rotating handle sensor)</li>
-      <li>ASC_LockOut - soft/hard/off sets the lock out mode. With global activated lock out mode (set ASC-Device lockOut soft) and window sensor open, the shutter stays up. This is true only, if commands are given by ASC module. Is global set to hard, the shutter is blocked by hardware if possible. In this case a locally mounted switch can't be used either.</li>
-      <li>ASC_LockOut_Cmd - inhibit/blocked/protection set command for the shutter-device for hardware interlock. Possible if "ASC_LockOut" is set to hard</li>
-      <li>ASC_Self_Defense_Exclude - on/off to exclude this shutter from active Self Defense. Shutter will not be closed if window is open and residents are absent.</li>
-      <li>ASC_BrightnessSensor - Sensor device used for brightness. ATTENTION! Is used also for ASC_Down - brightness</li>
-      <li>ASC_Brightness_Reading - matching reading which fixes the brightness value of ASC_BrightnessSensor</li>
-      <li>ASC_BrightnessMinVal - minimum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
-      <li>ASC_BrightnessMaxVal - maximum brightness value to activate check of conditions / if the value -1 is not changed, the value of the module device is used.</li>
-      <li>ASC_ShuttersPlace - window/terrace, if this attribute is set to terrace and the residents device are in state "gone"and SelfDefence is active the shutter will be closed</li>
-      <li>ASC_Wind_minMaxSpeed - </li>
-      <li>ASC_Wind_Pos - </li>
-    </ul>
-  </ul>
-</ul>
-
-=end html
-
-=begin html_DE
-
-<a name="AutoShuttersControl"></a>
 <h3>Automatische Rollladensteuerung - ASC</h3>
 <ul>
   <u><b>AutoShuttersControl - oder kurz ASC - steuert automatisch Deine Rollläden nach bestimmten Vorgaben. Zum Beispiel Sonnenaufgang und Sonnenuntergang oder je nach Fenstervent</b></u>
@@ -4930,11 +4781,11 @@ sub getblockAscDrivesAfterManual {
       <a name="ASC_autoAstroModeEvening"></a>
       <li>ASC_autoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <a name="ASC_autoAstroModeEveningHorizon"></a>
-      <li>ASC_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt</li>
+      <li>ASC_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt / default 0 wenn nicht gesetzt</li>
       <a name="ASC_autoAstroModeMorning"></a>
       <li>ASC_autoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
       <a name="ASC_autoAstroModeMorningHorizon"></a>
-      <li>ASC_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt</li>
+      <li>ASC_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt / default 0 wenn nicht gesetzt</li>
       <a name="ASC_autoShuttersControlComfort"></a>
       <li>ASC_autoShuttersControlComfort - on/off - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine Offenposition f&auml;hrt, die  beim Rollladen &uuml;ber das Attribut ASC_ComfortOpen_Pos eingestellt wird.</li>
       <a name="ASC_autoShuttersControlEvening"></a>
@@ -5041,6 +4892,201 @@ sub getblockAscDrivesAfterManual {
       <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben.</li>
       <li>ASC_WindowRec - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist</li>
       <li>ASC_WindowRec_subType - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt)</li>
+    </ul>
+  </ul>
+</ul>
+
+=end html
+
+=begin html_DE
+
+<a name="AutoShuttersControl"></a>
+<h3>Automatische Rollladensteuerung - ASC</h3>
+<ul>
+  <u><b>AutoShuttersControl - oder kurz ASC - steuert automatisch Deine Rollläden nach bestimmten Vorgaben. Zum Beispiel Sonnenaufgang und Sonnenuntergang oder je nach Fenstervent</b></u>
+  <br>
+  Dieses Modul soll alle vom Modul &uuml;berwachten Rolll&auml;den entsprechend der Konfiguration &uuml;ber die Attribute im Rollladen Device steuern. Es wird bei entsprechender Konfiguration zum Beispiel die Rolll&auml;den hochfahren, wenn ein Bewohner erwacht ist und draussen bereits die Sonne aufgegangen ist. Auch ist es m&ouml;glich, dass der geschlossene Rollladen bei Ankippen eines Fensters in eine L&uuml;ftungsposition f&auml;hrt.
+  <br><br>
+  <a name="AutoShuttersControlDefine"></a>
+  <b>Define</b>
+  <ul><br>
+    <code>define &lt;name&gt; AutoShuttersControl</code>
+    <br><br>
+    Example:
+    <ul><br>
+      <code>define myASControl AutoShuttersControl</code><br>
+    </ul>
+    <br>
+    Der Befehl erstellt ein AutoShuttersControl Device mit Namen myASControl.<br>
+    Nachdem das Device angelegt wurde, muss in allen Rolll&auml;den Devices, welche gesteuert werden sollen, das Attribut ASC mit Wert 1 oder 2 gesetzt werden.<br>
+    Dabei bedeutet 1 = "Inverse oder Rollo - Bsp.: Rollo Oben 0,Rollo Unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo Oben 100,Rollo Unten 0 und der Befehl zum prozentualen Fahren ist pct.<br>
+    Habt Ihr das Attribut gesetzt, k&ouml;nnt Ihr den automatischen Scan nach den Devices anstossen.
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlReadings"></a>
+  <b>Readings</b>
+  <ul>
+    Im Modul Device
+    <ul>
+      <li>..._nextAstroTimeEvent - Uhrzeit des n&auml;chsten Astro Events: Sonnenauf- oder Sonnenuntergang oder feste Zeit pro Rollonamen</li>
+      <li>..._PosValue - aktuelle Position des Rollladen</li>
+      <li>..._lastPosValue - letzte Position des Rollladen</li>
+      <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl, welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
+      <li>partyMode - on/off - aktiviert den globalen Partymodus: Alle Rollladen Devices, welche das Attribut ASC_Partymode auf on gestellt haben, werden nicht mehr gesteuert. Der letzte Schaltbefehl, der durch ein Fensterevent oder Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
+      <li>lockOut - on/off - f&uuml;r das Aktivieren des Aussperrschutzes gem&auml;&szlig; des entsprechenden Attributs ASC_LockOut im jeweiligen Rollladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rollladendevices)</li>
+      <li>room_... - Auflistung aller Rolll&auml;den, welche in den jeweiligen R&auml;men gefunden wurde,Bsp.: room_Schlafzimmer,Terrasse</li>
+      <li>state - Status des Devices: active,enabled,disabled oder Info zur letzten Fahrt</li>
+      <li>sunriseTimeWeHoliday - on/off - wird das Rollladen Device Attribut  ASC_Time_Up_WE_Holiday beachtet oder nicht</li>
+      <li>userAttrList - Status der UserAttribute, welche an die Rolll&auml;den gesendet werden</li>
+    </ul><br>
+    In den Rolll&auml;den Devices
+    <ul>
+      <li>ASC_Time_DriveUp - Sonnenaufgangszeit f&uuml;r das Rollo</li>
+      <li>ASC_Time_DriveDown - Sonnenuntergangszeit f&uuml;r das Rollo</li>
+      <li>ASC_ShuttersLastDrive - Grund des letzten Fahrens vom Rollladen</li>
+    </ul>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlSet"></a>
+  <b>Set</b>
+  <ul>
+    <li>partyMode - on/off - aktiviert den globalen Partymodus. Siehe Reading partyMode</li>
+    <li>lockOut - on/off - aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
+    <li>renewSetSunriseSunsetTimer - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
+    <li>scanForShutters - sucht alle FHEM Devices mit dem Attribut "ASC" = 1 oder 2</li>
+    <li>sunriseTimeWeHoliday - on/off - aktiviert/deaktiviert die Beachtung des Rollladen Device Attributes ASC_Time_Up_WE_Holiday</li>
+    <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an - das Attribut ASC_expert muss 1 sein.</li>
+    <li>selfDefense - on/off - aktiviert/deaktiviert den Selbstschutz, wenn das Residents Device absent meldet, selfDefense aktiv ist und ein Fenster im Haus  noch offen steht, wird an diesem Fenster das Rollo runtergefahren</li>
+    <li>wiggle - bewegt einen Rollladen oder alle Rolll&auml;den (f&uuml;r Abschreckungszwecke bei der Alarmierung) um 5%, und nach 1 Minute wieder zur&uuml;ck zur Ursprungsposition</li>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlGet"></a>
+  <b>Get</b>
+  <ul>
+    <li>showShuttersInformations - zeigt eine &Uuml;bersicht der Autofahrzeiten</li>
+    <li>showNotifyDevsInformations - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Dient zur Kontrolle - das Attribut ASC_expert muss 1 sein.</li>
+  </ul>
+  <br><br>
+  <a name="AutoShuttersControlAttributes"></a>
+  <b>Attributes</b>
+  <ul>
+  Im Modul Device
+    <ul>
+      <a name="ASC_autoAstroModeEvening"></a>
+      <li>ASC_autoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
+      <a name="ASC_autoAstroModeEveningHorizon"></a>
+      <li>ASC_autoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt / default 0 wenn nicht gesetzt</li>
+      <a name="ASC_autoAstroModeMorning"></a>
+      <li>ASC_autoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC</li>
+      <a name="ASC_autoAstroModeMorningHorizon"></a>
+      <li>ASC_autoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt / default 0 wenn nicht gesetzt</li>
+      <a name="ASC_autoShuttersControlComfort"></a>
+      <li>ASC_autoShuttersControlComfort - on/off - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate Sensor am Fenster beim &ouml;ffnen in eine Offenposition f&auml;hrt, die  beim Rollladen &uuml;ber das Attribut ASC_ComfortOpen_Pos eingestellt wird. / default off wenn nicht gesetzt</li>
+      <a name="ASC_autoShuttersControlEvening"></a>
+      <li>ASC_autoShuttersControlEvening - on/off - ob Abends die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <a name="ASC_autoShuttersControlMorning"></a>
+      <li>ASC_autoShuttersControlMorning - on/off - ob Morgens die Rolll&auml;den automatisch nach Zeit gesteuert werden sollen</li>
+      <a name="ASC_autoShuttersControlShading"></a>
+      <li>ASC_autoShuttersControlShading - on/off aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
+      <a name="ASC_blockAscDrivesAfterManual"></a>
+      <li>ASC_blockAscDrivesAfterManual - 0,1 wenn der Wert auf 1 gesetzt ist und ein Rollladen im Reading ASC_ShuttersLastDrive ein manual stehen hat und der Rollladen eine unbekannte (nicht in den Attributen konfigueriebare) position hat wird dieser Rollladen vom ASC nicht mehr gesteuert.</li>
+      <a name="ASC_brightnessDriveUpDown"></a>
+      <li>ASC_brightnessDriveUpDown - WERT-MORGENS:WERT-ABENDS, Werte bei dem Schaltbedingungen für Sunrise und Sunset gepr&uuml;ft werden sollen. Diese globale Einstellung kann durch die WERT-MORGENS:WERT-ABENDS Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
+      <a name="ASC_debug"></a>
+      <li>ASC_debug - aktiviert die erweiterte Logausgabe für Debugausgaben</li>
+      <a name="ASC_expert"></a>
+      <li>ASC_expert - ist der Wert 1 werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
+      <a name="ASC_freezeTemp"></a>
+      <li>ASC_freezeTemp - Temperatur, ab welcher der Frostschutz greifen soll und das Rollo nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
+      <a name="ASC_rainSensor"></a>
+      <li>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS] / der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben weden soll und der "wegen Regen geschlossen Position".</li>
+      <a name="ASC_residentsDev"></a>
+      <li>ASC_residentsDev - DEVICENAME[:READINGNAME] / der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents Device der obersten Ebene</li>
+      <a name="ASC_shuttersDriveOffset"></a>
+      <li>ASC_shuttersDriveOffset - maximal zuf&auml;llige Verz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung</li>
+      <a name="ASC_tempSensor"></a>
+      <li>ASC_tempSensor - DEVICENAME[:READINGNAME] / der Inhalt des Attributes ist eine Kombination aus Device und Reading f&uuml;r die Aussentemperatur</li>
+      <a name="ASC_twilightDevice"></a>
+      <li>ASC_twilightDevice - Device welches Informationen zum Sonnenstand liefert, wird unter anderem f&uuml;r die Beschattung verwendet.</li>
+      <a name="ASC_windSensor"></a>
+      <li>ASC_windSensor - DEVICE[:READING] / Name des FHEM Devices und des Readings f&uuml;r die Windgeschwindigkeit</li>
+
+
+      <a name="ASC_temperatureSensor"></a>
+      <li>ASC_temperatureSensor - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_temperatureReading"></a>
+      <li>ASC_temperatureReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_residentsDevice"></a>
+      <li>ASC_residentsDevice - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_residentsDeviceReading"></a>
+      <li>ASC_residentsDeviceReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorDevice"></a>
+      <li>ASC_rainSensorDevice - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorReading"></a>
+      <li>ASC_rainSensorReading - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_rainSensorShuttersClosedPos"></a>
+      <li>ASC_rainSensorShuttersClosedPos - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_brightnessMinVal"></a>
+      <li>ASC_brightnessMinVal - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+      <a name="ASC_brightnessMaxVal"></a>
+      <li>ASC_brightnessMaxVal - WARNUNG!!! OBSOLETE !!! NICHT VERWENDEN!!!</li>
+
+
+    </ul><br>
+    In den Rolll&auml;den Devices
+    <ul>
+      <li>ASC - 0/1/2 0 = "kein Anlegen der Attribute beim ersten Scan bzw. keine Beachtung eines Fahrbefehles",1 = "Inverse oder Rollo - Bsp.: Rollo Oben 0, Rollo Unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo Oben 100, Rollo Unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
+      <li>ASC_Antifreeze - soft/am/pm/hard/off - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_Antifreeze_Pos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren / default off wenn nicht gesetzt</li>
+      <li>ASC_Antifreeze_Pos - Position die angefahren werden soll wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist/ default 50 wenn nicht gesetzt</li>
+      <li>ASC_AutoAstroModeEvening - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC / default none wenn nicht gesetzt</li>
+      <li>ASC_AutoAstroModeEveningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt / default none wenn nicht gesetzt</li>
+      <li>ASC_AutoAstroModeMorning - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC / default none wenn nicht gesetzt</li>
+      <li>ASC_AutoAstroModeMorningHorizon - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt / default none wenn nicht gesetzt</li>
+      <li>ASC_BlockingTime_afterManual - wie viel Sekunden soll die Automatik nach einer manuellen Fahrt aus setzen. / default 1200 wenn nicht gesetzt</li>
+      <li>ASC_BlockingTime_beforDayOpen - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schließen Fahrt mehr statt finden. / default 3600 wenn nicht gesetzt</li>
+      <li>ASC_BlockingTime_beforNightClose - wie viel Sekunden vor dem n&auml;chtlichen schlie&zlig;en soll keine &ouml;ffnen Fahrt mehr statt finden. / default 3600 wenn nicht gesetzt</li>
+      <li>ASC_BrightnessSensor - DEVICE:READING WERT-MORGENS:WERT-ABENDS / 'Helligkeit:brightness 400:800' Angaben zum Helligkeitssensor und den Brightnesswerten f&uuml;r Sonnenuntergang und Sonnenaufgang. Die Sensor Device Angaben werden auch f&uuml;r die Beschattung verwendet. / default none wenn nicht gesetzt</li>
+      <li>ASC_Closed_Pos - in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
+      <li>ASC_ComfortOpen_Pos - in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
+      <li>ASC_Down - astro/time/brightness - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen runter gefahren / default astro wenn nicht gesetzt</li>
+      <li>ASC_DriveUpMaxDuration - die Dauer des hochfahrens vom Rollladen plus 5 Sekunden / default 60 wenn nicht gesetzt</li>
+      <li>ASC_Drive_Offset - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll. / default -1 wenn nicht gesetzt</li>
+      <li>ASC_Drive_OffsetStart - in Sekunden verz&ouml;gerter Wert ab welchen dann erst das Offset startet und dazu addiert wird. Funktioniert nur wenn gleichzeitig ein Drive_Offset gesetzt wird. / default -1 wenn nicht gesetzt</li>
+      <li>ASC_LockOut - soft/hard/off - stellt entsprechend den Aussperrschutz ein. Bei global aktivem Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rollladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rollladen hardwareseitig zu blockieren. Dann ist auch ein Fahren &uuml;ber die Taster nicht mehr m&ouml;glich. / default off wenn nicht gesetzt</li>
+      <li>ASC_LockOut_Cmd - inhibit/blocked/protection - set Befehl f&uuml;r das Rollladen-Device zum Hardware sperren. Dieser Befehl wird gesetzt werden, wenn man "ASC_LockOut" auf hard setzt / default none wenn nicht gesetzt</li>
+      <li>ASC_Mode_Down - always/home/absent/off - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) / default always wenn nicht gesetzt</li>
+      <li>ASC_Mode_Up - always/home/absent/off - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) / default always wenn nicht gesetzt</li>
+      <li>ASC_Open_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
+      <li>ASC_Partymode -  on/off - schaltet den Partymodus an oder aus. Wird  am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Rolll&auml;den, welche das Attribut auf on haben, zwischengespeichert und sp&auml;ter erst ausgef&uuml;hrt / default off wenn nicht gesetzt</li>
+      <li>ASC_Pos_Reading - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
+      <li>ASC_PrivacyDownTime_beforNightClose - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll / default -1 wenn nicht gesetzt</li>
+      <li>ASC_PrivacyDown_Pos - Position den Rollladens f&uuml;r den Sichtschutz / default 50 wenn nicht gesetzt</li>
+      <li>ASC_Roommate_Device - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern / default none wenn nicht gesetzt</li>
+      <li>ASC_Roommate_Reading - das Reading zum Roommate Device, welches den Status wieder gibt / default state wenn nicht gesetzt</li>
+      <li>ASC_Self_Defense_Exclude - on/off - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. / default off wenn nicht gesetzt</li>
+      <li>ASC_Shading_Angle_Left - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180° - 85° ==> ab Sonnenpos. 95° wird abgeschattet / default 75 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Angle_Right - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180° + 85° ==> bis Sonnenpos. 265° wird abgeschattet / default 75 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Direction -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 / default 180 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Min_Elevation - ab welcher Höhe des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 25.0 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Min_OutsideTemperature - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 18 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Mode - absent,always,off,home / wann soll die Beschattung nur statt finden. / default off wenn nicht gesetzt</li>
+      <li>ASC_Shading_Pos - Position des Rollladens für die Beschattung</li>
+      <li>ASC_Shading_StateChange_Cloudy - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 20000 wenn nicht gesetzt</li>
+      <li>ASC_Shading_StateChange_Sunny - Brightness Wert ab welchen Beschattung statt finden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 35000 wenn nicht gesetzt</li>
+      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll / default 1200 wenn nicht gesetzt</li>
+      <li>ASC_ShuttersPlace - window/terrace - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefence aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen / default window wenn nicht gesetzt</li>
+      <li>ASC_Time_Down_Early - Sunset fr&uuml;hste Zeit zum Runterfahren / default 16:00 wenn nicht gesetzt</li>
+      <li>ASC_Time_Down_Late - Sunset sp&auml;teste Zeit zum Runterfahren / default 22:00 wenn nicht gesetzt</li>
+      <li>ASC_Time_Up_Early - Sunrise fr&uuml;hste Zeit zum Hochfahren / default 05:00 wenn nicht gesetzt</li>
+      <li>ASC_Time_Up_Late - Sunrise sp&auml;teste Zeit zum Hochfahren / default 08:30 wenn nicht gesetzt</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). / default 08:00 wenn nicht gesetzt</li>
+      <li>ASC_Up - astro/time/brightness - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren / default astro wenn nicht gesetzt</li>
+      <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
+      <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist / default on wenn nicht gesetzt</li>
+      <li>ASC_WiggleValue - Wert um welchen sich die Position des Rollladens &auml;ndern soll / default 5 wenn nicht gesetzt</li>
+      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. / default '50:20 ClosedPosition' wenn nicht gesetzt</li>
+      <li>ASC_WindowRec - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist / default none wenn nicht gesetzt</li>
+      <li>ASC_WindowRec_subType - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) / default twostate wenn nicht gesetzt</li>
     </ul>
   </ul>
 </ul>
