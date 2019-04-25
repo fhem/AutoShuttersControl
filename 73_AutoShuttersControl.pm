@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.5.99.12';
+my $version = '0.5.99.15';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -4213,10 +4213,8 @@ BEGIN {
 sub _getRoommateStatus {
     my $self     = shift;
     my $roommate = $self->{roommate};
-    my $default  = $self->{defaultarg};
 
-    $default = 'none' if ( not defined($default) );
-    return ReadingsVal( $roommate, $shutters->getRoommatesReading, $default );
+    return ReadingsVal( $roommate, $shutters->getRoommatesReading, 'none' );
 }
 
 sub _getRoommateLastStatus {
@@ -4569,7 +4567,6 @@ sub _getResidentsDev {
       FHEM::AutoShuttersControl::GetAttrValues( $name, 'ASC_residentsDev',
         'none' );
 
-    return $device if ( $device eq 'none' );
     $self->{ASC_residentsDev}->{device} = $device;
     $self->{ASC_residentsDev}->{reading} =
       ( $reading ne 'none' ? $reading : 'state' );
