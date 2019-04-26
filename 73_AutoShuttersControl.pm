@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.5.99.16';
+my $version = '0.6.0';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -970,7 +970,8 @@ sub EventProcessingRoommate($@) {
                 (
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
-#                     or $getRoommatesLastStatus eq 'home'
+
+                    #                     or $getRoommatesLastStatus eq 'home'
                 )
                 and $shutters->getRoommatesStatus eq 'home'
               )
