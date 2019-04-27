@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.0';
+my $version = '0.6.1';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1857,8 +1857,11 @@ sub EventProcessingPartyMode($) {
     my ($hash) = @_;
     my $name = $hash->{NAME};
 
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {    
         $shutters->setShuttersDev($shuttersDev);
+        next
+          if ( $shutters->getPartyMode eq 'off' );
+        
         if (    not IsDay($shuttersDev)
             and $shutters->getModeDown ne 'off'
             and IsAfterShuttersManualBlocking($shuttersDev) )
@@ -3873,7 +3876,7 @@ sub getComfortOpenPos {
 
 sub getPartyMode {
     my $self = shift;
-
+    print 'PartyMode Shutter: ' . AttrVal( $self->{shuttersDev}, 'ASC_Partymode', 'off' ) . "\n";
     return AttrVal( $self->{shuttersDev}, 'ASC_Partymode', 'off' );
 }
 
@@ -4325,7 +4328,8 @@ sub getPartyMode {
     my $self = shift;
     my $name = $self->{name};
 
-    return ReadingsVal( $name, 'partyMode', 'none' );
+    print 'PartyMode ASC: ' . ReadingsVal( $name, 'partyMode', 'off' ) . "\n";
+    return ReadingsVal( $name, 'partyMode', 'off' );
 }
 
 sub getHardLockOut {
