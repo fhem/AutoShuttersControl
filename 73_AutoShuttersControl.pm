@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.1.1';
+my $version = '0.6.2';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
