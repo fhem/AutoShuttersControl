@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.1';
+my $version = '0.6.1.1';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1281,9 +1281,22 @@ sub EventProcessingBrightness($@) {
         )
         or (
             (
-                int( gettimeofday() / 86400 ) != int(
-                    computeAlignTime( '24:00', $shutters->getTimeUpEarly ) /
-                      86400
+                (
+                    (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpEarly ) / 86400
+                        )
+                        and not IsWe()
+                    )
+                    or (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday ) / 86400
+                        )
+                        and IsWe()
+                        and $ascDev->getSunriseTimeWeHoliday eq 'on'
+                    )
                 )
                 and int( gettimeofday() / 86400 ) == int(
                     computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
@@ -1857,11 +1870,11 @@ sub EventProcessingPartyMode($) {
     my ($hash) = @_;
     my $name = $hash->{NAME};
 
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {    
+    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
         next
           if ( $shutters->getPartyMode eq 'off' );
-        
+
         if (    not IsDay($shuttersDev)
             and $shutters->getModeDown ne 'off'
             and IsAfterShuttersManualBlocking($shuttersDev) )
@@ -3876,7 +3889,7 @@ sub getComfortOpenPos {
 
 sub getPartyMode {
     my $self = shift;
-    print 'PartyMode Shutter: ' . AttrVal( $self->{shuttersDev}, 'ASC_Partymode', 'off' ) . "\n";
+
     return AttrVal( $self->{shuttersDev}, 'ASC_Partymode', 'off' );
 }
 
@@ -4328,7 +4341,6 @@ sub getPartyMode {
     my $self = shift;
     my $name = $self->{name};
 
-    print 'PartyMode ASC: ' . ReadingsVal( $name, 'partyMode', 'off' ) . "\n";
     return ReadingsVal( $name, 'partyMode', 'off' );
 }
 
@@ -5087,7 +5099,8 @@ sub getblockAscDrivesAfterManual {
       <li>ASC_Time_Down_Late - Sunset sp&auml;teste Zeit zum Runterfahren / default 22:00 wenn nicht gesetzt</li>
       <li>ASC_Time_Up_Early - Sunrise fr&uuml;hste Zeit zum Hochfahren / default 05:00 wenn nicht gesetzt</li>
       <li>ASC_Time_Up_Late - Sunrise sp&auml;teste Zeit zum Hochfahren / default 08:30 wenn nicht gesetzt</li>
-      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). / default 08:00 wenn nicht gesetzt</li>
+      <li>ASC_Time_Up_WE_Holiday - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). / default 08:00 wenn nicht gesetzt
+      ACHTUNG!!! in Verbindung mit Brightness f&uuml;r ASC_Up muss die Uhrzeit kleiner sein wie die Uhrzeit aus ASC_Time_Up_Late</li>
       <li>ASC_Up - astro/time/brightness - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren / default astro wenn nicht gesetzt</li>
       <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
       <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist / default on wenn nicht gesetzt</li>
