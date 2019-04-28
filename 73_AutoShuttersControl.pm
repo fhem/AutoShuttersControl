@@ -694,8 +694,17 @@ sub WriteReadingsShuttersList($) {
             ) eq 'none'
           );
 
-          ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
-          readingsSingleUpdate($defs{$_},'associatedWith',(ReadingsVal($_,'associatedWith',$name) eq $name ? $name : ReadingsVal($_,'associatedWith','none') . ',' . $name), 0);
+        ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
+        readingsSingleUpdate(
+            $defs{$_},
+            'associatedWith',
+            (
+                ReadingsVal( $_, 'associatedWith', $name ) eq $name
+                ? $name
+                : ReadingsVal( $_, 'associatedWith', 'none' ) . ',' . $name
+            ),
+            0
+        );
     }
     readingsBulkUpdate( $hash, 'state', 'active' );
     readingsEndUpdate( $hash, 0 );
