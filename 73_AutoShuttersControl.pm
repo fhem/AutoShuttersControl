@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.1.1';
+my $version = '0.6.1.2';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -693,6 +693,9 @@ sub WriteReadingsShuttersList($) {
                 'none'
             ) eq 'none'
           );
+
+          ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
+          readingsSingleUpdate($defs{$_},'associatedWith',(ReadingsVal($_,'associatedWith',$name) eq $name ? $name : ReadingsVal($_,'associatedWith','none') . ',' . $name), 0);
     }
     readingsBulkUpdate( $hash, 'state', 'active' );
     readingsEndUpdate( $hash, 0 );
