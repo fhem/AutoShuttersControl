@@ -79,10 +79,10 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_residentsDev '
       . 'ASC_rainSensor '
       . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
-      . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
+      . 'ASC_autoAstroModeMorningHorizon:selectnumbers,-9,0.5,9,1,lin'
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
-      . 'ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
-      . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
+      . 'ASC_autoAstroModeEveningHorizon:selectnumbers,-9,0.5,9,1,lin'
+      . 'ASC_freezeTemp:selectnumbers,-5,0.5,5,1,lin'
       . 'ASC_shuttersDriveOffset '
       . 'ASC_twilightDevice '
       . 'ASC_windSensor '
@@ -156,13 +156,11 @@ my %userAttrList = (
     'ASC_Up:time,astro,brightness'                                  => '-',
     'ASC_Down:time,astro,brightness'                                => '-',
     'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
-'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
-      => '-',
+    'ASC_AutoAstroModeMorningHorizon:selectnumbers,-9,0.5,9,1,lin'  => '-',
     'ASC_AutoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
-'ASC_AutoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
-      => '-',
-    'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
-    'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
+    'ASC_AutoAstroModeEveningHorizon:selectnumbers,-9,0.5,9,1,lin'  => '-',
+    'ASC_Open_Pos:selectnumbers,0,1,100,0,lin'   => [ '', 0,   100 ],
+    'ASC_Closed_Pos:selectnumbers,0,1,100,0,lin' => [ '', 100, 0 ],
     'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
     'ASC_Time_Up_Early'                          => '-',
     'ASC_Time_Up_Late'                           => '-',
@@ -180,7 +178,7 @@ my %userAttrList = (
     'ASC_BlockingTime_beforDayOpen'              => '-',
     'ASC_BrightnessSensor'                       => '-',
     'ASC_Shading_Direction'                      => '-',
-    'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
+    'ASC_Shading_Pos:selectnumbers,10,1,100,1,lin'         => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
     'ASC_Shading_Angle_Left'                               => '-',
     'ASC_Shading_Angle_Right'                              => '-',
@@ -193,12 +191,11 @@ my %userAttrList = (
     'ASC_Drive_OffsetStart'                                => '-',
     'ASC_WindowRec_subType:twostate,threestate'            => '-',
     'ASC_ShuttersPlace:window,terrace'                     => '-',
-    'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'     => [ '', 70, 30 ],
-    'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 20, 80 ],
+    'ASC_Ventilate_Pos:selectnumbers,10,1,100,1,lin'       => [ '', 70, 30 ],
+    'ASC_ComfortOpen_Pos:selectnumbers,0,1,100,1,lin'      => [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'                                 => '-',
     'ASC_Antifreeze:off,soft,hard,am,pm'                   => '-',
-'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
-      => [ '', 85, 15 ],
+    'ASC_Antifreeze_Pos:selectnumbers,5,1,100,1,lin'       => [ '', 85, 15 ],
     'ASC_Partymode:on,off'            => '-',
     'ASC_Roommate_Device'             => '-',
     'ASC_Roommate_Reading'            => '-',
