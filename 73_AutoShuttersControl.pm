@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.2.3';
+my $version = '0.6.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1202,7 +1202,7 @@ sub EventProcessingRain($@) {
             $shutters->setShuttersDev($shuttersDev);
 
             next
-              if ($shutters->getRainProtection eq 'off' );
+              if ( $shutters->getRainProtection eq 'off' );
 
             if (    $val > $triggerMax
                 and $shutters->getStatus != $closedPos
@@ -3968,8 +3968,7 @@ sub getWindMax {
     ## Erwartetes Ergebnis
     # max:hyst pos
 
-    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max
-      ;
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max;
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} =
       ( $hyst ne 'none' ? $max - $hyst : $max - 20 );
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} =
@@ -4659,7 +4658,9 @@ sub _getRainSensor {
       ( $reading ne 'none' ? $reading : 'state' );
     $self->{ASC_rainSensor}->{triggermax} = ( $max ne 'none' ? $max : 1000 );
     $self->{ASC_rainSensor}->{triggerhyst} =
-      ( $hyst ne 'none' ? $max - $hyst : ( $self->{ASC_rainSensor}->{triggermax} * 0 ) );
+      (   $hyst ne 'none'
+        ? $max - $hyst
+        : ( $self->{ASC_rainSensor}->{triggermax} * 0 ) );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
       ( $pos ne 'none' ? $pos : $shutters->getClosedPos );
 
