@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.2';
+my $version = '0.6.2.1';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1187,7 +1187,7 @@ sub EventProcessingRain($@) {
     my $name    = $device;
     my $reading = $ascDev->getRainSensorReading;
 
-    if ( $events =~ m#$reading:\s(\d+|rain|dry)# ) {
+    if ( $events =~ m#$reading:\s(\d+(\.\d+)?|rain|dry)# ) {
         my $val;
         my $triggerMax = $ascDev->getRainTriggerMax;
         my $triggerMin = $ascDev->getRainTriggerMin;
@@ -1223,7 +1223,7 @@ sub EventProcessingWind($@) {
     $shutters->setShuttersDev($shuttersDev);
 
     my $reading = $ascDev->getWindSensorReading;
-    if ( $events =~ m#$reading:\s(\d+)# ) {
+    if ( $events =~ m#$reading:\s(\d+(\.\d+)?)# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
 
@@ -1340,7 +1340,7 @@ sub EventProcessingBrightness($@) {
     );
 
     my $reading = $shutters->getBrightnessReading;
-    if ( $events =~ m#$reading:\s(\d+)# ) {
+    if ( $events =~ m#$reading:\s(\d+(\.\d+)?)# ) {
         my $brightnessMinVal;
         if ( $shutters->getBrightnessMinVal > -1 ) {
             $brightnessMinVal = $shutters->getBrightnessMinVal;
@@ -1533,7 +1533,7 @@ sub EventProcessingShadingBrightness($@) {
           . ' - Es wird nun geprüft ob der übergebene Event ein nummerischer Wert vom Brightnessreading ist.'
     );
 
-    if ( $events =~ m#$reading:\s(\d+)# ) {
+    if ( $events =~ m#$reading:\s(\d+(\.\d+)?)# ) {
         Log3(
             $name, 4,
 "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness
@@ -3963,9 +3963,10 @@ sub getWindMax {
     ## Erwartetes Ergebnis
     # max:hyst pos
 
-    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max;
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax} = $max
+      ;
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} =
-      $hyst;
+      ( $hyst ne 'none' ? $max - $hyst : $max - 20 );
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} =
       ( $pos ne 'none' ? $pos : $shutters->getOpenPos );
 
@@ -4647,9 +4648,9 @@ sub _getRainSensor {
       ( $reading ne 'none' ? $reading : 'state' );
     $self->{ASC_rainSensor}->{triggermax} = ( $max ne 'none' ? $max : 1000 );
     $self->{ASC_rainSensor}->{triggerhyst} =
-      ( $hyst ne 'none' ? $max - $hyst : ( $max * 0 ) );
+      ( $hyst ne 'none' ? $max - $hyst : ( $self->{ASC_rainSensor}->{triggermax} * 0 ) );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
-      ( $pos ne 'none' ? $pos : 50 );
+      ( $pos ne 'none' ? $pos : $shutters->getClosedPos );
 
     return $self->{ASC_rainSensor}->{device};
 }
@@ -5129,7 +5130,7 @@ sub getblockAscDrivesAfterManual {
       <li>ASC_Ventilate_Pos -  in 10 Schritten von 0 bis 100, Default ist abh&auml;ngig vom Attribut ASC</li>
       <li>ASC_Ventilate_Window_Open - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist / default on wenn nicht gesetzt</li>
       <li>ASC_WiggleValue - Wert um welchen sich die Position des Rollladens &auml;ndern soll / default 5 wenn nicht gesetzt</li>
-      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. / default '50:20 ClosedPosition' wenn nicht gesetzt</li>
+      <li>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION] / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist das Attribut ASC_WindProtection auf off zu setzen. / default '50:20 ClosedPosition' wenn nicht gesetzt</li>
       <li>ASC_WindProtection - on/off aktiviert den Windschutz f&uuml;r diesen Rollladen. / default on wenn nicht gesetzt.</li>
       <li>ASC_WindowRec - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist / default none wenn nicht gesetzt</li>
       <li>ASC_WindowRec_subType - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) / default twostate wenn nicht gesetzt</li>
