@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.2.1';
+my $version = '0.6.2.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -207,6 +207,7 @@ my %userAttrList = (
     'ASC_WindParameters'              => '-',
     'ASC_DriveUpMaxDuration'          => '-',
     'ASC_WindProtection:on,off'       => '-',
+    'ASC_RainProtection:on,off'       => '-',
 );
 
 my %posSetCmds = (
@@ -1199,6 +1200,10 @@ sub EventProcessingRain($@) {
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
+
+            next
+              if ($shutters->getRainProtection eq 'off' );
+
             if (    $val > $triggerMax
                 and $shutters->getStatus != $closedPos
                 and IsAfterShuttersManualBlocking($shuttersDev) )
@@ -3995,6 +4000,12 @@ sub getWindProtection {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_WindProtection', 'on' );
+}
+
+sub getRainProtection {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_RainProtection', 'on' );
 }
 
 sub getModeUp {
