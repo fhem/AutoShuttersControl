@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.3.4';
+my $version = '0.6.4';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -844,15 +844,15 @@ sub EventProcessingWindowRec($@) {
             ? $shutters->getStatus > $shutters->getComfortOpenPos
             : $shutters->getStatus < $shutters->getComfortOpenPos
         );
-        
+
         ASC_Debug( 'EventProcessingWindowRec: '
-            . $shutters->getShuttersDev
-            . ' - HOMEMODE: '
-            . $homemode
-            . ' : QueryShuttersPosWinRecTilted'
-            . $queryShuttersPosWinRecTilted
-            . ' QueryShuttersPosWinRecComfort: '
-            . $queryShuttersPosWinRecComfort );
+              . $shutters->getShuttersDev
+              . ' - HOMEMODE: '
+              . $homemode
+              . ' : QueryShuttersPosWinRecTilted'
+              . $queryShuttersPosWinRecTilted
+              . ' QueryShuttersPosWinRecComfort: '
+              . $queryShuttersPosWinRecComfort );
 
         if (
                 $1 eq 'closed'
@@ -865,8 +865,7 @@ sub EventProcessingWindowRec($@) {
             if (
                     IsDay($shuttersDev)
                 and $shutters->getStatus != $shutters->getOpenPos
-                and (  ( $homemode ne 'asleep'
-                     and $homemode ne 'gotosleep' )
+                and ( ( $homemode ne 'asleep' and $homemode ne 'gotosleep' )
                     or $homemode eq 'none' )
                 and $shutters->getModeUp ne 'absent'
                 and $shutters->getModeUp ne 'off'
@@ -883,11 +882,12 @@ sub EventProcessingWindowRec($@) {
                 );
             }
 
-            elsif ( $shutters->getModeUp ne 'absent'
+            elsif (
+                    $shutters->getModeUp ne 'absent'
                 and $shutters->getModeUp ne 'off'
-                and ( not IsDay($shuttersDev)
-                   or $homemode eq 'asleep'
-                   or $homemode eq 'gotosleep' )
+                and (  not IsDay($shuttersDev)
+                    or $homemode eq 'asleep'
+                    or $homemode eq 'gotosleep' )
                 and $shutters->getModeDown ne 'absent'
                 and $shutters->getModeDown ne 'off'
               )
@@ -4669,10 +4669,11 @@ sub _getRainSensor {
     $self->{ASC_rainSensor}->{reading} =
       ( $reading ne 'none' ? $reading : 'state' );
     $self->{ASC_rainSensor}->{triggermax} = ( $max ne 'none' ? $max : 1000 );
-    $self->{ASC_rainSensor}->{triggerhyst} =
-      (   $hyst ne 'none'
+    $self->{ASC_rainSensor}->{triggerhyst} = (
+          $hyst ne 'none'
         ? $max - $hyst
-        : ( $self->{ASC_rainSensor}->{triggermax} * 0 ) );
+        : ( $self->{ASC_rainSensor}->{triggermax} * 0 )
+    );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
       ( $pos ne 'none' ? $pos : $shutters->getClosedPos );
 
