@@ -1235,8 +1235,7 @@ sub EventProcessingRain($@) {
             if (    $val > $triggerMax
                 and $shutters->getStatus != $closedPos
                 and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'unprotection'
-              )
+                and $shutters->getRainProtectionStatus eq 'unprotection' )
             {
                 $shutters->setLastDrive('rain protection');
                 $shutters->setDriveCmd($closedPos);
@@ -1245,8 +1244,7 @@ sub EventProcessingRain($@) {
             elsif ( ( $val == 0 or $val < $triggerMax )
                 and $shutters->getStatus == $closedPos
                 and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'protection'
-              ) 
+                and $shutters->getRainProtectionStatus eq 'protection' )
             {
                 $shutters->setLastDrive('rain un-protection');
                 $shutters->setDriveCmd( $shutters->getLastPos );
@@ -3674,19 +3672,24 @@ sub getIfInShading {
 sub getWindProtectionStatus {    # Werte protection, unprotection
     my $self = shift;
 
-    return ( defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters})
-        and
-        defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL})
-        ? $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} : 'unprotection' );
+    return (
+        defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters} )
+          and defined(
+            $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
+          )
+        ? $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
+        : 'unprotection'
+    );
 }
 
 sub getRainProtectionStatus {    # Werte protection, unprotection
     my $self = shift;
 
-    return ( defined( $self->{ $self->{shuttersDev} }->{RainProtection})
-        and
-        defined( $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL})
-        ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} : 'unprotection' );   
+    return ( defined( $self->{ $self->{shuttersDev} }->{RainProtection} )
+          and
+          defined( $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} )
+        ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
+        : 'unprotection' );
 }
 
 sub getShadingStatusTimestamp {
