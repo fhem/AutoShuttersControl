@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.5.8';
+my $version = '0.6.5.9';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2958,9 +2958,34 @@ sub ShuttersSunrise($$) {
                     }
                 }
                 else {
-                    $shuttersSunriseUnixtime =
-                      computeAlignTime( '24:00',
-                        $shutters->getTimeUpWeHoliday );
+                    if (
+                        IsWe()
+                            and int( gettimeofday() / 86400 ) == int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday ) / 86400
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime =
+                        computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
+                    }
+                    elsif (
+                        int( gettimeofday() / 86400 ) == int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpEarly ) / 86400
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime =
+                        computeAlignTime( '24:00',
+                            $shutters->getTimeUpEarly );
+                    }
+                    else {
+                        $shuttersSunriseUnixtime =
+                        computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
+                    }
                 }
             }
             else {
