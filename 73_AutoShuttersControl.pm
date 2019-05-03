@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.5.9';
+my $version = '0.6.5.10';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -698,18 +698,6 @@ sub WriteReadingsShuttersList($) {
                 'none'
             ) eq 'none'
           );
-
-        ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
-        readingsSingleUpdate(
-            $defs{$_},
-            'associatedWith',
-            (
-                ReadingsVal( $_, 'associatedWith', $name ) eq $name
-                ? $name
-                : ReadingsVal( $_, 'associatedWith', 'none' ) . ',' . $name
-            ),
-            0
-        );
     }
     readingsBulkUpdate( $hash, 'state', 'active' );
     readingsEndUpdate( $hash, 0 );
@@ -740,6 +728,23 @@ sub UserAttributs_Readings_ForShutters($$) {
                         not defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } )
                         and $attrib eq 'ASC_Pos_Reading' );
                 }
+
+                ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
+                my $associatedString =
+                  ReadingsVal( $_, 'associatedWith', 'none' );
+                if ( $associatedString ne 'none' ) {
+                    my %hash;
+                    %hash = map { ( $_ => 1 ) }
+                      split( ',', "$associatedString,$name" );
+
+                    readingsSingleUpdate( $defs{$_},
+                        'associatedWith', join( ',', sort keys %hash ), 0 );
+                }
+                else {
+                    readingsSingleUpdate( $defs{$_},
+                        'associatedWith', $name, 0 );
+                }
+                #######################################
             }
             ## Oder das Attribut wird wieder gelöscht.
             elsif ( $cmd eq 'del' ) {
@@ -750,6 +755,21 @@ sub UserAttributs_Readings_ForShutters($$) {
                     $_ . ' .?(AutoShuttersControl|ASC)_.*' );
                 CommandDeleteAttr( undef, $_ . ' ASC' );
                 delFromDevAttrList( $_, $attrib );
+
+                ### associatedWith wird wieder entfernt
+                my $associatedString =
+                  ReadingsVal( $_, 'associatedWith', 'none' );
+                my %hash;
+                %hash = map { ( $_ => 1 ) }
+                  grep { " $name " !~ m/ $_ / }
+                  split( ',', "$associatedString,$name" );
+
+                if ( keys %hash > 1 ) {
+                    readingsSingleUpdate( $defs{$_},
+                        'associatedWith', join( ',', sort keys %hash ), 0 );
+                }
+                else { CommandDeleteReading( undef, $_ . ' associatedWith' ); }
+                ###################################
             }
         }
     }
@@ -772,9 +792,9 @@ sub AddNotifyDev($@) {
 
     my %hash;
     %hash = map { ( $_ => 1 ) }
-      split( ",", "$notifyDev,$dev" );
+      split( ',', "$notifyDev,$dev" );
 
-    $hash->{NOTIFYDEV} = join( ",", sort keys %hash );
+    $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
     my @devs = split( ',', $dev );
     foreach (@devs) {
@@ -802,13 +822,13 @@ sub DeleteNotifyDev($@) {
         if ( !keys %{ $hash->{monitoredDevs}{$notifyDev} } ) {
             delete $hash->{monitoredDevs}{$notifyDev};
             my $notifyDevString = $hash->{NOTIFYDEV};
-            $notifyDevString = "" if ( !$notifyDevString );
+            $notifyDevString = '' if ( !$notifyDevString );
             my %hash;
             %hash = map { ( $_ => 1 ) }
               grep { " $notifyDev " !~ m/ $_ / }
-              split( ",", "$notifyDevString,$notifyDev" );
+              split( ',', "$notifyDevString,$notifyDev" );
 
-            $hash->{NOTIFYDEV} = join( ",", sort keys %hash );
+            $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
         }
     }
     readingsSingleUpdate( $hash, '.monitoredDevs',
@@ -2960,14 +2980,14 @@ sub ShuttersSunrise($$) {
                 else {
                     if (
                         IsWe()
-                            and int( gettimeofday() / 86400 ) == int(
+                        and int( gettimeofday() / 86400 ) == int(
                             computeAlignTime( '24:00',
                                 $shutters->getTimeUpWeHoliday ) / 86400
                         )
                       )
                     {
                         $shuttersSunriseUnixtime =
-                        computeAlignTime( '24:00',
+                          computeAlignTime( '24:00',
                             $shutters->getTimeUpWeHoliday );
                     }
                     elsif (
@@ -2978,14 +2998,13 @@ sub ShuttersSunrise($$) {
                       )
                     {
                         $shuttersSunriseUnixtime =
-                        computeAlignTime( '24:00',
+                          computeAlignTime( '24:00',
                             $shutters->getTimeUpEarly );
                     }
                     else {
                         $shuttersSunriseUnixtime =
-                        computeAlignTime( '24:00',
-                            $shutters->getTimeUpWeHoliday )
-                         + 86400;
+                          computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday ) + 86400;
                     }
                 }
             }
@@ -3711,11 +3730,13 @@ sub getWindProtectionStatus {    # Werte protection, unprotection
 sub getRainProtectionStatus {    # Werte protection, unprotection
     my $self = shift;
 
-    return ( defined( $self->{ $self->{shuttersDev} }->{RainProtection} )
+    return (
+        defined( $self->{ $self->{shuttersDev} }->{RainProtection} )
           and
           defined( $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} )
         ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
-        : 'unprotection' );
+        : 'unprotection'
+    );
 }
 
 sub getShadingStatusTimestamp {
