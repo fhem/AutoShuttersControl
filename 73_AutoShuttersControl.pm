@@ -2984,7 +2984,8 @@ sub ShuttersSunrise($$) {
                     else {
                         $shuttersSunriseUnixtime =
                         computeAlignTime( '24:00',
-                            $shutters->getTimeUpWeHoliday );
+                            $shutters->getTimeUpWeHoliday )
+                         + 86400;
                     }
                 }
             }
