@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.7';
+my $version = '0.6.7.1-patchBrightness';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1424,14 +1424,38 @@ sub EventProcessingBrightness($@) {
               . $brightnessMaxVal
               . ' oder kleiner dem eingestellten Sunset-Wert: '
               . $brightnessMinVal
-              . ' ist' );
+              . ' ist. Werte für weitere Parameter - getUp ist: '
+              . $shutters->getUp
+              . ' getDown ist: '
+              . $shutters->getDown
+              . ' getSunrise ist: '
+              . $shutters->getSunrise
+              . ' getSunset ist: '
+              . $shutters->getSunset);
 
         if (
-            int( gettimeofday() / 86400 ) != int(
-                computeAlignTime( '24:00', $shutters->getTimeUpEarly ) / 86400
-            )
-            and int( gettimeofday() / 86400 ) == int(
-                computeAlignTime( '24:00', $shutters->getTimeUpLate ) / 86400
+            (
+                (
+                    (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpEarly ) / 86400
+                        )
+                        and not IsWe()
+                    )
+                    or (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday ) / 86400
+                        )
+                        and IsWe()
+                        and $ascDev->getSunriseTimeWeHoliday eq 'on'
+                    )
+                )
+                and int( gettimeofday() / 86400 ) == int(
+                    computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
+                      86400
+                )
             )
             and $1 > $brightnessMaxVal
             and $shutters->getUp eq 'brightness'
@@ -2628,14 +2652,27 @@ sub IsDay($) {
 
     if (
         (
-               $shutters->getDown eq 'brightness'
-            or $shutters->getUp eq 'brightness'
+               $shutters->getModeDown eq 'brightness'
+            or $shutters->getModeUp eq 'brightness'
         )
-        and (
+        or (
             (
-                int( gettimeofday() / 86400 ) != int(
-                    computeAlignTime( '24:00', $shutters->getTimeUpEarly ) /
-                      86400
+                (
+                    (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpEarly ) / 86400
+                        )
+                        and not IsWe()
+                    )
+                    or (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday ) / 86400
+                        )
+                        and IsWe()
+                        and $ascDev->getSunriseTimeWeHoliday eq 'on'
+                    )
                 )
                 and int( gettimeofday() / 86400 ) == int(
                     computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
@@ -2671,10 +2708,13 @@ sub IsDay($) {
             $brightnessMaxVal = $ascDev->getBrightnessMaxVal;
         }
 
+    ##### Nach Sonnenuntergang / Abends
         $respIsDay = (
             (
-                ( $shutters->getBrightness > $brightnessMinVal and $isday )
-                  or $shutters->getSunset
+                ( $shutters->getBrightness > $brightnessMinVal
+                    and $isday
+                    and not $shutters->getSunset )
+                  or not $shutters->getSunset
             ) ? 1 : 0
         ) if ( $shutters->getDown eq 'brightness' );
 
@@ -2689,9 +2729,12 @@ sub IsDay($) {
               . ' Sunset: '
               . $shutters->getSunset );
 
+    ##### Nach Sonnenauf / Morgens
         $respIsDay = (
             (
-                ( $shutters->getBrightness > $brightnessMaxVal and not $isday )
+                ( $shutters->getBrightness > $brightnessMaxVal
+                    and not $isday
+                    and not $shutters->getSunrise )
                   or $respIsDay
                   or $shutters->getSunrise
             ) ? 1 : 0
@@ -2705,7 +2748,7 @@ sub IsDay($) {
               . $shutters->getBrightness
               . ' BrightnessMax: '
               . $brightnessMaxVal
-              . ' Sunset: '
+              . ' Sunrise: '
               . $shutters->getSunrise );
     }
 
