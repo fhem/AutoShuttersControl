@@ -44,7 +44,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.7.1-patchBrightness';
+my $version = '0.6.7';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1431,7 +1431,7 @@ sub EventProcessingBrightness($@) {
               . ' getSunrise ist: '
               . $shutters->getSunrise
               . ' getSunset ist: '
-              . $shutters->getSunset);
+              . $shutters->getSunset );
 
         if (
             (
@@ -2046,11 +2046,12 @@ sub EventProcessingShutters($@) {
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
         $ascDev->setPosReading;
-        
+
         ASC_Debug( 'EventProcessingShutters: '
               . $shutters->getShuttersDev
               . ' - Event vom Rolllo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
-              . ' Int von gettimeofday: ' . int( gettimeofday() )
+              . ' Int von gettimeofday: '
+              . int( gettimeofday() )
               . ' Last Position Timestamp: '
               . $shutters->getLastPosTimestamp
               . ' Drive Up Max Duration: '
@@ -2058,16 +2059,12 @@ sub EventProcessingShutters($@) {
               . ' Last Position: '
               . $shutters->getLastPos
               . ' aktuelle Position: '
-              . $shutters->getStatus
-        );
-        
-        
-        
+              . $shutters->getStatus );
+
         if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) >
-                $shutters->getDriveUpMaxDuration
+            $shutters->getDriveUpMaxDuration
             and ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) >
-                $shutters->getDriveUpMaxDuration
-          )
+            $shutters->getDriveUpMaxDuration )
         {
             $shutters->setLastDrive('manual');
             $shutters->setLastDriveReading;
@@ -2727,12 +2724,14 @@ sub IsDay($) {
             $brightnessMaxVal = $ascDev->getBrightnessMaxVal;
         }
 
-    ##### Nach Sonnenuntergang / Abends
+        ##### Nach Sonnenuntergang / Abends
         $respIsDay = (
             (
-                ( $shutters->getBrightness > $brightnessMinVal
-                    and $isday
-                    and not $shutters->getSunset )
+                (
+                          $shutters->getBrightness > $brightnessMinVal
+                      and $isday
+                      and not $shutters->getSunset
+                )
                   or not $shutters->getSunset
             ) ? 1 : 0
         ) if ( $shutters->getDown eq 'brightness' );
@@ -2748,12 +2747,14 @@ sub IsDay($) {
               . ' Sunset: '
               . $shutters->getSunset );
 
-    ##### Nach Sonnenauf / Morgens
+        ##### Nach Sonnenauf / Morgens
         $respIsDay = (
             (
-                ( $shutters->getBrightness > $brightnessMaxVal
-                    and not $isday
-                    and not $shutters->getSunrise )
+                (
+                          $shutters->getBrightness > $brightnessMaxVal
+                      and not $isday
+                      and not $shutters->getSunrise
+                )
                   or $respIsDay
                   or $shutters->getSunrise
             ) ? 1 : 0
