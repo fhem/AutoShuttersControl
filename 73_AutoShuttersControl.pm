@@ -2046,9 +2046,28 @@ sub EventProcessingShutters($@) {
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
         $ascDev->setPosReading;
+        
+        ASC_Debug( 'EventProcessingShutters: '
+              . $shutters->getShuttersDev
+              . ' - Event vom Rolllo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
+              . ' Int von gettimeofday: ' . int( gettimeofday() )
+              . ' Last Position Timestamp: '
+              . $shutters->getLastPosTimestamp
+              . ' Drive Up Max Duration: '
+              . $shutters->getDriveUpMaxDuration
+              . ' Last Position: '
+              . $shutters->getLastPos
+              . ' aktuelle Position: '
+              . $shutters->getStatus
+        );
+        
+        
+        
         if ( ( int( gettimeofday() ) - $shutters->getLastPosTimestamp ) >
                 $shutters->getDriveUpMaxDuration
-            and $shutters->getLastPos != $shutters->getStatus )
+            and ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) >
+                $shutters->getDriveUpMaxDuration
+          )
         {
             $shutters->setLastDrive('manual');
             $shutters->setLastDriveReading;
