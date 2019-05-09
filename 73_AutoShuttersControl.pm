@@ -4970,9 +4970,33 @@ sub getblockAscDrivesAfterManual {
       <li><strong>ASC_Pos_Reading</strong> - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
       <li><strong>ASC_PrivacyDownTime_beforNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&zlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
       <li><strong>ASC_PrivacyDown_Pos</strong> - Position den Rollladens f&uuml;r den Sichtschutz (default: 50)</li>
+      <li><strong>ASC_WindProtection - on/off</strong> - soll das Rolllo beim Regenschutz beachtet werden. On=JA, off=NEIN.</li>
       <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
       <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
       <li><strong>SC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li>
+
+
+      <ul>
+        <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
+      </br>Damit die Beschattung Funktion hat, m&uuml;&szlig;en folgende Anforderungen erf&uuml;llt sein.
+    </br><strong>Im ASC Device</strong> das Attribut "ASC_autoShuttersControlShading" mit dem Wert on, sowie ein Astro/Twilight Device im Attribut "ASC_twilightDevice" und das Attribut "ASC_tempSensor".
+    </br><strong>In den Rollladendevices</strong> ben&ouml;tigt ihr ein Helligkeitssensor als Attribut "ASC_BrightnessSensor", sofern noch nicht vorhanden. Findet der Sensor nur f&uuml;r die Beschattung Verwendung ist der Wert DEVICENAME[:READING] ausreichend.
+    </br>Alle weiteren Attribute sind optional und wenn nicht gestezt mit default Werten belegt. Ihr solltet sie dennoch einmal anschauen und entsprechend Euren Gegebenheiten setzen. Die Werte f&uumlr; die Fensterposition und den Vor- Nachlaufwinkel sowie die Granzwerte f&uuml;r die StateChange_Cloudy und StateChange_Sunny solltet ihr besondere Beachtung dabei schenken.
+    <ul>
+      <li>ASC_Shading_Angle_Left - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180&deg; - 85&deg; ==> ab Sonnenpos. 95&deg; wird abgeschattet / default 75 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Angle_Right - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180&deg; + 85&deg; ==> bis Sonnenpos. 265&deg; wird abgeschattet / default 75 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Direction -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 / default 180 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Min_Elevation - ab welcher H&ouml;he des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 25.0 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Min_OutsideTemperature - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 18 wenn nicht gesetzt</li>
+      <li>ASC_Shading_Mode - absent,always,off,home / wann soll die Beschattung nur statt finden. / default off wenn nicht gesetzt</li>
+      <li>ASC_Shading_Pos - Position des Rollladens f&uuml;r die Beschattung</li>
+      <li>ASC_Shading_StateChange_Cloudy - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 20000 wenn nicht gesetzt</li>
+      <li>ASC_Shading_StateChange_Sunny - Brightness Wert ab welchen Beschattung statt finden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte / default 35000 wenn nicht gesetzt</li>
+      <li>ASC_Shading_WaitingPeriod - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung statt finden soll / default 1200 wenn nicht gesetzt</li>
+    </ul>
+
+
+
       <li><strong>ASC_Shading_Angle_Left</strong> - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180° - 85° ==> ab Sonnenpos. 95° wird abgeschattet (default: 75)</li>
       <li><strong>ASC_Shading_Angle_Right</strong> - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180° + 85° ==> bis Sonnenpos. 265° wird abgeschattet (default: 75)</li>
       <li><strong>ASC_Shading_Direction</strong> -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 (default: 180)</li>
@@ -4988,12 +5012,12 @@ sub getblockAscDrivesAfterManual {
       <li><strong>ASC_Time_Down_Late</strong> - Sunset sp&auml;teste Zeit zum Runterfahren (default: 22:00)</li>
       <li><strong>ASC_Time_Up_Early</strong> - Sunrise fr&uuml;hste Zeit zum Hochfahren (default: 05:00)</li>
       <li><strong>ASC_Time_Up_Late</strong> - Sunrise sp&auml;teste Zeit zum Hochfahren (default: 08:30)</li>
-      <li><strong>ASC_Time_Up_WE_Holiday</strong> - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). (default: 08:00)</li>
+      <li><strong>ASC_Time_Up_WE_Holiday</strong> - Sunrise fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). (default: 08:00) ACHTUNG!!! in Verbindung mit Brightness f&uuml;r <em>ASC_Up</em> muss die Uhrzeit kleiner sein wie die Uhrzeit aus <em>ASC_Time_Up_Late</em></li>
       <li><strong>ASC_Up - astro/time/brightness</strong> - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren (default: astro)</li>
       <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
       <li><strong>ASC_Ventilate_Window_Open</strong> - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist (default: on)</li>
       <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
-    <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE</strong> / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
+      <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
       <li><strong>ASC_WindowRec</strong> - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist (default: none)</li>
       <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
     </ul>
@@ -5206,8 +5230,6 @@ sub getblockAscDrivesAfterManual {
 </ul>
 </ul>
 </ul>
-
-
 
 =end html_DE
 
