@@ -4853,7 +4853,9 @@ sub getblockAscDrivesAfterManual {
       <li><strong>..._lastPosValue</strong> - letzte Position des Rollladen</li>
       <li><strong>..._lastDelayPosValue</strong> - letzter abgesetzter Fahrbefehl, welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li><strong>partyMode - on/off</strong> - Partymodus-Status</li>
-      <li><strong>lockOut - on/off</strong> - Aussperrschutz-Status</li>
+      <li><strong>ascEnable - on/off</strong> - globale ASC Steuerung bei den Rolllos aktiv oder inaktiv
+      <li><strong>controlShading - on/off</strong> - globale Beschattungsfunktion aktiv oder inaktiv
+      <li><strong>hardLockOut - on/off</strong> - Aussperrschutz-Status</li> 
       <li><strong>room_...</strong> - Auflistung aller Rolll&auml;den, die in den jeweiligen R&auml;men gefunden wurde. Beispiel: room_Schlafzimmer: Terrasse</li>
       <li><strong>selfDefense</strong> - Selbstschutz-Status</li>
       <li><strong>state</strong> - Status des ASC-Devices: active, enabled, disabled oder weitere Statusinformationen</li>
@@ -4862,6 +4864,7 @@ sub getblockAscDrivesAfterManual {
     </ul><br />
     <u>In den Rolll&auml;den-Geräten</u>
     <ul>
+      <li><strong>ASC_Enable - on/off</strong> - wird das Rolllo &uuml;ber ASC gesteuert oder nicht</li>
       <li><strong>ASC_Time_DriveUp</strong> - Im Astro-Modus ist hier die Sonnenaufgangszeit f&uuml;r das Rollo gespeichert. Im Brightness- und Zeit-Modus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Up_Late</em> gespeichert.</li>
       <li><strong>ASC_Time_DriveDown</strong>  - Im Astro-Modus ist hier die Sonnenuntergangszeit f&uuml;r das Rollo gespeichert. Im Brightness- und Zeit-Modus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Down_Late</em> gespeichert.</li>
       <li><strong>ASC_ShuttersLastDrive</strong>  - Grund der letzten Fahrt vom Rollladen</li>
@@ -4871,6 +4874,7 @@ sub getblockAscDrivesAfterManual {
   <a name="AutoShuttersControlSet"></a>
   <strong>Set</strong>
   <ul>
+    <li><strong>ascEnable - on/off</strong> - aktivieren oder deaktiveren der globalen ASC Steuerung</li>
     <li><strong>controlShading - on/off</strong> - aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
     <li><strong>createNewNotifyDev</strong> - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an. Diese Funktion steht nur zur Verfügung, wenn Attribut ASC_expert auf 1 gesetzt ist.</li>
     <li><strong>hardLockOut - on/off</strong> - aktiviert den globalen Aussperrschutz für die Rolll&auml;den, bei denen das Attributs <em>ASC_LockOut</em> entsprechend gesetzt ist. Mehr Informationen in der Beschreibung bei den Attributen f&uuml;r die Rollladengeräten.</li>
@@ -4878,6 +4882,7 @@ sub getblockAscDrivesAfterManual {
     <li><strong>renewSetSunriseSunsetTimer</strong> - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
     <li><strong>scanForShutters</strong> - Durchsucht das System nach Geräten mit dem Attribut <em>ASC = 1</em> oder <em>ASC = 2</em></li>
     <li><strong>selfDefense - on/off</strong> - aktiviert bzw. deaktiviert die Selbstschutzfunktion. Beispiel: Wenn das Residents-Gerät <em>absent</em> meldet, die Selbstschutzfunktion aktiviert wurde und ein Fenster im Haus noch geöffnet ist, so wird an diesem Fenster das Rollo dann heruntergefahren.</li>
+    <li><strong>shutterASCenableToggle - on/off</strong> - aktivieren oder deaktiveren der ASC Kontrolle beim einzelnen Rolllo</li>
     <li><strong>sunriseTimeWeHoliday - on/off</strong> - aktiviert die Wochenendunterstützung und somit, ob im Rollladengerät das Attribut <em>ASC_Time_Up_WE_Holiday</em> beachtet werden soll oder nicht.</li>
     <li><strong>wiggle</strong> - bewegt einen oder mehrere Rolll&auml;den um einen definierten Wert (Default: 5%) und nach einer Minute wieder zur&uuml;ck in die Ursprungsposition. Diese Funktion könnte bpsw. zur Abschreckung in einem Alarmsystem eingesetzt werden.</li>
   </ul>
