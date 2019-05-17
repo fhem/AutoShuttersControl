@@ -338,6 +338,8 @@ sub Notify($$) {
           if ( $ascDev->getSelfDefense eq 'none' );
         readingsSingleUpdate( $hash, 'controlShading', 'off', 0 )
           if ( $ascDev->getAutoShuttersControlShading eq 'none' );
+        readingsSingleUpdate( $hash, 'ascEnable', 'on', 0 )
+          if ( $ascDev->getASCenable eq 'none' );
 
 # Ist der Event ein globaler und passt zum Rest der Abfrage oben wird nach neuen Rolläden Devices gescannt und eine Liste im Rolladenmodul sortiert nach Raum generiert
         ShuttersDeviceScan($hash)
@@ -504,20 +506,41 @@ sub Set($$@) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
     }
+    elsif ( lc $cmd eq 'ascenable' ) {
+        return "usage: $cmd" if ( @args > 1 );
+        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+    }
+    elsif ( lc $cmd eq 'shutterascenabletoggle' ) {
+        return "usage: $cmd" if ( @args > 1 );
+        readingsSingleUpdate(
+            $defs{ $args[0] },
+            'ASC_Enable',
+            (
+                ReadingsVal( $args[0], 'ASC_Enable', 'off' ) eq 'on'
+                ? 'off'
+                : 'on'
+            ),
+            1
+        );
+    }
     elsif ( lc $cmd eq 'wiggle' ) {
         return "usage: $cmd" if ( @args > 1 );
 
         ( $args[0] eq 'all' ? wiggleAll($hash) : wiggle( $hash, $args[0] ) );
     }
     else {
-        my $list = "scanForShutters:noArg";
+        my $list = 'scanForShutters:noArg';
         $list .=
-" renewSetSunriseSunsetTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off wiggle:all,"
+' renewSetSunriseSunsetTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
           if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
-        $list .= " createNewNotifyDev:noArg"
+        $list .= ' createNewNotifyDev:noArg'
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
             and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
+        $list .=
+          ' shutterASCenableToggle:'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -596,6 +619,8 @@ sub ShuttersDeviceScan($) {
         $shutters->setShadingStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'out' : 'in' )
         );
+        readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
+          if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
     }
 
     ### Temporär und muss später entfernt werden
@@ -1356,10 +1381,12 @@ sub EventProcessingBrightness($@) {
                             computeAlignTime( '24:00',
                                 $shutters->getTimeUpEarly ) / 86400
                         )
-                        and ( not IsWe()
-                          or (IsWe()
-                            and $ascDev->getSunriseTimeWeHoliday eq 'off')
-                    ) )
+                        and (
+                            not IsWe()
+                            or ( IsWe()
+                                and $ascDev->getSunriseTimeWeHoliday eq 'off' )
+                        )
+                    )
                     or (
                         int( gettimeofday() / 86400 ) != int(
                             computeAlignTime( '24:00',
@@ -1435,10 +1462,12 @@ sub EventProcessingBrightness($@) {
                             computeAlignTime( '24:00',
                                 $shutters->getTimeUpEarly ) / 86400
                         )
-                        and ( not IsWe()
-                          or (IsWe()
-                            and $ascDev->getSunriseTimeWeHoliday eq 'off')
-                    ) )
+                        and (
+                            not IsWe()
+                            or ( IsWe()
+                                and $ascDev->getSunriseTimeWeHoliday eq 'off' )
+                        )
+                    )
                     or (
                         int( gettimeofday() / 86400 ) != int(
                             computeAlignTime( '24:00',
@@ -2096,12 +2125,10 @@ sub ShuttersCommandSet($$$) {
                     or $shutters->getComfortOpenPos != $posValue )
                 and $shutters->getVentilateOpen eq 'on'
             )
-            or (
-                    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+            or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getSubTyp eq 'threestate'
                 and $ascDev->getAutoShuttersControlComfort eq 'on'
-                and $shutters->getVentilateOpen eq 'off'
-            )
+                and $shutters->getVentilateOpen eq 'off' )
             or (
                 CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and (  $shutters->getLockOut eq 'soft'
@@ -2341,7 +2368,7 @@ sub SunSetShuttersAfterTimerFn($) {
 
     $shutters->setSunset(1);
     $shutters->setSunrise(0);
-    
+
     my $posValue;
     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
         or $shutters->getVentilateOpen eq 'off' )
@@ -2391,7 +2418,7 @@ sub SunRiseShuttersAfterTimerFn($) {
     my $hash        = $funcHash->{hash};
     my $shuttersDev = $funcHash->{shuttersdevice};
     $shutters->setShuttersDev($shuttersDev);
-    
+
     $shutters->setSunset(0);
     $shutters->setSunrise(1);
 
@@ -3286,7 +3313,8 @@ sub SetCmdFn($) {
       if ( defined( $h->{lastDrive} ) );
 
     return
-      unless ( $shutters->getASC != 0 );
+      unless ( $shutters->getASCenable eq 'on'
+        and $ascDev->getASCenable eq 'on' );
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
@@ -3857,13 +3885,6 @@ BEGIN {
     );
 }
 
-sub getASC {
-    ## Dient der Erkennung des Rolladen, 0 bedeutet soll nicht erkannt werden beim ersten Scan und soll nicht bediehnt werden wenn Events kommen
-    my $self = shift;
-
-    return AttrVal( $self->{shuttersDev}, 'ASC', 0 );
-}
-
 sub getAntiFreezePos {
     my $self = shift;
 
@@ -4391,6 +4412,12 @@ sub getDelayCmd {
     return $self->{ $self->{shuttersDev} }{delayCmd};
 }
 
+sub getASCenable {
+    my $self = shift;
+
+    return ReadingsVal( $self->{shuttersDev}, 'ASC_Enable', 'on' );
+}
+
 ## Klasse Fenster (Window) und die Subklassen Attr und Readings ##
 package ASC_Window;
 our @ISA = qw(ASC_Window::Attr ASC_Window::Readings);
@@ -4656,6 +4683,13 @@ sub getElevation {
       if ( $defs{ $ascDev->_getTwilightDevice }->{TYPE} eq 'Astro' );
 
     return $elevation;
+}
+
+sub getASCenable {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return ReadingsVal( $name, 'ascEnable', 'none' );
 }
 
 ## Subklasse Attr ##
@@ -5197,7 +5231,9 @@ sub getblockAscDrivesAfterManual {
       <li>..._lastPosValue - letzte Position des Rollladen</li>
       <li>..._lastDelayPosValue - letzter abgesetzter Fahrbefehl, welcher beim n&auml;chsten zul&auml;ssigen Event ausgef&uuml;hrt wird.</li>
       <li>partyMode - on/off - aktiviert den globalen Partymodus: Alle Rollladen Devices, welche das Attribut ASC_Partymode auf on gestellt haben, werden nicht mehr gesteuert. Der letzte Schaltbefehl, der durch ein Fensterevent oder Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim off setzen durch set ASC-Device partyMode off ausgef&uuml;hrt</li>
-      <li>lockOut - on/off - f&uuml;r das Aktivieren des Aussperrschutzes gem&auml;&szlig; des entsprechenden Attributs ASC_LockOut im jeweiligen Rollladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rollladendevices)</li>
+      <li>ascEnable - on/off, globale ASC Steuerung bei den Rolllos aktiv oder inaktiv
+      <li>controlShading - on/off, globale Beschattungsfunktion aktiv oder inaktiv
+      <li>hardLockOut - on/off - f&uuml;r das Aktivieren des Aussperrschutzes gem&auml;&szlig; des entsprechenden Attributs ASC_LockOut im jeweiligen Rollladen. (siehe Beschreibung bei den Attributen f&uuml;r die Rollladendevices)</li>
       <li>room_... - Auflistung aller Rolll&auml;den, welche in den jeweiligen R&auml;men gefunden wurde,Bsp.: room_Schlafzimmer,Terrasse</li>
       <li>state - Status des Devices: active,enabled,disabled oder Info zur letzten Fahrt</li>
       <li>sunriseTimeWeHoliday - on/off - wird das Rollladen Device Attribut  ASC_Time_Up_WE_Holiday beachtet oder nicht</li>
@@ -5205,6 +5241,7 @@ sub getblockAscDrivesAfterManual {
     </ul><br>
     In den Rolll&auml;den Devices
     <ul>
+      <li>ASC_Enable - on/off, wird das Rolllo &uuml;ber ASC gesteuert oder nicht</li>
       <li>ASC_Time_DriveUp - Sonnenaufgangszeit f&uuml;r das Rollo</li>
       <li>ASC_Time_DriveDown - Sonnenuntergangszeit f&uuml;r das Rollo</li>
       <li>ASC_ShuttersLastDrive - Grund des letzten Fahrens vom Rollladen</li>
@@ -5214,6 +5251,7 @@ sub getblockAscDrivesAfterManual {
   <a name="AutoShuttersControlSet"></a>
   <b>Set</b>
   <ul>
+    <li>ascEnable - on/off, aktivieren oder deaktiveren der globalen ASC Steuerung</li>
     <li>partyMode - on/off - aktiviert den globalen Partymodus. Siehe Reading partyMode</li>
     <li>lockOut - on/off - aktiviert den globalen Aussperrschutz. Siehe Reading partyMode</li>
     <li>renewSetSunriseSunsetTimer - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
@@ -5221,6 +5259,7 @@ sub getblockAscDrivesAfterManual {
     <li>sunriseTimeWeHoliday - on/off - aktiviert/deaktiviert die Beachtung des Rollladen Device Attributes ASC_Time_Up_WE_Holiday</li>
     <li>createNewNotifyDev - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an - das Attribut ASC_expert muss 1 sein.</li>
     <li>selfDefense - on/off - aktiviert/deaktiviert den Selbstschutz, wenn das Residents Device absent meldet, selfDefense aktiv ist und ein Fenster im Haus  noch offen steht, wird an diesem Fenster das Rollo runtergefahren</li>
+    <li>shutterASCenableToggle - on/off, aktivieren oder deaktiveren der ASC Kontrolle beim einzelnen Rolllo</li>
     <li>wiggle - bewegt einen Rollladen oder alle Rolll&auml;den (f&uuml;r Abschreckungszwecke bei der Alarmierung) um 5%, und nach 1 Minute wieder zur&uuml;ck zur Ursprungsposition</li>
   </ul>
   <br><br>
