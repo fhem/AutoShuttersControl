@@ -45,7 +45,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.11';
+my $version = '0.6.12';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -94,6 +94,12 @@ sub AutoShuttersControl_Initialize($) {
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
+}
+
+sub ascAPIget($;$) {
+    my ($getCommand,$shutterDev) = @_;
+
+    return FHEM::AutoShuttersControl::ascAPIget($getCommand,$shutterDev);
 }
 
 ## unserer packagename
@@ -225,6 +231,19 @@ my %posSetCmds = (
 my $shutters = new ASC_Shutters();
 my $ascDev   = new ASC_Dev();
 
+sub ascAPIget($;$) {
+    my ($getCommand,$shutterDev) = @_;
+
+    my $getter = 'get'.$getCommand;
+    if ( defined($shutterDev) and $shutterDev ) {
+        $shutters->setShuttersDev($shutterDev);
+        return $shutters->$getter;
+    }
+    else {
+        return $ascDev->$getter;
+    }
+}
+
 sub Define($$) {
     my ( $hash, $def ) = @_;
     my @a = split( '[ \t][ \t]*', $def );
@@ -248,6 +267,8 @@ sub Define($$) {
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
     $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
+    #$hash->{shutters} = $shutters;
+    #$hash->{ascDev} = $ascDev;
     $ascDev->setName($name);
 
     readingsSingleUpdate(
@@ -932,13 +953,7 @@ sub EventProcessingWindowRec($@) {
                 elsif ( $shutters->getStatus != $shutters->getOpenPos ) {
                     $shutters->setLastDrive('window closed at day');
                     $shutters->setNoOffset(1);
-                    $shutters->setDriveCmd(
-                        (
-                              $shutters->getLastPos != $shutters->getClosedPos
-                            ? $shutters->getLastPos
-                            : $shutters->getOpenPos
-                        )
-                    );
+                    $shutters->setDriveCmd( $shutters->getOpenPos );
                 }
             }
 
