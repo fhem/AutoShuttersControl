@@ -97,9 +97,9 @@ sub AutoShuttersControl_Initialize($) {
 }
 
 sub ascAPIget($;$) {
-    my ($getCommand,$shutterDev) = @_;
+    my ( $getCommand, $shutterDev ) = @_;
 
-    return FHEM::AutoShuttersControl::ascAPIget($getCommand,$shutterDev);
+    return FHEM::AutoShuttersControl::ascAPIget( $getCommand, $shutterDev );
 }
 
 ## unserer packagename
@@ -232,9 +232,9 @@ my $shutters = new ASC_Shutters();
 my $ascDev   = new ASC_Dev();
 
 sub ascAPIget($;$) {
-    my ($getCommand,$shutterDev) = @_;
+    my ( $getCommand, $shutterDev ) = @_;
 
-    my $getter = 'get'.$getCommand;
+    my $getter = 'get' . $getCommand;
     if ( defined($shutterDev) and $shutterDev ) {
         $shutters->setShuttersDev($shutterDev);
         return $shutters->$getter;
@@ -267,8 +267,8 @@ sub Define($$) {
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
     $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
-    #$hash->{shutters} = $shutters;
-    #$hash->{ascDev} = $ascDev;
+                  #$hash->{shutters} = $shutters;
+                  #$hash->{ascDev} = $ascDev;
     $ascDev->setName($name);
 
     readingsSingleUpdate(
@@ -1881,13 +1881,13 @@ sub ShadingProcessing($@) {
           . ' - Alle Werte für die weitere Verarbeitung sind korrekt vorhanden und es wird nun mit der Beschattungsverarbeitung begonnen'
     );
 
-    # minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
+# minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
     my $winPosMin = $winPos - $angleMinus;
     my $winPosMax = $winPos + $anglePlus;
 
     if (
         (
-            $outTemp < $shutters->getShadingMinOutsideTemperature - 3
+               $outTemp < $shutters->getShadingMinOutsideTemperature - 3
             or not IsDay($shuttersDev)
             or $azimuth < $winPosMin
             or $azimuth > $winPosMax
@@ -5250,6 +5250,51 @@ sub getblockAscDrivesAfterManual {
     <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
   </ul>
 </ul>
+    <strong><u>Beschreibung der AutoShuttersControl API</u></strong>
+    </br>Mit dem Aufruf der API Funktion und &Uuml;bergabe der entsprechenden Parameter ist es m&ouml;glich auf interne Daten zu zu greifen.
+    </p>
+    <u>&Uuml;bersicht f&uuml;r das Rolllo Device</u>
+    <ul>
+      <code>ascAPIget('Getter','ROLLODEVICENAME')</code><br>
+    </ul>
+    <table border="1">
+      <th>Getter</th><th>Erl&auml;uterung</th>
+      <tr><td>FreezeStatus</td><td>1=soft, 2=Daytime, 3=hard</tr>
+      <tr><td>NoOffset</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</tr>
+      <tr><td>LastDrive</td><td>Grund des letzten Fahrens</tr>
+      <tr><td>LastPos</td><td>die letzte Position des Rolllos</tr>
+      <tr><td>LastPosTimestamp</td><td>Timestamp der letzten festgestellten Position</tr>
+      <tr><td>LastManPos</td><td>Position der letzten manuellen Fahrt</tr>
+      <tr><td>LastManPosTimestamp</td><td>Timestamp der letzten manuellen Position</tr>
+      <tr><td>SunsetUnixTime</td><td>berechnete Unixzeit f&uuml;r Abends (Sonnenuntergang)</tr>
+      <tr><td>Sunset</td><td>1=Abendfahrt wurde durchgef&uuml;hrt, 0=noch keine Abendfahrt durchgef&uuml;hrt</tr>
+      <tr><td>SunriseUnixTime</td><td>berechnete Unixzeit f&uuml;r Morgens (Sonnenaufgang)</tr>
+      <tr><td>Sunrise</td><td>1=Morgenfahrt wurde durchgef&uuml;hrt, 0=noch keine Morgenfahrt durchgef&uuml;hrt</tr>
+      <tr><td>RoommatesStatus</td><td>aktueller Status der/des Roommate/s f&uuml;r das Rolllo</tr>
+      <tr><td>RoommatesLastStatus</td><td>letzter Status der/des Roommate/s f&uuml;r das Rolllo</tr>
+      <tr><td>ShadingStatus</td><td>Ausgabe des aktuellen Shading Status, „in“, „out“, „in reserved“, „out reserved“</tr>
+      <tr><td>ShadingStatusTimestamp</td><td>Timestamp des letzten Beschattungsstatus</tr>
+      <tr><td>IfInShading</td><td>Befindet sich das Rolllo, in Abh&auml;ngigkeit des Shading Mode, in der Beschattung</tr>
+      <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protection“ oder „unprotection“</tr>
+      <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „protection“ oder „unprotection“</tr>
+      <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</tr>
+      <tr><td>Status</td><td>Position des Rolllos</tr>
+      <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r das Rolllo die ASC Steuerung aktiv ist.</tr>
+    <table/>
+    </p>
+    <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
+    <ul>
+      <code>ascAPIget('Getter')</code><br>
+    </ul>
+    <table border="1">
+      <th>Getter</th><th>Erl&auml;uterung</th>
+      <tr><td>outTemp </td><td>aktuelle Außentemperatur sofern Sensor definiert</tr>
+      <tr><td>ResidentsStatus</td><td>aktueller Status des Residents Devices</tr>
+      <tr><td>ResidentsLastStatus</td><td>letzter Status des Residents Devices</tr>
+      <tr><td>Azimuth</td><td>Azimut Wert</tr>
+      <tr><td>Elevation</td><td>Elevation Wert</tr>
+      <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</tr>
+    <table/>
 </ul>
 
 =end html_DE
