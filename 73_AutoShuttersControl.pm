@@ -45,7 +45,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.10';
+my $version = '0.6.11';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1217,6 +1217,18 @@ sub EventProcessingResidents($@) {
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
             elsif (
+                    $shutters->getShadingMode eq 'home'
+                and IsDay($shuttersDev)
+                and $shutters->getIfInShading
+                and $shutters->getStatus != $shutters->getShadingPos
+                and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getShuttersPlace eq 'terrace' )
+              )
+            {
+                $shutters->setLastDrive('shading in');
+                $shutters->setDriveCmd( $shutters->getShadingPos );
+            }
+            elsif (
                     $ascDev->getSelfDefense eq 'on'
                 and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $shutters->getSelfDefenseExclude eq 'off'
@@ -1854,10 +1866,16 @@ sub ShadingProcessing($@) {
           . ' - Alle Werte für die weitere Verarbeitung sind korrekt vorhanden und es wird nun mit der Beschattungsverarbeitung begonnen'
     );
 
+    # minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
+    my $winPosMin = $winPos - $angleMinus;
+    my $winPosMax = $winPos + $anglePlus;
+
     if (
         (
             $outTemp < $shutters->getShadingMinOutsideTemperature - 3
             or not IsDay($shuttersDev)
+            or $azimuth < $winPosMin
+            or $azimuth > $winPosMax
         )
         and $shutters->getShadingStatus ne 'out'
         and $getStatus != $getShadingPos
@@ -1877,10 +1895,6 @@ sub ShadingProcessing($@) {
 "AutoShuttersControl ($name) - Shading Processing - Es ist Sonnenuntergang vorbei oder die Aussentemperatur unterhalb der Shading Temperatur "
         );
     }
-
-# minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
-    my $winPosMin = $winPos - $angleMinus;
-    my $winPosMax = $winPos + $anglePlus;
 
     if (   $azimuth < $winPosMin
         or $azimuth > $winPosMax
@@ -5019,9 +5033,9 @@ sub getblockAscDrivesAfterManual {
 <a name="AutoShuttersControl"></a>
 <h3>AutoShuttersControl</h3>
 <ul>
-  <p>AutoShuttersControl (ASC) ermöglicht eine vollständige Automatisierung der vorhandenen Rollläden. Das Modul bietet umfangreiche Konfigurationsmöglichkeiten, um Rollläden bspw. nach Sonnenauf- und untergangszeiten, nach Helligkeitswerten oder rein zeitgesteuert zu steuern.</p>
+  <p>AutoShuttersControl (ASC) erm&ouml;glicht eine vollst&auml;ndige Automatisierung der vorhandenen Rolll&auml;den. Das Modul bietet umfangreiche Konfigurationsm&ouml;glichkeiten, um Rolll&auml;den bspw. nach Sonnenauf- und untergangszeiten, nach Helligkeitswerten oder rein zeitgesteuert zu steuern.</p>
   <p>
-    Man kann festlegen, welche Rollläden von ASC in die Automatisierung mit aufgenommen werden sollen. Daraufhin stehen diverse Attribute zur Feinkonfiguration zur Verfügung. So sind unter anderem komplexe Lösungen wie Fahrten in Abhängigkeit des Bewohnerstatus einfach umsetzbar. Beispiel: Hochfahren von Rolll&auml;den, wenn der Bewohner erwacht ist und drau&szlig;en bereits die Sonne aufgegangen ist. Weiterhin ist es m&ouml;glich, dass der geschlossene Rollladen z.B. nach dem Ankippen eines Fensters in eine L&uuml;ftungsposition f&auml;hrt. Und vieles mehr.
+    Man kann festlegen, welche Rolll&auml;den von ASC in die Automatisierung mit aufgenommen werden sollen. Daraufhin stehen diverse Attribute zur Feinkonfiguration zur Verf&uuml;gung. So sind unter anderem komplexe L&ouml;sungen wie Fahrten in Abh&auml;ngigkeit des Bewohnerstatus einfach umsetzbar. Beispiel: Hochfahren von Rolll&auml;den, wenn der Bewohner erwacht ist und drau&szlig;en bereits die Sonne aufgegangen ist. Weiterhin ist es m&ouml;glich, dass der geschlossene Rollladen z.B. nach dem Ankippen eines Fensters in eine L&uuml;ftungsposition f&auml;hrt. Und vieles mehr.
   </p>
   <a name="AutoShuttersControlDefine"></a>
   <strong>Define</strong>
@@ -5034,20 +5048,11 @@ sub getblockAscDrivesAfterManual {
       <code>define myASControl AutoShuttersControl</code><br />
     </ul>
     <br />
-    Der Befehl erstellt ein AutoShuttersControl-Device mit Namen <em>myASControl</em>.<br />
-    Nach der Anlage des ASC-Device müssen anschließend die Rolll&auml;den in die Automatisierung aufgenommen werden. Dazu muss in den Rolll&auml;den-Geräten das Attribut ASC mit dem Wert 1 oder 2 gesetzt werden. Dabei bedeutet:
-    <dl>
-      <dt><u>ASC=1 Inverse oder Rollo</u></dt>
-      <dd>Rollo-Position oben = 0</dd>
-      <dd>Rollo-Position unten = 100</dd>
-      <dd>Der Befehl zum prozentualen Fahren lautet <em>position</em></dd>
-      <br />
-      <dt><u>ASC=2 Homematic-Style</u></dt>
-      <dd>Rollo-Position oben = 100</dd>
-      <dd>Rollo-Positon unten = 0</dd>
-      <dd>Der Befehl zum prozentualen Fahren ist <em>pct</em></dd>
-    </dl>
-    Nachdem das Attribut in den Rolll&auml;den entsprechend gesetzt wurde, ist ein Scandurchlauf (siehe: <em>set ASC-Device scanForShutters</em>) im ASC-Device durchzuführen.
+    Der Befehl erstellt ein AutoShuttersControl Device mit Namen <em>myASControl</em>.<br />
+    Nachdem das Device angelegt wurde, muss in allen Rolll&auml;den Devices, welche gesteuert werden sollen, das Attribut ASC mit Wert 1 oder 2 gesetzt werden.
+    Dabei bedeutet 1 = "Prozent geschlossen" (z.B. ROLLO oder Siro Modul) - Rollo Oben 0, Rollo Unten 100, 2 = "Prozent ge&ouml;ffnet" (z.B. Homematic) - Rollo Oben 100, Rollo Unten 0.
+    Die Voreinstellung f&uuml;r den Befehl zum prozentualen Fahren ist in beiden F&auml;llen unterschiedlich. 1="position" und 2="pct". Dies kann, soweit erforderlich, zu sp&auml;terer Zeit noch angepa&szlig;t werden.
+    Habt Ihr das Attribut gesetzt, k&ouml;nnt Ihr den automatischen Scan nach den Devices anstossen.
   </ul>
   <br /
   <a name="AutoShuttersControlReadings"></a>
@@ -5066,10 +5071,10 @@ sub getblockAscDrivesAfterManual {
       <li><strong>room_...</strong> - Auflistung aller Rolll&auml;den, die in den jeweiligen R&auml;men gefunden wurde. Beispiel: room_Schlafzimmer: Terrasse</li>
       <li><strong>selfDefense</strong> - Selbstschutz-Status</li>
       <li><strong>state</strong> - Status des ASC-Devices: active, enabled, disabled oder weitere Statusinformationen</li>
-      <li><strong>sunriseTimeWeHoliday - on/off</strong> - Status der Wochenendunterstützung</li>
-      <li><strong>userAttrList</strong> - Das ASC-Modul verteilt diverse Benutzerattribute <em>(userattr)</em> Rolll&auml;den-Geräten. In diesem Reading kann der Status dieser Verteilung geprüft werden.</li>
+      <li><strong>sunriseTimeWeHoliday - on/off</strong> - Status der Wochenendunterst&uuml;tzung</li>
+      <li><strong>userAttrList</strong> - Das ASC-Modul verteilt diverse Benutzerattribute <em>(userattr)</em> Rolll&auml;den-Ger&auml;ten. In diesem Reading kann der Status dieser Verteilung gepr&uuml;ft werden.</li>
     </ul><br />
-    <u>In den Rolll&auml;den-Geräten</u>
+    <u>In den Rolll&auml;den-Ger&auml;ten</u>
     <ul>
       <li><strong>ASC_Enable - on/off</strong> - wird das Rolllo &uuml;ber ASC gesteuert oder nicht</li>
       <li><strong>ASC_Time_DriveUp</strong> - Im Astro-Modus ist hier die Sonnenaufgangszeit f&uuml;r das Rollo gespeichert. Im Brightness- und Zeit-Modus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Up_Late</em> gespeichert.</li>
@@ -5083,22 +5088,22 @@ sub getblockAscDrivesAfterManual {
   <ul>
     <li><strong>ascEnable - on/off</strong> - aktivieren oder deaktiveren der globalen ASC Steuerung</li>
     <li><strong>controlShading - on/off</strong> - aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
-    <li><strong>createNewNotifyDev</strong> - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an. Diese Funktion steht nur zur Verfügung, wenn Attribut ASC_expert auf 1 gesetzt ist.</li>
-    <li><strong>hardLockOut - on/off</strong> - aktiviert den globalen Aussperrschutz für die Rolll&auml;den, bei denen das Attributs <em>ASC_LockOut</em> entsprechend gesetzt ist. Mehr Informationen in der Beschreibung bei den Attributen f&uuml;r die Rollladengeräten.</li>
-    <li><strong>partyMode - on/off</strong> - aktiviert den globalen Partymodus. Alle Rollladen-Geräten, in welchen das Attribut <em>ASC_Partymode</em> auf <em>on</em> gesetzt ist, werden durch ASC nicht mehr gesteuert. Der letzte Schaltbefehl, der bspw. durch ein Fensterevent oder Wechsel des Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim Deaktivieren des Partmodus ausgef&uuml;hrt</li>
+    <li><strong>createNewNotifyDev</strong> - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an. Diese Funktion steht nur zur Verf&uuml;gung, wenn Attribut ASC_expert auf 1 gesetzt ist.</li>
+    <li><strong>hardLockOut - on/off</strong> - aktiviert den globalen Aussperrschutz f&uuml;r die Rolll&auml;den, bei denen das Attributs <em>ASC_LockOut</em> entsprechend gesetzt ist. Mehr Informationen in der Beschreibung bei den Attributen f&uuml;r die Rollladenger&auml;ten.</li>
+    <li><strong>partyMode - on/off</strong> - aktiviert den globalen Partymodus. Alle Rollladen-Ger&auml;ten, in welchen das Attribut <em>ASC_Partymode</em> auf <em>on</em> gesetzt ist, werden durch ASC nicht mehr gesteuert. Der letzte Schaltbefehl, der bspw. durch ein Fensterevent oder Wechsel des Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim Deaktivieren des Partmodus ausgef&uuml;hrt</li>
     <li><strong>renewSetSunriseSunsetTimer</strong> - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sunset und Sunrise und setzt die internen Timer neu.</li>
-    <li><strong>scanForShutters</strong> - Durchsucht das System nach Geräten mit dem Attribut <em>ASC = 1</em> oder <em>ASC = 2</em></li>
-    <li><strong>selfDefense - on/off</strong> - aktiviert bzw. deaktiviert die Selbstschutzfunktion. Beispiel: Wenn das Residents-Gerät <em>absent</em> meldet, die Selbstschutzfunktion aktiviert wurde und ein Fenster im Haus noch geöffnet ist, so wird an diesem Fenster das Rollo dann heruntergefahren.</li>
+    <li><strong>scanForShutters</strong> - Durchsucht das System nach Ger&auml;ten mit dem Attribut <em>ASC = 1</em> oder <em>ASC = 2</em></li>
+    <li><strong>selfDefense - on/off</strong> - aktiviert bzw. deaktiviert die Selbstschutzfunktion. Beispiel: Wenn das Residents-Ger&auml;t <em>absent</em> meldet, die Selbstschutzfunktion aktiviert wurde und ein Fenster im Haus noch ge&ouml;ffnet ist, so wird an diesem Fenster das Rollo dann heruntergefahren.</li>
     <li><strong>shutterASCenableToggle - on/off</strong> - aktivieren oder deaktiveren der ASC Kontrolle beim einzelnen Rolllo</li>
-    <li><strong>sunriseTimeWeHoliday - on/off</strong> - aktiviert die Wochenendunterstützung und somit, ob im Rollladengerät das Attribut <em>ASC_Time_Up_WE_Holiday</em> beachtet werden soll oder nicht.</li>
-    <li><strong>wiggle</strong> - bewegt einen oder mehrere Rolll&auml;den um einen definierten Wert (Default: 5%) und nach einer Minute wieder zur&uuml;ck in die Ursprungsposition. Diese Funktion könnte bpsw. zur Abschreckung in einem Alarmsystem eingesetzt werden.</li>
+    <li><strong>sunriseTimeWeHoliday - on/off</strong> - aktiviert die Wochenendunterst&uuml;tzung und somit, ob im Rollladenger&auml;t das Attribut <em>ASC_Time_Up_WE_Holiday</em> beachtet werden soll oder nicht.</li>
+    <li><strong>wiggle</strong> - bewegt einen oder mehrere Rolll&auml;den um einen definierten Wert (Default: 5%) und nach einer Minute wieder zur&uuml;ck in die Ursprungsposition. Diese Funktion k&ouml;nnte bpsw. zur Abschreckung in einem Alarmsystem eingesetzt werden.</li>
   </ul>
   <br /><br />
   <a name="AutoShuttersControlGet"></a>
   <strong>Get</strong>
   <ul>
     <li><strong>showShuttersInformations</strong> - zeigt eine &Uuml;bersicht aller Rolll&auml;den mit den Fahrzeiten, Modus und diverse weitere Statusanzeigen.</li>
-    <li><strong>showNotifyDevsInformations</strong> - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Diese Funktion wird primär fürs Debugging genutzt. Hierzu ist das Attribut <em>ASC_expert = 1</em> zu setzen.</li>
+    <li><strong>showNotifyDevsInformations</strong> - zeigt eine &Uuml;bersicht der abgelegten NOTIFYDEV Struktur. Diese Funktion wird prim&auml;r f&uuml;rs Debugging genutzt. Hierzu ist das Attribut <em>ASC_expert = 1</em> zu setzen.</li>
   </ul>
   <br /><br />
   <a name="AutoShuttersControlAttributes"></a>
@@ -5109,11 +5114,11 @@ sub getblockAscDrivesAfterManual {
       <a name="ASC_autoAstroModeEvening"></a>
       <li><strong>ASC_autoAstroModeEvening</strong> - REAL, CIVIL, NAUTIC, ASTRONOMIC oder HORIZON</li>
       <a name="ASC_autoAstroModeEveningHorizon"></a>
-      <li><strong>ASC_autoAstroModeEveningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur berücksichtigt, wenn im Attribut <em>ASC_autoAstroModeEvening</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
+      <li><strong>ASC_autoAstroModeEveningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur ber&uuml;cksichtigt, wenn im Attribut <em>ASC_autoAstroModeEvening</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
       <a name="ASC_autoAstroModeMorning"></a>
       <li><strong>ASC_autoAstroModeMorning</strong> - REAL, CIVIL, NAUTIC, ASTRONOMIC oder HORIZON</li>
       <a name="ASC_autoAstroModeMorningHorizon"></a>
-      <li><strong>ASC_autoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur berücksichtigt, wenn im Attribut <em>ASC_autoAstroModeEvening</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
+      <li><strong>ASC_autoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur ber&uuml;cksichtigt, wenn im Attribut <em>ASC_autoAstroModeEvening</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
       <a name="ASC_autoShuttersControlComfort"></a>
       <li><strong>ASC_autoShuttersControlComfort - on/off</strong> - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate-Sensor am Fenster beim &ouml;ffnen in eine Offenposition f&auml;hrt. Hierzu muss beim Rollladen das Attribut <em>ASC_ComfortOpen_Pos</em> entsprechend konfiguriert sein. (default: off)</li>
       <a name="ASC_autoShuttersControlEvening"></a>
@@ -5121,11 +5126,11 @@ sub getblockAscDrivesAfterManual {
       <a name="ASC_autoShuttersControlMorning"></a>
       <li><strong>ASC_autoShuttersControlMorning - on/off</strong> - aktiviert die automatische Steuerung durch das ASC-Modul am Morgen.</li>
       <a name="ASC_blockAscDrivesAfterManual"></a>
-      <li><strong>ASC_blockAscDrivesAfterManual - 0,1</strong> - wenn dieser Wert auf 1 gesetzt ist, dann werden Rolll&auml;den vom ASC-Modul nicht mehr gesteuert, wenn zuvor manuell eingegriffen wurde. Voraussetzung hierfür ist jedoch, dass im Reading <em>ASC_ShuttersLastDrive</em> der Status <em>manual</em> enthalten ist und sich der Rollladen auf eine unbekannte (nicht in den Attributen anderweitig konfigurierte) Position befindet.</li>
+      <li><strong>ASC_blockAscDrivesAfterManual - 0,1</strong> - wenn dieser Wert auf 1 gesetzt ist, dann werden Rolll&auml;den vom ASC-Modul nicht mehr gesteuert, wenn zuvor manuell eingegriffen wurde. Voraussetzung hierf&uuml;r ist jedoch, dass im Reading <em>ASC_ShuttersLastDrive</em> der Status <em>manual</em> enthalten ist und sich der Rollladen auf eine unbekannte (nicht in den Attributen anderweitig konfigurierte) Position befindet.</li>
       <a name="ASC_brightnessDriveUpDown"></a>
-      <li><strong>ASC_brightnessDriveUpDown - WERT-MORGENS:WERT-ABENDS</strong> - Werte bei dem Schaltbedingungen für Sunrise und Sunset gepr&uuml;ft werden sollen. Diese globale Einstellung kann durch die WERT-MORGENS:WERT-ABENDS Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
+      <li><strong>ASC_brightnessDriveUpDown - WERT-MORGENS:WERT-ABENDS</strong> - Werte bei dem Schaltbedingungen f&uuml;r Sunrise und Sunset gepr&uuml;ft werden sollen. Diese globale Einstellung kann durch die WERT-MORGENS:WERT-ABENDS Einstellung von ASC_BrightnessSensor im Rollladen selbst &uuml;berschrieben werden.</li>
       <a name="ASC_debug"></a>
-      <li><strong>ASC_debug</strong> - aktiviert die erweiterte Logausgabe für Debugausgaben</li>
+      <li><strong>ASC_debug</strong> - aktiviert die erweiterte Logausgabe f&uuml;r Debugausgaben</li>
       <a name="ASC_expert"></a>
       <li><strong>ASC_expert</strong> - ist der Wert 1, so werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
       <a name="ASC_freezeTemp"></a>
@@ -5166,7 +5171,7 @@ sub getblockAscDrivesAfterManual {
       <li>ASC_brightnessMaxVal - <em>WARNUNG!!! OBSOLET !!! NICHT VERWENDEN!!!</em></li>
     </ul>
     <br />
-    <u> In den Rolll&auml;den-Geräten</u>
+    <u> In den Rolll&auml;den-Ger&auml;ten</u>
     <ul>
       <li><strong>ASC - 0/1/2</strong> 0 = "kein Anlegen der Attribute beim ersten Scan bzw. keine Beachtung eines Fahrbefehles",1 = "Inverse oder Rollo - Bsp.: Rollo oben 0, Rollo unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo oben 100, Rollo unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
       <li><strong>ASC_Antifreeze - soft/am/pm/hard/off</strong> - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_Antifreeze_Pos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren (default: off)</li>
@@ -5176,7 +5181,7 @@ sub getblockAscDrivesAfterManual {
       <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
       <li><strong>ASC_AutoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber Horizont wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt (default: none)</li>
       <li><strong>ASC_BlockingTime_afterManual</strong> - wie viel Sekunden soll die Automatik nach einer manuellen Fahrt aus setzen. (default: 1200)</li>
-      <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schließen Fahrt mehr statt finden. (default: 3600)</li>
+      <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr statt finden. (default: 3600)</li>
       <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&zlig;en soll keine &ouml;ffnen Fahrt mehr statt finden. (default: 3600)</li>
       <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
       <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
@@ -5185,7 +5190,7 @@ sub getblockAscDrivesAfterManual {
       <li><strong>ASC_DriveUpMaxDuration</strong> - die Dauer des hochfahrens vom Rollladen plus 5 Sekunden (default: 60)</li>
       <li><strong>ASC_Drive_Offset</strong> - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll. (default: -1)</li>
       <li><strong>ASC_Drive_OffsetStart</strong> - in Sekunden verz&ouml;gerter Wert ab welchen dann erst das Offset startet und dazu addiert wird. Funktioniert nur wenn gleichzeitig ein Drive_Offset gesetzt wird. (default: -1)</li>
-      <li><strong>ASC_LockOut - soft/hard/off</strong> - stellt entsprechend den Aussperrschutz ein. Bei global aktivem Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rollladen oben. Dies gilt nur bei Steuerbefehle über das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rollladen hardwareseitig zu blockieren. Dann ist auch ein Fahren &uuml;ber die Taster nicht mehr m&ouml;glich. (default: off)</li>
+      <li><strong>ASC_LockOut - soft/hard/off</strong> - stellt entsprechend den Aussperrschutz ein. Bei global aktivem Aussperrschutz (set ASC-Device lockOut soft) und einem Fensterkontakt open bleibt dann der Rollladen oben. Dies gilt nur bei Steuerbefehle &uuml;ber das ASC Modul. Stellt man global auf hard, wird bei entsprechender M&ouml;glichkeit versucht den Rollladen hardwareseitig zu blockieren. Dann ist auch ein Fahren &uuml;ber die Taster nicht mehr m&ouml;glich. (default: off)</li>
       <li><strong>ASC_LockOut_Cmd - inhibit/blocked/protection</strong> - set Befehl f&uuml;r das Rollladen-Device zum Hardware sperren. Dieser Befehl wird gesetzt werden, wenn man "ASC_LockOut" auf hard setzt (default: none)</li>
       <li><strong>ASC_Mode_Down - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
       <li><strong>ASC_Mode_Up - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
@@ -5207,13 +5212,13 @@ sub getblockAscDrivesAfterManual {
     <li><strong>ASC_Shading_Angle_Left</strong> - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180° - 85° ==> ab Sonnenpos. 95° wird abgeschattet (default: 75)</li>
     <li><strong>ASC_Shading_Angle_Right</strong> - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180° + 85° ==> bis Sonnenpos. 265° wird abgeschattet (default: 75)</li>
     <li><strong>ASC_Shading_Direction</strong> -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 (default: 180)</li>
-    <li><strong>ASC_Shading_Min_Elevation</strong> - ab welcher Höhe des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 25.0)</li>
+    <li><strong>ASC_Shading_Min_Elevation</strong> - ab welcher H&ouml;he des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 25.0)</li>
     <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 18)</li>
     <li><strong>ASC_Shading_Mode - absent,always,off,home</strong> / wann soll die Beschattung nur statt finden. (default: off)</li>
-    <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens für die Beschattung</li>
+    <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung</li>
     <li><strong>ASC_Shading_StateChange_Cloudy</strong> - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 20000)</li>
     <li><strong>ASC_Shading_StateChange_Sunny</strong> - Brightness Wert ab welchen Beschattung statt finden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 35000)</li>
-    <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten für die Beschattung statt finden soll (default: 1200)</li>
+    <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung statt finden soll (default: 1200)</li>
     </ul></p>
     <li><strong>ASC_ShuttersPlace - window/terrace</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefence aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen (default: window)</li>
     <li><strong>ASC_Time_Down_Early</strong> - Sunset fr&uuml;hste Zeit zum Runterfahren (default: 16:00)</li>
@@ -5225,7 +5230,7 @@ sub getblockAscDrivesAfterManual {
     <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
     <li><strong>ASC_Ventilate_Window_Open</strong> - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist (default: on)</li>
     <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
-    <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem für Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
+    <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem f&uuml;r Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
     <li><strong>ASC_WindowRec</strong> - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist (default: none)</li>
     <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
   </ul>
