@@ -45,7 +45,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.12';
+my $version = '0.6.13';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2017,7 +2017,7 @@ sub ShadingProcessing($@) {
             and $getShadingPos == $getStatus )
         {
             $shutters->setLastDrive('shading out');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos );
+            ShuttersCommandSet( $hash, $shuttersDev, ($shutters->getShadingPos == $shutters->getLastPos ? $shutters->getOpenPos : $shutters->getLastPos) );
 
             ASC_Debug( 'ShadingProcessing: '
                   . $shutters->getShuttersDev
@@ -5256,7 +5256,7 @@ sub getblockAscDrivesAfterManual {
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rolllo Device</u>
     <ul>
-      <code>ascAPIget('Getter','ROLLODEVICENAME')</code><br>
+      <code>{ ascAPIget('Getter','ROLLODEVICENAME') }</code><br>
     </ul>
     <table border="1">
       <th>Getter</th><th>Erl&auml;uterung</th>
@@ -5285,7 +5285,7 @@ sub getblockAscDrivesAfterManual {
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
     <ul>
-      <code>ascAPIget('Getter')</code><br>
+      <code>{ ascAPIget('Getter') }</code><br>
     </ul>
     <table border="1">
       <th>Getter</th><th>Erl&auml;uterung</th>
