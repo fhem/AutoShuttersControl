@@ -12,6 +12,7 @@
 #       - FunkOdyssey commandref style
 #       - sledge fix many typo in commandref
 #       - many User that use with modul and report bugs
+#       - Christoph (christoph.kaiser.in) Patch that expand RegEx for Window Events
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -45,7 +46,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.13';
+my $version = '0.6.14';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -839,6 +840,7 @@ sub AddNotifyDev($@) {
     %hash = map { ( $_ => 1 ) }
       split( ',', "$notifyDev,$dev" );
 
+	my $match;																	# CK: added local variable to save matched event type (open|opened|close|closed|tilt|tilted)
     $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
     my @devs = split( ',', $dev );
@@ -886,20 +888,30 @@ sub EventProcessingWindowRec($@) {
     my $name = $hash->{NAME};
 
     if (
-        $events =~
-        m#state:\s(open(ed)?|closed|tilted)# # weitere mögliche Events  (opened / closed)
-        and IsAfterShuttersManualBlocking($shuttersDev)
+        $events =~ m#.*state:.*(open(?>ed)?|closed?|tilt(?>ed)?)#
+          and IsAfterShuttersManualBlocking($shuttersDev)
       )
     {
+        $match = $1;
+
+        ASC_Debug( 'EventProcessingWindowRec: '
+            . $shutters->getShuttersDev
+            .' - RECEIVED EVENT: '
+            . $events
+            .' - IDENTIFIED EVENT: '
+            . $1 
+            .' - STORED EVENT: '
+            . $match );
+
         $shutters->setShuttersDev($shuttersDev);
         my $homemode = $shutters->getRoommatesStatus;
         $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
         #### Hardware Lock der Rollläden
         $shutters->setHardLockOut('off')
-          if ( $1 eq 'closed' and $shutters->getShuttersPlace eq 'terrace' );
+          if ( $match =~ /close/ and $shutters->getShuttersPlace eq 'terrace' );
         $shutters->setHardLockOut('on')
-          if ( ( $1 eq 'open' or $1 eq 'opened' )
+          if ( $match =~ /open/
             and $shutters->getShuttersPlace eq 'terrace' );
 
         my $queryShuttersPosWinRecTilted = (
@@ -922,8 +934,8 @@ sub EventProcessingWindowRec($@) {
               . ' QueryShuttersPosWinRecComfort: '
               . $queryShuttersPosWinRecComfort );
 
-        if (
-                $1 eq 'closed'
+        if ( 
+            $match =~ /close/
             and IsAfterShuttersTimeBlocking($shuttersDev)
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
@@ -974,9 +986,9 @@ sub EventProcessingWindowRec($@) {
         }
         elsif (
             (
-                $1 eq 'tilted'
-                or ( ( $1 eq 'open' or $1 eq 'opened' )
-                    and $shutters->getSubTyp eq 'twostate' )
+              $match =~ /tilt/
+              or (  $match =~ /open/
+                and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
             and $queryShuttersPosWinRecTilted
@@ -986,7 +998,7 @@ sub EventProcessingWindowRec($@) {
             $shutters->setNoOffset(1);
             $shutters->setDriveCmd( $shutters->getVentilatePos );
         }
-        elsif ( ( $1 eq 'open' or $1 eq 'opened' )
+        elsif ( $match =~ /open/
             and $shutters->getSubTyp eq 'threestate' )
         {
             my $posValue;
@@ -3283,17 +3295,15 @@ sub CheckIfShuttersWindowRecOpen($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if (   $shutters->getWinStatus eq 'open'
-        or $shutters->getWinStatus eq 'opened' )
+    if (  $shutters->getWinStatus =~ /open/ ) 												# CK: covers: open|opened
     {
         return 2;
     }
-    elsif ( $shutters->getWinStatus eq 'tilted'
-        and $shutters->getSubTyp eq 'threestate' )
+    elsif ( $shutters->getWinStatus =~ /tilt/ and $shutters->getSubTyp eq 'threestate' ) 	# CK: covers: tilt|tilted
     {
         return 1;
     }
-    elsif ( $shutters->getWinStatus eq 'closed' ) { return 0; }
+    elsif ( $shutters->getWinStatus =~ /close/ ) { return 0; } 								# CK: covers: close|closed
 }
 
 sub makeReadingName($) {
