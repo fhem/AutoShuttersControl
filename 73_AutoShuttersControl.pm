@@ -892,7 +892,7 @@ sub EventProcessingWindowRec($@) {
     if ( $events =~ m#.*state:.*(open(?>ed)?|closed?|tilt(?>ed)?)#
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
-        $match = $1;
+        my $match = $1;
 
         ASC_Debug( 'EventProcessingWindowRec: '
               . $shutters->getShuttersDev
