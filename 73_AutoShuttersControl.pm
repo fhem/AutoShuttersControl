@@ -5311,7 +5311,7 @@ sub getblockAscDrivesAfterManual {
       <code>{ ascAPIget('Getter','ROLLODEVICENAME') }</code><br>
     </ul>
     <table border="1">
-      <th>Getter</th><th>Erl&auml;uterung</th>
+      <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
       <tr><td>FreezeStatus</td><td>1=soft, 2=Daytime, 3=hard</td></tr>
       <tr><td>NoOffset</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</td></tr>
       <tr><td>LastDrive</td><td>Grund des letzten Fahrens</td></tr>
@@ -5333,21 +5333,21 @@ sub getblockAscDrivesAfterManual {
       <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
       <tr><td>Status</td><td>Position des Rolllos</td></tr>
       <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r das Rolllo die ASC Steuerung aktiv ist.</td></tr>
-    <table/>
+    </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
     <ul>
       <code>{ ascAPIget('Getter') }</code><br>
     </ul>
     <table border="1">
-      <th>Getter</th><th>Erl&auml;uterung</th>
+      <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
       <tr><td>outTemp </td><td>aktuelle Außentemperatur sofern Sensor definiert</td></tr>
       <tr><td>ResidentsStatus</td><td>aktueller Status des Residents Devices</td></tr>
       <tr><td>ResidentsLastStatus</td><td>letzter Status des Residents Devices</td></tr>
       <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
       <tr><td>Elevation</td><td>Elevation Wert</td></tr>
       <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
-    <table/>
+    </table>
 </ul>
 
 =end html_DE
