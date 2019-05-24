@@ -1729,6 +1729,12 @@ sub EventProcessingShadingBrightness($@) {
                   . ' - Alle Bedingungen zur weiteren Beschattungsverarbeitung sind erfüllt. Es wird nun die eigentliche Beschattungsfunktion aufgerufen'
             );
         }
+#         else {
+#             unless ( $shutters->getShadingMode eq $homemode
+#                 and 
+#             $shutters->setShadingStatus('out');
+#             ShadingProcessingDriveCommand($hash,$shuttersDev);
+#         }
     }
 }
 
@@ -1988,81 +1994,90 @@ sub ShadingProcessing($@) {
               . ' Neuer Status: '
               . $shutters->getShadingStatus );
     }
+    
+    ShadingProcessingDriveCommand($hash,$shuttersDev)
+        if (   $shutters->getShadingStatus eq 'out'
+            or $shutters->getShadingStatus eq 'in' );
+}
 
-    if (   $shutters->getShadingStatus eq 'out'
-        or $shutters->getShadingStatus eq 'in' )
+sub ShadingProcessingDriveCommand($$) {
+    my ($hash,$shuttersDev) = @_;
+
+    my $name = $hash->{NAME};
+    $shutters->setShuttersDev($shuttersDev);
+
+    my $getShadingPos    = $shutters->getShadingPos;
+    my $getStatus        = $shutters->getStatus;
+
+    $shutters->setShadingStatus( $shutters->getShadingStatus )
+        if (
+        ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
+        ( $shutters->getShadingWaitingPeriod / 2 ) );
+
+    if (    $shutters->getShadingStatus eq 'in'
+        and $getShadingPos != $getStatus )
     {
-        ### Erstmal rausgenommen könnte Grund für nicht mehr reinfahren in die Beschattung sein
-        $shutters->setShadingStatus( $shutters->getShadingStatus )
-          if (
-            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
-            ( $shutters->getShadingWaitingPeriod / 2 ) );
+        my $queryShuttersShadingPos = (
+                $shutters->getShuttersPosCmdValueNegate
+            ? $getStatus > $getShadingPos
+            : $getStatus < $getShadingPos
+        );
 
-        if (    $shutters->getShadingStatus eq 'in'
-            and $getShadingPos != $getStatus )
+        if (
+            not $queryShuttersShadingPos
+            and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and $shutters->getShuttersPlace eq 'terrace' )
+            )
         {
-            my $queryShuttersShadingPos = (
-                  $shutters->getShuttersPosCmdValueNegate
-                ? $getStatus > $getShadingPos
-                : $getStatus < $getShadingPos
-            );
-
-            if (
-                not $queryShuttersShadingPos
-                and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    and $shutters->getShuttersPlace eq 'terrace' )
-              )
-            {
-                $shutters->setLastDrive('shading in');
-                ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
-
-                ASC_Debug( 'ShadingProcessing: '
-                      . $shutters->getShuttersDev
-                      . ' - Der aktuelle Beschattungsstatus ist: '
-                      . $shutters->getShadingStatus
-                      . ' und somit wird nun in die Position: '
-                      . $getShadingPos
-                      . ' zum Beschatten gefahren' );
-            }
-        }
-        elsif ( $shutters->getShadingStatus eq 'out'
-            and $getShadingPos == $getStatus )
-        {
-            $shutters->setLastDrive('shading out');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                (
-                      $shutters->getShadingPos == $shutters->getLastPos
-                    ? $shutters->getOpenPos
-                    : $shutters->getLastPos
-                )
-            );
+            $shutters->setLastDrive('shading in');
+            ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
 
             ASC_Debug( 'ShadingProcessing: '
-                  . $shutters->getShuttersDev
-                  . ' - Der aktuelle Beschattungsstatus ist: '
-                  . $shutters->getShadingStatus
-                  . ' und somit wird nun in die Position: '
-                  . $getShadingPos
-                  . ' zum beenden der Beschattung gefahren' );
+                    . $shutters->getShuttersDev
+                    . ' - Der aktuelle Beschattungsstatus ist: '
+                    . $shutters->getShadingStatus
+                    . ' und somit wird nun in die Position: '
+                    . $getShadingPos
+                    . ' zum Beschatten gefahren' );
         }
-
-        Log3( $name, 4,
-"AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
-              . $shutters->getShadingStatus );
-
-        ASC_Debug(
-                'ShadingProcessing: '
-              . $shutters->getShuttersDev
-              . ' - Der aktuelle Beschattungsstatus ist: '
-              . $shutters->getShadingStatus
-              . ', Beschattungsstatus Zeitstempel: '
-              . strftime(
-                "%Y.%m.%e %T", localtime( $shutters->getShadingStatusTimestamp )
-              )
-        );
     }
+    elsif ( $shutters->getShadingStatus eq 'out'
+        and $getShadingPos == $getStatus )
+    {
+        $shutters->setLastDrive('shading out');
+        ShuttersCommandSet(
+            $hash,
+            $shuttersDev,
+            (
+                    $shutters->getShadingPos == $shutters->getLastPos
+                ? $shutters->getOpenPos
+                : $shutters->getLastPos
+            )
+        );
+
+        ASC_Debug( 'ShadingProcessing: '
+                . $shutters->getShuttersDev
+                . ' - Der aktuelle Beschattungsstatus ist: '
+                . $shutters->getShadingStatus
+                . ' und somit wird nun in die Position: '
+                . $getShadingPos
+                . ' zum beenden der Beschattung gefahren' );
+    }
+
+    Log3( $name, 4,
+"AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
+            . $shutters->getShadingStatus );
+
+    ASC_Debug(
+            'ShadingProcessing: '
+            . $shutters->getShuttersDev
+            . ' - Der aktuelle Beschattungsstatus ist: '
+            . $shutters->getShadingStatus
+            . ', Beschattungsstatus Zeitstempel: '
+            . strftime(
+            "%Y.%m.%e %T", localtime( $shutters->getShadingStatusTimestamp )
+            )
+    );
 }
 
 sub EventProcessingPartyMode($) {
@@ -2495,6 +2510,7 @@ sub SunRiseShuttersAfterTimerFn($) {
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
             )
+            and $shutters->getShadingStatus ne 'in'
           )
         {
             $shutters->setLastDrive('day open');
