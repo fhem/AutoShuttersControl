@@ -13,6 +13,7 @@
 #       - sledge fix many typo in commandref
 #       - many User that use with modul and report bugs
 #       - Christoph (christoph.kaiser.in) Patch that expand RegEx for Window Events
+#       - Julian (Loredo) expand Residents Events for new Residents functions
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -840,7 +841,8 @@ sub AddNotifyDev($@) {
     %hash = map { ( $_ => 1 ) }
       split( ',', "$notifyDev,$dev" );
 
-	my $match;																	# CK: added local variable to save matched event type (open|opened|close|closed|tilt|tilted)
+    my $match
+      ; # CK: added local variable to save matched event type (open|opened|close|closed|tilt|tilted)
     $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
     my @devs = split( ',', $dev );
@@ -887,21 +889,19 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if (
-        $events =~ m#.*state:.*(open(?>ed)?|closed?|tilt(?>ed)?)#
-          and IsAfterShuttersManualBlocking($shuttersDev)
-      )
+    if ( $events =~ m#.*state:.*(open(?>ed)?|closed?|tilt(?>ed)?)#
+        and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         $match = $1;
 
         ASC_Debug( 'EventProcessingWindowRec: '
-            . $shutters->getShuttersDev
-            .' - RECEIVED EVENT: '
-            . $events
-            .' - IDENTIFIED EVENT: '
-            . $1 
-            .' - STORED EVENT: '
-            . $match );
+              . $shutters->getShuttersDev
+              . ' - RECEIVED EVENT: '
+              . $events
+              . ' - IDENTIFIED EVENT: '
+              . $1
+              . ' - STORED EVENT: '
+              . $match );
 
         $shutters->setShuttersDev($shuttersDev);
         my $homemode = $shutters->getRoommatesStatus;
@@ -911,7 +911,7 @@ sub EventProcessingWindowRec($@) {
         $shutters->setHardLockOut('off')
           if ( $match =~ /close/ and $shutters->getShuttersPlace eq 'terrace' );
         $shutters->setHardLockOut('on')
-          if ( $match =~ /open/
+          if (  $match =~ /open/
             and $shutters->getShuttersPlace eq 'terrace' );
 
         my $queryShuttersPosWinRecTilted = (
@@ -934,8 +934,8 @@ sub EventProcessingWindowRec($@) {
               . ' QueryShuttersPosWinRecComfort: '
               . $queryShuttersPosWinRecComfort );
 
-        if ( 
-            $match =~ /close/
+        if (
+                $match =~ /close/
             and IsAfterShuttersTimeBlocking($shuttersDev)
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
@@ -986,9 +986,9 @@ sub EventProcessingWindowRec($@) {
         }
         elsif (
             (
-              $match =~ /tilt/
-              or (  $match =~ /open/
-                and $shutters->getSubTyp eq 'twostate' )
+                $match =~ /tilt/
+                or (    $match =~ /open/
+                    and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
             and $queryShuttersPosWinRecTilted
@@ -1170,7 +1170,7 @@ sub EventProcessingResidents($@) {
     my $reading                = $ascDev->getResidentsReading;
     my $getResidentsLastStatus = $ascDev->getResidentsLastStatus;
 
-    if ( $events =~ m#$reading:\s(absent)# ) {
+    if ( $events =~ m#$reading:\s((?:pet_[a-z]+)|(?:absent))# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             my $getModeUp   = $shutters->getModeUp;
@@ -1217,7 +1217,7 @@ sub EventProcessingResidents($@) {
         }
     }
     elsif (
-        $events =~ m#$reading:\s(home)#
+        $events =~ m#$reading:\s((?:[a-z]+_)?home)#
         and (  $getResidentsLastStatus eq 'absent'
             or $getResidentsLastStatus eq 'gone'
             or $getResidentsLastStatus eq 'asleep'
@@ -2029,7 +2029,15 @@ sub ShadingProcessing($@) {
             and $getShadingPos == $getStatus )
         {
             $shutters->setLastDrive('shading out');
-            ShuttersCommandSet( $hash, $shuttersDev, ($shutters->getShadingPos == $shutters->getLastPos ? $shutters->getOpenPos : $shutters->getLastPos) );
+            ShuttersCommandSet(
+                $hash,
+                $shuttersDev,
+                (
+                      $shutters->getShadingPos == $shutters->getLastPos
+                    ? $shutters->getOpenPos
+                    : $shutters->getLastPos
+                )
+            );
 
             ASC_Debug( 'ShadingProcessing: '
                   . $shutters->getShuttersDev
@@ -3295,15 +3303,18 @@ sub CheckIfShuttersWindowRecOpen($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if (  $shutters->getWinStatus =~ /open/ ) 												# CK: covers: open|opened
+    if ( $shutters->getWinStatus =~ /open/ )    # CK: covers: open|opened
     {
         return 2;
     }
-    elsif ( $shutters->getWinStatus =~ /tilt/ and $shutters->getSubTyp eq 'threestate' ) 	# CK: covers: tilt|tilted
+    elsif ( $shutters->getWinStatus =~ /tilt/
+        and $shutters->getSubTyp eq 'threestate' )    # CK: covers: tilt|tilted
     {
         return 1;
     }
-    elsif ( $shutters->getWinStatus =~ /close/ ) { return 0; } 								# CK: covers: close|closed
+    elsif ( $shutters->getWinStatus =~ /close/ ) {
+        return 0;
+    }                                                 # CK: covers: close|closed
 }
 
 sub makeReadingName($) {
@@ -4676,15 +4687,46 @@ sub getOutTemp {
 
 sub getResidentsStatus {
     my $self = shift;
-
-    return ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
+    my $val =
+      ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
         'none' );
+
+    if ( $val =~ m/^(?:(.+)_)?(.+)$/ ) {
+        return ( $1, $2 ) if (wantarray);
+        return $1 && $1 eq 'pet' ? 'absent' : $2;
+    }
+    elsif (
+        ReadingsVal( $ascDev->_getResidentsDev, 'homealoneType', '-' ) eq
+        'PET' )
+    {
+        return ( 'pet', 'absent' ) if (wantarray);
+        return 'absent';
+    }
+    else {
+        return ( undef, $val ) if (wantarray);
+        return $val;
+    }
 }
 
 sub getResidentsLastStatus {
     my $self = shift;
+    my $val = ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
 
-    return ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
+    if ( $val =~ m/^(?:(.+)_)?(.+)$/ ) {
+        return ( $1, $2 ) if (wantarray);
+        return $1 && $1 eq 'pet' ? 'absent' : $2;
+    }
+    elsif (
+        ReadingsVal( $ascDev->_getResidentsDev, 'lastHomealoneType', '-' ) eq
+        'PET' )
+    {
+        return ( 'pet', 'absent' ) if (wantarray);
+        return 'absent';
+    }
+    else {
+        return ( undef, $val ) if (wantarray);
+        return $val;
+    }
 }
 
 sub getAutoShuttersControlShading {
