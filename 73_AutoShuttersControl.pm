@@ -12,6 +12,7 @@
 #       - FunkOdyssey commandref style
 #       - sledge fix many typo in commandref
 #       - many User that use with modul and report bugs
+#       - Julian (Loredo) expand Residents Events for new Residents functions
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -1158,7 +1159,7 @@ sub EventProcessingResidents($@) {
     my $reading                = $ascDev->getResidentsReading;
     my $getResidentsLastStatus = $ascDev->getResidentsLastStatus;
 
-    if ( $events =~ m#$reading:\s(absent)# ) {
+    if ( $events =~ m#$reading:\s((?:pet_[a-z]+)|(?:absent))# ) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             my $getModeUp   = $shutters->getModeUp;
@@ -1205,7 +1206,7 @@ sub EventProcessingResidents($@) {
         }
     }
     elsif (
-        $events =~ m#$reading:\s(home)#
+        $events =~ m#$reading:\s((?:[a-z]+_)?home)#
         and (  $getResidentsLastStatus eq 'absent'
             or $getResidentsLastStatus eq 'gone'
             or $getResidentsLastStatus eq 'asleep'
@@ -4666,15 +4667,47 @@ sub getOutTemp {
 
 sub getResidentsStatus {
     my $self = shift;
-
-    return ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
+    my $val =
+      ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
         'none' );
+
+    if ( $val =~ m/^(?:(.+)_)?(.+)$/ ) {
+        return ( $1, $2 ) if (wantarray);
+        return $1 && $1 eq 'pet' ? 'absent' : $2;
+    }
+    elsif (
+        ReadingsVal( $ascDev->_getResidentsDev, 'homealoneType', '-' )
+        eq 'PET' )
+    {
+        return ( 'pet', 'absent' ) if (wantarray);
+        return 'absent';
+    }
+    else {
+        return ( undef, $val ) if (wantarray);
+        return $val;
+    }
 }
 
 sub getResidentsLastStatus {
     my $self = shift;
+    my $val = ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
 
-    return ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
+    if ( $val =~ m/^(?:(.+)_)?(.+)$/ ) {
+        return ( $1, $2 ) if (wantarray);
+        return $1 && $1 eq 'pet' ? 'absent' : $2;
+    }
+    elsif (
+        ReadingsVal( $ascDev->_getResidentsDev, 'lastHomealoneType',
+            '-' ) eq 'PET'
+      )
+    {
+        return ( 'pet', 'absent' ) if (wantarray);
+        return 'absent';
+    }
+    else {
+        return ( undef, $val ) if (wantarray);
+        return $val;
+    }
 }
 
 sub getAutoShuttersControlShading {
