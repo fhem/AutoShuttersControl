@@ -5069,7 +5069,7 @@ sub getblockAscDrivesAfterManual {
     Die Voreinstellung f&uuml;r den Befehl zum prozentualen Fahren ist in beiden F&auml;llen unterschiedlich. 1="position" und 2="pct". Dies kann, soweit erforderlich, zu sp&auml;terer Zeit noch angepa&szlig;t werden.
     Habt Ihr das Attribut gesetzt, k&ouml;nnt Ihr den automatischen Scan nach den Devices anstossen.
   </ul>
-  <br /
+  <br />
   <a name="AutoShuttersControlReadings"></a>
   <strong>Readings</strong>
   <ul>
