@@ -5287,7 +5287,7 @@ sub getblockAscDrivesAfterManual {
     <li><strong>ASC_Shading_StateChange_Sunny</strong> - Brightness Wert ab welchen Beschattung statt finden soll, immer in Abh&auml;ngikkeit der anderen einbezogenden Sensorwerte (default: 35000)</li>
     <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung statt finden soll (default: 1200)</li>
     </ul></p>
-    <li><strong>ASC_ShuttersPlace - window/terrace</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefence aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen (default: window)</li>
+    <li><strong>ASC_ShuttersPlace - window/terrace</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen (default: window)</li>
     <li><strong>ASC_Time_Down_Early</strong> - Sunset fr&uuml;hste Zeit zum Runterfahren (default: 16:00)</li>
     <li><strong>ASC_Time_Down_Late</strong> - Sunset sp&auml;teste Zeit zum Runterfahren (default: 22:00)</li>
     <li><strong>ASC_Time_Up_Early</strong> - Sunrise fr&uuml;hste Zeit zum Hochfahren (default: 05:00)</li>
