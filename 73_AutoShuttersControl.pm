@@ -929,7 +929,7 @@ sub EventProcessingWindowRec($@) {
               . $shutters->getShuttersDev
               . ' - HOMEMODE: '
               . $homemode
-              . ' : QueryShuttersPosWinRecTilted'
+              . ' QueryShuttersPosWinRecTilted:'
               . $queryShuttersPosWinRecTilted
               . ' QueryShuttersPosWinRecComfort: '
               . $queryShuttersPosWinRecComfort );
