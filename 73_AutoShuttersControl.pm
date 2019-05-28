@@ -3130,8 +3130,7 @@ sub ShuttersSunrise($$) {
             {
                 if ( not IsWeTomorrow() ) {
                     if (
-                        IsWe()
-                        and int( gettimeofday() / 86400 ) == int(
+                        int( gettimeofday() / 86400 ) == int(
                             computeAlignTime( '24:00',
                                 $shutters->getTimeUpWeHoliday ) / 86400
                         )
@@ -3146,11 +3145,12 @@ sub ShuttersSunrise($$) {
                             computeAlignTime( '24:00',
                                 $shutters->getTimeUpEarly ) / 86400
                         )
+                        and $shutters->getSunrise
                       )
                     {
                         $shuttersSunriseUnixtime =
                           computeAlignTime( '24:00',
-                            $shutters->getTimeUpWeHoliday );
+                            $shutters->getTimeUpEarly ) + 86400;
                     }
                     else {
                         $shuttersSunriseUnixtime =
@@ -3181,6 +3181,17 @@ sub ShuttersSunrise($$) {
                         $shuttersSunriseUnixtime =
                           computeAlignTime( '24:00',
                             $shutters->getTimeUpEarly );
+                    }
+                    elsif (
+                        int( gettimeofday() / 86400 ) != int(
+                            computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday ) / 86400
+                        )
+                      )
+                    {
+                        $shuttersSunriseUnixtime =
+                          computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
                     }
                     else {
                         $shuttersSunriseUnixtime =
