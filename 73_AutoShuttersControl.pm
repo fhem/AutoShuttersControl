@@ -473,18 +473,18 @@ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rai
             DeleteNotifyDev( $hash, $1, $2 );
         }
         elsif ( $events =~
-m#^ATTR\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownTime_beforNightClose|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)\s(.*)$#
+m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownTime_beforNightClose|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)(.*)?#
           )
         {
-            CreateSunRiseSetShuttersTimer( $hash, $1 )
+            CreateSunRiseSetShuttersTimer( $hash, $2 )
               if (
-                $2 ne 'ASC_Time_Up_WE_Holiday'
-                or (    $2 eq 'ASC_Time_Up_WE_Holiday'
+                $3 ne 'ASC_Time_Up_WE_Holiday'
+                or (    $3 eq 'ASC_Time_Up_WE_Holiday'
                     and $ascDev->getSunriseTimeWeHoliday eq 'on' )
               );
         }
         elsif ( $events =~
-m#^ATTR\s(.*)\s(ASC_autoAstroModeMorning|ASC_autoAstroModeMorningHorizon|ASC_autoAstroModeEvening|ASC_autoAstroModeEveningHorizon)\s(.*)$#
+m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_autoAstroModeMorning|ASC_autoAstroModeMorningHorizon|ASC_autoAstroModeEvening|ASC_autoAstroModeEveningHorizon)(.*)?#
           )
         {
             RenewSunRiseSetShuttersTimer($hash);
