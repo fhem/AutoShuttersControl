@@ -1256,6 +1256,18 @@ sub EventProcessingResidents($@) {
                 $shutters->setDriveCmd( $shutters->getShadingPos );
             }
             elsif (
+                    $shutters->getShadingMode eq 'absent'
+                and IsDay($shuttersDev)
+                and $shutters->getIfInShading
+                and $shutters->getStatus == $shutters->getShadingPos
+                and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getShuttersPlace eq 'terrace' )
+              )
+            {
+                $shutters->setLastDrive('shading out');
+                $shutters->setDriveCmd( $shutters->getLastPos );
+            }
+            elsif (
                     $ascDev->getSelfDefense eq 'on'
                 and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                 and $shutters->getSelfDefenseExclude eq 'off'
