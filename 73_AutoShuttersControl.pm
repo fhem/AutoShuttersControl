@@ -3149,8 +3149,8 @@ sub ShuttersSunrise($$) {
                       )
                     {
                         $shuttersSunriseUnixtime =
-                          computeAlignTime( '24:00',
-                            $shutters->getTimeUpEarly ) + 86400;
+                          computeAlignTime( '24:00', $shutters->getTimeUpEarly )
+                          + 86400;
                     }
                     else {
                         $shuttersSunriseUnixtime =
