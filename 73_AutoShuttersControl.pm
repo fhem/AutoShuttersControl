@@ -5374,7 +5374,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
-    </table>
+    <table/>
         </p>
         <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
         <ul>
@@ -5388,7 +5388,7 @@ sub getblockAscDrivesAfterManual {
             <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
             <tr><td>Elevation</td><td>Elevation Wert</td></tr>
             <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
-            </table>
+            <table/>
 </ul>!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5633,7 +5633,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
-    </table>
+    <table/>
         </p>
         <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
         <ul>
@@ -5647,7 +5647,7 @@ sub getblockAscDrivesAfterManual {
             <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
             <tr><td>Elevation</td><td>Elevation Wert</td></tr>
             <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
-            </table>
+            <table/>
 </ul>
 
 =end html_DE
