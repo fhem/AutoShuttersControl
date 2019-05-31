@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.14';
+my $version = '0.6.15';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -220,7 +220,7 @@ my %userAttrList = (
 
 my %posSetCmds = (
     ZWave      => 'dim',
-    Siro       => 'position',
+    Siro       => 'pct',
     CUL_HM     => 'pct',
     ROLLO      => 'pct',
     SOMFY      => 'position',
