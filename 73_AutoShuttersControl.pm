@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.15';
+my $version = '0.6.16';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -2174,6 +2174,17 @@ sub EventProcessingShutters($@) {
             $shutters->setLastDriveReading;
             $ascDev->setStateReading;
             $shutters->setLastManPos($1);
+
+            ASC_Debug(
+                'EventProcessingShutters: eine manualle Fahrt wurde erkannt!');
+        }
+        else {
+            $shutters->setLastDriveReading;
+            $ascDev->setStateReading;
+
+            ASC_Debug(
+'EventProcessingShutters: eine automatisierte Fahrt durch ASC wurde erkannt! Es werden nun die LastDriveReading und StateReading Werte gesetzt!'
+            );
         }
     }
 }
@@ -3410,8 +3421,6 @@ sub SetCmdFn($) {
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
-        $shutters->setLastDriveReading;
-        $ascDev->setStateReading;
     }
     else {
         $shutters->setLastDrive(
