@@ -7,13 +7,14 @@
 #
 #   Special thanks goes to:
 #       - Bernd (Cluni) this module is based on the logic of his script "Rollladensteuerung für HM/ROLLO inkl. Abschattung und Komfortfunktionen in Perl" (https://forum.fhem.de/index.php/topic,73964.0.html)
-#       - Beta-User for many tests and ideas
+#       - Beta-User for many tests, many suggestions and good discussions
 #       - pc1246 write english commandref
 #       - FunkOdyssey commandref style
 #       - sledge fix many typo in commandref
 #       - many User that use with modul and report bugs
 #       - Christoph (christoph.kaiser.in) Patch that expand RegEx for Window Events
 #       - Julian (Loredo) expand Residents Events for new Residents functions
+#       - Christoph (Christoph Morrison) for fix Commandref, many suggestions and good discussions
 #
 #
 #  This script is free software; you can redistribute it and/or modify
@@ -47,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16';
+my $version = '0.6.15';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -316,7 +317,8 @@ sub Undef($$) {
 
 sub Attr(@) {
     my ( $cmd, $name, $attrName, $attrVal ) = @_;
-    my $hash = $defs{$name};
+
+    #     my $hash = $defs{$name};
 
     return undef;
 }
@@ -621,17 +623,17 @@ sub ShuttersDeviceScan($) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
-        delFromDevAttrList( $_, 'ASC_Wind_SensorDevice' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
-        delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
-        delFromDevAttrList( $_, 'ASC_Wind_minMaxSpeed' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
-        delFromDevAttrList( $_, 'ASC_Wind_Pos' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
-        CommandDeleteReading( undef, $_ . ' ASC_Time_PrivacyDriveUp' )
-          if ( ReadingsVal( $_, 'ASC_Time_PrivacyDriveUp', 'none' ) ne 'none' )
-          ;    # temporär muss später gelöscht werden ab Version 0.6.3
+#         delFromDevAttrList( $_, 'ASC_Wind_SensorDevice' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
+#         delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
+#         delFromDevAttrList( $_, 'ASC_Wind_minMaxSpeed' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
+#         delFromDevAttrList( $_, 'ASC_Wind_Pos' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
+#         CommandDeleteReading( undef, $_ . ' ASC_Time_PrivacyDriveUp' )
+#           if ( ReadingsVal( $_, 'ASC_Time_PrivacyDriveUp', 'none' ) ne 'none' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.6.3
 
         $shuttersList = $shuttersList . ',' . $_;
         $shutters->setShuttersDev($_);
@@ -1330,20 +1332,20 @@ sub EventProcessingRain($@) {
             if (    $val > $triggerMax
                 and $shutters->getStatus != $closedPos
                 and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'unprotection' )
+                and $shutters->getRainProtectionStatus eq 'unprotected' )
             {
-                $shutters->setLastDrive('rain protection');
+                $shutters->setLastDrive('rain protected');
                 $shutters->setDriveCmd($closedPos);
-                $shutters->setRainProtectionStatus('protection');
+                $shutters->setRainProtectionStatus('protected');
             }
             elsif ( ( $val == 0 or $val < $triggerMax )
                 and $shutters->getStatus == $closedPos
                 and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'protection' )
+                and $shutters->getRainProtectionStatus eq 'protected' )
             {
-                $shutters->setLastDrive('rain un-protection');
+                $shutters->setLastDrive('rain un-protected');
                 $shutters->setDriveCmd( $shutters->getLastPos );
-                $shutters->setRainProtectionStatus('unprotection');
+                $shutters->setRainProtectionStatus('unprotected');
             }
         }
     }
@@ -1380,18 +1382,18 @@ sub EventProcessingWind($@) {
               );
 
             if (    $1 > $shutters->getWindMax
-                and $shutters->getWindProtectionStatus eq 'unprotection' )
+                and $shutters->getWindProtectionStatus eq 'unprotected' )
             {
-                $shutters->setLastDrive('wind protection');
+                $shutters->setLastDrive('wind protected');
                 $shutters->setDriveCmd( $shutters->getWindPos );
-                $shutters->setWindProtectionStatus('protection');
+                $shutters->setWindProtectionStatus('protected');
             }
             elsif ( $1 < $shutters->getWindMin
-                and $shutters->getWindProtectionStatus eq 'protection' )
+                and $shutters->getWindProtectionStatus eq 'protected' )
             {
-                $shutters->setLastDrive('wind un-protection');
+                $shutters->setLastDrive('wind un-protected');
                 $shutters->setDriveCmd( $shutters->getLastPos );
-                $shutters->setWindProtectionStatus('unprotection');
+                $shutters->setWindProtectionStatus('unprotected');
             }
 
             ASC_Debug( 'EventProcessingWind: '
@@ -1720,8 +1722,8 @@ sub EventProcessingShadingBrightness($@) {
             )
             and IsDay($shuttersDev)
             and $ascDev->getAutoShuttersControlShading eq 'on'
-            and $shutters->getRainProtectionStatus eq 'unprotection'
-            and $shutters->getWindProtectionStatus eq 'unprotection'
+            and $shutters->getRainProtectionStatus eq 'unprotected'
+            and $shutters->getWindProtectionStatus eq 'unprotected'
           )
         {
             ShadingProcessing(
@@ -1743,8 +1745,8 @@ sub EventProcessingShadingBrightness($@) {
         }
         elsif ( $shutters->getShadingStatus eq 'in'
             and $shutters->getShadingMode ne $homemode
-            and $shutters->getRainProtectionStatus eq 'unprotection'
-            and $shutters->getWindProtectionStatus eq 'unprotection' )
+            and $shutters->getRainProtectionStatus eq 'unprotected'
+            and $shutters->getWindProtectionStatus eq 'unprotected' )
         {
             $shutters->setShadingStatus('out');
             ShadingProcessingDriveCommand( $hash, $shuttersDev );
@@ -1805,8 +1807,8 @@ sub EventProcessingTwilightDevice($@) {
                 )
                 and IsDay($shuttersDev)
                 and $ascDev->getAutoShuttersControlShading eq 'on'
-                and $shutters->getRainProtectionStatus eq 'unprotection'
-                and $shutters->getWindProtectionStatus eq 'unprotection'
+                and $shutters->getRainProtectionStatus eq 'unprotected'
+                and $shutters->getWindProtectionStatus eq 'unprotected'
               )
             {
                 ShadingProcessing(
@@ -2381,14 +2383,14 @@ sub RenewSunRiseSetShuttersTimer($) {
           . AttrVal( $_, 'ASC_BrightnessMaxVal',   700 )
           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
 
-        delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-        delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-        delFromDevAttrList( $_, 'ASC_BrightnessMinVal' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-        delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
-          ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+#         delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+#         delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+#         delFromDevAttrList( $_, 'ASC_BrightnessMinVal' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+#         delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
+#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
 
     }
 }
@@ -3531,7 +3533,7 @@ sub setHardLockOut {
         CommandSet( undef,
             $self->{shuttersDev} . ' '
               . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
-          if ( $shutters->getLockOutCmd eq 'protection' );
+          if ( $shutters->getLockOutCmd eq 'protected' );
     }
     return 0;
 }
@@ -3893,7 +3895,7 @@ sub setShadingStatus {
     return 0;
 }
 
-sub setWindProtectionStatus {    # Werte protection, unprotection
+sub setWindProtectionStatus {    # Werte protected, unprotected
     my ( $self, $value ) = @_;
 
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
@@ -3901,7 +3903,7 @@ sub setWindProtectionStatus {    # Werte protection, unprotection
     return 0;
 }
 
-sub setRainProtectionStatus {    # Werte protection, unprotection
+sub setRainProtectionStatus {    # Werte protected, unprotected
     my ( $self, $value ) = @_;
 
     $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
@@ -3929,7 +3931,7 @@ sub getIfInShading {
     );
 }
 
-sub getWindProtectionStatus {    # Werte protection, unprotection
+sub getWindProtectionStatus {    # Werte protected, unprotected
     my $self = shift;
 
     return (
@@ -3940,11 +3942,11 @@ sub getWindProtectionStatus {    # Werte protection, unprotection
               )
         )
         ? $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
-        : 'unprotection'
+        : 'unprotected'
     );
 }
 
-sub getRainProtectionStatus {    # Werte protection, unprotection
+sub getRainProtectionStatus {    # Werte protected, unprotected
     my $self = shift;
 
     return (
@@ -3955,7 +3957,7 @@ sub getRainProtectionStatus {    # Werte protection, unprotection
               )
         )
         ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
-        : 'unprotection'
+        : 'unprotected'
     );
 }
 
@@ -4153,17 +4155,15 @@ sub getShadingWaitingPeriod {
 sub getOffset {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', -1 );
+    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', -1 );
+    return ( $val =~ /^\d+$/ ? $val : -1 );
 }
 
 sub getOffsetStart {
     my $self = shift;
 
-    return (
-          AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 ) > 0
-        ? AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 )
-        : -1
-    );
+    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 );
+    return ( ( $val > 0 and $val =~ /^\d+$/ ) ? $val : -1 );
 }
 
 sub getBlockingTimeAfterManual {
@@ -5235,7 +5235,7 @@ sub getblockAscDrivesAfterManual {
             <a name="ASC_autoAstroModeMorning"></a>
             <li><strong>ASC_autoAstroModeMorning</strong> - REAL, CIVIL, NAUTIC, ASTRONOMIC oder HORIZON</li>
             <a name="ASC_autoAstroModeMorningHorizon"></a>
-            <li><strong>ASC_autoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur ber&uuml;cksichtigt, wenn im Attribut <em>ASC_autoAstroModeEvening</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
+            <li><strong>ASC_autoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber dem Horizont. Wird nur ber&uuml;cksichtigt, wenn im Attribut <em>ASC_autoAstroModeMorning</em> der Wert <em>HORIZON</em> ausgew&auml;hlt wurde. (default: 0)</li>
             <a name="ASC_autoShuttersControlComfort"></a>
             <li><strong>ASC_autoShuttersControlComfort - on/off</strong> - schaltet die Komfortfunktion an. Bedeutet, dass ein Rollladen mit einem threestate-Sensor am Fenster beim &Ouml;ffnen in eine Offenposition f&auml;hrt. Hierzu muss beim Rollladen das Attribut <em>ASC_ComfortOpen_Pos</em> entsprechend konfiguriert sein. (default: off)</li>
             <a name="ASC_autoShuttersControlEvening"></a>
@@ -5378,8 +5378,8 @@ sub getblockAscDrivesAfterManual {
         <tr><td>ShadingStatus</td><td>Ausgabe des aktuellen Shading Status, „in“, „out“, „in reserved“, „out reserved“</td></tr>
         <tr><td>ShadingStatusTimestamp</td><td>Timestamp des letzten Beschattungsstatus</td></tr>
         <tr><td>IfInShading</td><td>Befindet sich der Rollladen, in Abh&auml;ngigkeit des Shading Mode, in der Beschattung</td></tr>
-        <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protection“ oder „unprotection“</td></tr>
-        <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „protection“ oder „unprotection“</td></tr>
+        <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protected“ oder „unprotected“</td></tr>
+        <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „unprotected“ oder „unprotected“</td></tr>
         <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
