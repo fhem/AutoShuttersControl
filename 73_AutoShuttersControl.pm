@@ -53,17 +53,17 @@ my $version = '0.6.15';
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
 
-    ### alte Attribute welche entfernt werden
-    my $oldAttr =
-        'ASC_temperatureSensor '
-      . 'ASC_temperatureReading '
-      . 'ASC_residentsDevice '
-      . 'ASC_residentsDeviceReading '
-      . 'ASC_rainSensorDevice '
-      . 'ASC_rainSensorReading '
-      . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
-      . 'ASC_brightnessMinVal '
-      . 'ASC_brightnessMaxVal ';
+#    ### alte Attribute welche entfernt werden
+#     my $oldAttr =
+#         'ASC_temperatureSensor '
+#       . 'ASC_temperatureReading '
+#       . 'ASC_residentsDevice '
+#       . 'ASC_residentsDeviceReading '
+#       . 'ASC_rainSensorDevice '
+#       . 'ASC_rainSensorReading '
+#       . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+#       . 'ASC_brightnessMinVal '
+#       . 'ASC_brightnessMaxVal ';
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
@@ -92,7 +92,7 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
-      . $oldAttr
+#       . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
@@ -649,52 +649,52 @@ sub ShuttersDeviceScan($) {
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
     }
 
-    ### Temporär und muss später entfernt werden
-    CommandAttr( undef,
-            $name
-          . ' ASC_tempSensor '
-          . AttrVal( $name, 'ASC_temperatureSensor',  'none' ) . ':'
-          . AttrVal( $name, 'ASC_temperatureReading', 'temperature' ) )
-      if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
-    CommandAttr( undef,
-            $name
-          . ' ASC_residentsDev '
-          . AttrVal( $name, 'ASC_residentsDevice',        'none' ) . ':'
-          . AttrVal( $name, 'ASC_residentsDeviceReading', 'state' ) )
-      if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
-    CommandAttr( undef,
-            $name
-          . ' ASC_rainSensor '
-          . AttrVal( $name, 'ASC_rainSensorDevice',  'none' ) . ':'
-          . AttrVal( $name, 'ASC_rainSensorReading', 'rain' ) . ' 100 '
-          . AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 ) )
-      if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
-    CommandAttr( undef,
-            $name
-          . ' ASC_brightnessDriveUpDown '
-          . AttrVal( $name, 'ASC_brightnessMinVal', 500 ) . ':'
-          . AttrVal( $name, 'ASC_brightnessMaxVal', 800 ) )
-      if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
-
-    CommandDeleteAttr( undef, $name . ' ASC_temperatureSensor' )
-      if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_temperatureReading' )
-      if ( AttrVal( $name, 'ASC_temperatureReading', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_residentsDevice' )
-      if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_residentsDeviceReading' )
-      if ( AttrVal( $name, 'ASC_residentsDeviceReading', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_rainSensorDevice' )
-      if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_rainSensorReading' )
-      if ( AttrVal( $name, 'ASC_rainSensorReading', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_rainSensorShuttersClosedPos' )
-      if (
-        AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_brightnessMinVal' )
-      if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
-    CommandDeleteAttr( undef, $name . ' ASC_brightnessMaxVal' )
-      if ( AttrVal( $name, 'ASC_brightnessMaxVal', 'none' ) ne 'none' );
+#    ### Temporär und muss später entfernt werden
+#     CommandAttr( undef,
+#             $name
+#           . ' ASC_tempSensor '
+#           . AttrVal( $name, 'ASC_temperatureSensor',  'none' ) . ':'
+#           . AttrVal( $name, 'ASC_temperatureReading', 'temperature' ) )
+#       if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
+#     CommandAttr( undef,
+#             $name
+#           . ' ASC_residentsDev '
+#           . AttrVal( $name, 'ASC_residentsDevice',        'none' ) . ':'
+#           . AttrVal( $name, 'ASC_residentsDeviceReading', 'state' ) )
+#       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
+#     CommandAttr( undef,
+#             $name
+#           . ' ASC_rainSensor '
+#           . AttrVal( $name, 'ASC_rainSensorDevice',  'none' ) . ':'
+#           . AttrVal( $name, 'ASC_rainSensorReading', 'rain' ) . ' 100 '
+#           . AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 ) )
+#       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+#     CommandAttr( undef,
+#             $name
+#           . ' ASC_brightnessDriveUpDown '
+#           . AttrVal( $name, 'ASC_brightnessMinVal', 500 ) . ':'
+#           . AttrVal( $name, 'ASC_brightnessMaxVal', 800 ) )
+#       if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
+# 
+#     CommandDeleteAttr( undef, $name . ' ASC_temperatureSensor' )
+#       if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_temperatureReading' )
+#       if ( AttrVal( $name, 'ASC_temperatureReading', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_residentsDevice' )
+#       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_residentsDeviceReading' )
+#       if ( AttrVal( $name, 'ASC_residentsDeviceReading', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorDevice' )
+#       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorReading' )
+#       if ( AttrVal( $name, 'ASC_rainSensorReading', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorShuttersClosedPos' )
+#       if (
+#         AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_brightnessMinVal' )
+#       if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
+#     CommandDeleteAttr( undef, $name . ' ASC_brightnessMaxVal' )
+#       if ( AttrVal( $name, 'ASC_brightnessMaxVal', 'none' ) ne 'none' );
 
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
 
@@ -2373,16 +2373,16 @@ sub RenewSunRiseSetShuttersTimer($) {
         $shutters->setInTimerFuncHash(undef);
         CreateSunRiseSetShuttersTimer( $hash, $_ );
 
-        ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
+#        ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
 #         CommandAttr(undef, $_ . ' ASC_BrightnessSensor '.AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700)) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
 
-        $attr{$_}{'ASC_BrightnessSensor'} =
-            AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) . ':'
-          . AttrVal( $_, 'ASC_Brightness_Reading', 'brightness' ) . ' '
-          . AttrVal( $_, 'ASC_BrightnessMinVal',   500 ) . ':'
-          . AttrVal( $_, 'ASC_BrightnessMaxVal',   700 )
-          if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
-
+#         $attr{$_}{'ASC_BrightnessSensor'} =
+#             AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) . ':'
+#           . AttrVal( $_, 'ASC_Brightness_Reading', 'brightness' ) . ' '
+#           . AttrVal( $_, 'ASC_BrightnessMinVal',   500 ) . ':'
+#           . AttrVal( $_, 'ASC_BrightnessMaxVal',   700 )
+#           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
+# 
 #         delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
 #         delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
@@ -5303,7 +5303,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
             <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
             <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
-            <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
+            <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
             <li><strong>ASC_DriveUpMaxDuration</strong> - die Dauer des Hochfahrens des Rollladens plus 5 Sekunden (default: 60)</li>
             <li><strong>ASC_Drive_Offset</strong> - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll. (default: -1)</li>
             <li><strong>ASC_Drive_OffsetStart</strong> - in Sekunden verz&ouml;gerter Wert ab welchen dann erst das Offset startet und dazu addiert wird. Funktioniert nur wenn gleichzeitig ASC_Drive_Offset gesetzt wird. (default: -1)</li>
@@ -5343,7 +5343,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Time_Up_Early</strong> - Sonnenaufgang fr&uuml;hste Zeit zum Hochfahren (default: 05:00)</li>
             <li><strong>ASC_Time_Up_Late</strong> - Sonnenaufgang sp&auml;teste Zeit zum Hochfahren (default: 08:30)</li>
             <li><strong>ASC_Time_Up_WE_Holiday</strong> - Sonnenaufgang fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). (default: 08:00) ACHTUNG!!! in Verbindung mit Brightness f&uuml;r <em>ASC_Up</em> muss die Uhrzeit kleiner sein wie die Uhrzeit aus <em>ASC_Time_Up_Late</em></li>
-            <li><strong>ASC_Up - astro/time/brightness</strong> - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessMinVal erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren (default: astro)</li>
+            <li><strong>ASC_Up - astro/time/brightness</strong> - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte Down Wert von ASC_brightnessDriveUpDown erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren (default: astro)</li>
             <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
             <li><strong>ASC_Ventilate_Window_Open</strong> - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist (default: on)</li>
             <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
