@@ -48,22 +48,22 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.15';
+my $version = '0.6.15.1';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
 
-#    ### alte Attribute welche entfernt werden
-#     my $oldAttr =
-#         'ASC_temperatureSensor '
-#       . 'ASC_temperatureReading '
-#       . 'ASC_residentsDevice '
-#       . 'ASC_residentsDeviceReading '
-#       . 'ASC_rainSensorDevice '
-#       . 'ASC_rainSensorReading '
-#       . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
-#       . 'ASC_brightnessMinVal '
-#       . 'ASC_brightnessMaxVal ';
+   #    ### alte Attribute welche entfernt werden
+   #     my $oldAttr =
+   #         'ASC_temperatureSensor '
+   #       . 'ASC_temperatureReading '
+   #       . 'ASC_residentsDevice '
+   #       . 'ASC_residentsDeviceReading '
+   #       . 'ASC_rainSensorDevice '
+   #       . 'ASC_rainSensorReading '
+   #       . 'ASC_rainSensorShuttersClosedPos:0,10,20,30,40,50,60,70,80,90,100 '
+   #       . 'ASC_brightnessMinVal '
+   #       . 'ASC_brightnessMaxVal ';
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
@@ -92,7 +92,8 @@ sub AutoShuttersControl_Initialize($) {
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
-#       . $oldAttr
+
+      #       . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
@@ -675,7 +676,7 @@ sub ShuttersDeviceScan($) {
 #           . AttrVal( $name, 'ASC_brightnessMinVal', 500 ) . ':'
 #           . AttrVal( $name, 'ASC_brightnessMaxVal', 800 ) )
 #       if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
-# 
+#
 #     CommandDeleteAttr( undef, $name . ' ASC_temperatureSensor' )
 #       if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
 #     CommandDeleteAttr( undef, $name . ' ASC_temperatureReading' )
@@ -916,25 +917,26 @@ sub EventProcessingWindowRec($@) {
           if (  $match =~ /open/
             and $shutters->getShuttersPlace eq 'terrace' );
 
-        my $queryShuttersPosWinRecTilted = (
-              $shutters->getShuttersPosCmdValueNegate
-            ? $shutters->getStatus > $shutters->getVentilatePos
-            : $shutters->getStatus < $shutters->getVentilatePos
-        );
-        my $queryShuttersPosWinRecComfort = (
-              $shutters->getShuttersPosCmdValueNegate
-            ? $shutters->getStatus > $shutters->getComfortOpenPos
-            : $shutters->getStatus < $shutters->getComfortOpenPos
-        );
+        #         my $queryShuttersPosWinRecTilted = (
+        #               $shutters->getShuttersPosCmdValueNegate
+        #             ? $shutters->getStatus > $shutters->getVentilatePos
+        #             : $shutters->getStatus < $shutters->getVentilatePos
+        #         );
+        #         my $queryShuttersPosWinRecComfort = (
+        #               $shutters->getShuttersPosCmdValueNegate
+        #             ? $shutters->getStatus > $shutters->getComfortOpenPos
+        #             : $shutters->getStatus < $shutters->getComfortOpenPos
+        #         );
 
         ASC_Debug( 'EventProcessingWindowRec: '
               . $shutters->getShuttersDev
               . ' - HOMEMODE: '
               . $homemode
               . ' QueryShuttersPosWinRecTilted:'
-              . $queryShuttersPosWinRecTilted
+              . $shutters->getQueryShuttersPos( $shutters->getVentilatePos )
               . ' QueryShuttersPosWinRecComfort: '
-              . $queryShuttersPosWinRecComfort );
+              . $shutters->getQueryShuttersPos( $shutters->getComfortOpenPos )
+        );
 
         if (
                 $match =~ /close/
@@ -993,7 +995,7 @@ sub EventProcessingWindowRec($@) {
                     and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
-            and $queryShuttersPosWinRecTilted
+            and $shutters->getQueryShuttersPos( $shutters->getVentilatePos )
           )
         {
             $shutters->setLastDrive('ventilate - window open');
@@ -1006,12 +1008,13 @@ sub EventProcessingWindowRec($@) {
             my $posValue;
             my $setLastDrive;
             if (    $ascDev->getAutoShuttersControlComfort eq 'on'
-                and $queryShuttersPosWinRecComfort )
+                and
+                $shutters->getQueryShuttersPos( $shutters->getComfortOpenPos ) )
             {
                 $posValue     = $shutters->getComfortOpenPos;
                 $setLastDrive = 'comfort - window open';
             }
-            elsif ( $queryShuttersPosWinRecTilted
+            elsif ( $shutters->getQueryShuttersPos( $shutters->getVentilatePos )
                 and $shutters->getVentilateOpen eq 'on' )
             {
                 $posValue     = $shutters->getVentilatePos;
@@ -2197,11 +2200,11 @@ sub ShuttersCommandSet($$$) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
-    my $queryShuttersPosValue = (
-          $shutters->getShuttersPosCmdValueNegate
-        ? $shutters->getStatus > $posValue
-        : $shutters->getStatus < $posValue
-    );
+    #     my $queryShuttersPosValue = (
+    #           $shutters->getShuttersPosCmdValueNegate
+    #         ? $shutters->getStatus > $posValue
+    #         : $shutters->getStatus < $posValue
+    #     );
 
     if (
         $posValue != $shutters->getShadingPos
@@ -2226,11 +2229,11 @@ sub ShuttersCommandSet($$$) {
                 and (  $shutters->getLockOut eq 'soft'
                     or $shutters->getLockOut eq 'hard' )
                 and $ascDev->getHardLockOut eq 'on'
-                and not $queryShuttersPosValue
+                and not $shutters->getQueryShuttersPos($posValue)
             )
             or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace'
-                and not $queryShuttersPosValue )
+                and not $shutters->getQueryShuttersPos($posValue) )
         )
       )
     {
@@ -2382,7 +2385,7 @@ sub RenewSunRiseSetShuttersTimer($) {
 #           . AttrVal( $_, 'ASC_BrightnessMinVal',   500 ) . ':'
 #           . AttrVal( $_, 'ASC_BrightnessMaxVal',   700 )
 #           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
-# 
+#
 #         delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
 #         delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
@@ -2462,10 +2465,14 @@ sub SunSetShuttersAfterTimerFn($) {
     $shutters->setSunrise(0);
 
     my $posValue;
+
     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
         or $shutters->getVentilateOpen eq 'off' )
     {
         $posValue = $shutters->getClosedPos;
+    }
+    elsif ( $shutters->getQueryShuttersPos( $shutters->getVentilatePos ) ) {
+        $posValue = $shutters->getStatus;
     }
     else { $posValue = $shutters->getVentilatePos; }
 
@@ -2482,14 +2489,15 @@ sub SunSetShuttersAfterTimerFn($) {
         and IsAfterShuttersManualBlocking($shuttersDev)
       )
     {
-        my $queryShuttersPosPrivacyDown = (
-              $shutters->getShuttersPosCmdValueNegate
-            ? $shutters->getStatus > $shutters->getPrivacyDownPos
-            : $shutters->getStatus < $shutters->getPrivacyDownPos
-        );
+        #         my $queryShuttersPosPrivacyDown = (
+        #               $shutters->getShuttersPosCmdValueNegate
+        #             ? $shutters->getStatus > $shutters->getPrivacyDownPos
+        #             : $shutters->getStatus < $shutters->getPrivacyDownPos
+        #         );
 
         if ( $funcHash->{privacyMode} == 1
-            and not $queryShuttersPosPrivacyDown )
+            and
+            not $shutters->getQueryShuttersPos( $shutters->getPrivacyDownPos ) )
         {
             $shutters->setLastDrive('privacy position');
             ShuttersCommandSet( $hash, $shuttersDev,
@@ -3731,6 +3739,18 @@ sub getShuttersPosCmdValueNegate {
     my $self = shift;
 
     return ( $shutters->getOpenPos < $shutters->getClosedPos ? 1 : 0 );
+}
+
+sub getQueryShuttersPos
+{ # Es wird geschaut ob die aktuelle Position des Rollos unterhalb der Zielposition ist
+    my ( $self, $posValue ) =
+      @_;    #   wenn dem so ist wird 1 zurück gegeben ansonsten 0
+
+    return (
+          $shutters->getShuttersPosCmdValueNegate
+        ? $shutters->getStatus > $posValue
+        : $shutters->getStatus < $posValue
+    );
 }
 
 sub getPosSetCmd {
