@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.15.1';
+my $version = '0.6.15.3';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -3713,6 +3713,12 @@ sub setInTimerFuncHash {
     return 0;
 }
 
+sub getIsDay {
+    my $self = shift;
+
+    return FHEM::AutoShuttersControl::IsDay( $self->{shuttersDev} );
+}
+
 sub getFreezeStatus {
     use POSIX qw(strftime);
     my $self = shift;
@@ -5717,6 +5723,10 @@ sub getblockAscDrivesAfterManual {
             <td>ASCenable</td>
             <td>Does <abbr>ASC</abbr> control the shutter?</td>
         </tr>
+        <tr>
+            <td>IsDay</td>
+            <td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td>
+        </tr>
     <table/>
     </p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
@@ -5995,6 +6005,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
+        <tr><td>IsDay</td><td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td></tr>
     <table/>
         </p>
         <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
