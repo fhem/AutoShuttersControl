@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.15.3';
+my $version = '0.6.15.4';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -5725,7 +5725,7 @@ sub getblockAscDrivesAfterManual {
         </tr>
         <tr>
             <td>IsDay</td>
-            <td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td>
+            <td>Contains the current mode of the shutter: day (after sunrise till sunset) or night (sunset till sunrise)</td>
         </tr>
     <table/>
     </p>
