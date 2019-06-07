@@ -6099,7 +6099,8 @@ sub getblockAscDrivesAfterManual {
         "FHEM": 5.00918799,
         "perl": 5.016, 
         "Meta": 0,
-        "JSON": 0
+        "JSON": 0,
+        "Date::Parse": 0
       },
       "recommends": {
       },
