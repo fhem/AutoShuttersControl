@@ -2036,14 +2036,14 @@ sub ShadingProcessingDriveCommand($$) {
     if (    $shutters->getShadingStatus eq 'in'
         and $getShadingPos != $getStatus )
     {
-        my $queryShuttersShadingPos = (
-              $shutters->getShuttersPosCmdValueNegate
-            ? $getStatus > $getShadingPos
-            : $getStatus < $getShadingPos
-        );
+#         my $queryShuttersShadingPos = (
+#               $shutters->getShuttersPosCmdValueNegate
+#             ? $getStatus > $getShadingPos
+#             : $getStatus < $getShadingPos
+#         );
 
         if (
-            not $queryShuttersShadingPos
+            not $shutters->getQueryShuttersPos($shutters->getShadingPos);
             and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace' )
           )
