@@ -5767,7 +5767,7 @@ sub getblockAscDrivesAfterManual {
             <td>ASCenable</td>
             <td>Does <abbr>ASC</abbr> control the shutter?</td>
         </tr>
-    </table>
+    <table/>
     </p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
         <p>
@@ -5802,7 +5802,7 @@ sub getblockAscDrivesAfterManual {
                 <td>ASCenable</td>
                 <td>Is <abbr>ASC</abbr> globally activated?</td>
             </tr>
-        </table>
+        <table/>
 </ul>
 
 =end html
