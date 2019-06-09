@@ -2233,7 +2233,7 @@ sub ShuttersCommandSet($$$) {
             )
             or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace'
-                and not $shutters->getQueryShuttersPos($posValue) )
+                and $shutters->getQueryShuttersPos($posValue) )
         )
       )
     {
