@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.10';
+my $version = '0.6.16.11';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -890,7 +890,7 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if ( $events =~ m#.*state:.*([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?)#
+    if ( $events =~ m#.*state:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?)#
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         my $match = $1;
