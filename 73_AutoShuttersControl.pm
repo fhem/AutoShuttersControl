@@ -2038,14 +2038,14 @@ sub ShadingProcessingDriveCommand($$) {
     if (    $shutters->getShadingStatus eq 'in'
         and $getShadingPos != $getStatus )
     {
-#         my $queryShuttersShadingPos = (
-#               $shutters->getShuttersPosCmdValueNegate
-#             ? $getStatus > $getShadingPos
-#             : $getStatus < $getShadingPos
-#         );
+        #         my $queryShuttersShadingPos = (
+        #               $shutters->getShuttersPosCmdValueNegate
+        #             ? $getStatus > $getShadingPos
+        #             : $getStatus < $getShadingPos
+        #         );
 
         if (
-            not $shutters->getQueryShuttersPos($shutters->getShadingPos);
+            not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
             and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace' )
           )
@@ -2395,10 +2395,10 @@ sub RenewSunRiseSetShuttersTimer($) {
 #         delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
         $attr{$_}{'ASC_Shading_MinMax_Elevation'} =
-            AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
-            if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
+          AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
+          if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
 
-        delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation')
+        delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation' )
           ;    # temporär muss später gelöscht werden ab Version 0.6.17
     }
 }
@@ -2484,14 +2484,15 @@ sub SunSetShuttersAfterTimerFn($) {
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
-    if (  $ascDev->getAutoShuttersControlEvening eq 'on'
-      and IsAfterShuttersManualBlocking($shuttersDev)
-      and (
+    if (
+            $ascDev->getAutoShuttersControlEvening eq 'on'
+        and IsAfterShuttersManualBlocking($shuttersDev)
+        and (
             $shutters->getModeDown eq $homemode
             or (    $shutters->getModeDown eq 'absent'
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
-          )
+        )
       )
     {
         #         my $queryShuttersPosPrivacyDown = (
@@ -2530,13 +2531,17 @@ sub SunRiseShuttersAfterTimerFn($) {
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
-    if (  $ascDev->getAutoShuttersControlMorning eq 'on'
-      and ( $shutters->getModeUp eq $homemode
-        or (    $shutters->getModeUp eq 'absent'
-            and $homemode eq 'gone' )
-        or $shutters->getModeUp eq 'always' )
+    if (
+        $ascDev->getAutoShuttersControlMorning eq 'on'
+        and (
+            $shutters->getModeUp eq $homemode
+            or (    $shutters->getModeUp eq 'absent'
+                and $homemode eq 'gone' )
+            or $shutters->getModeUp eq 'always'
+        )
       )
     {
+
         if (
             (
                    $shutters->getRoommatesStatus eq 'home'
@@ -4160,7 +4165,8 @@ sub getShadingMinOutsideTemperature {
 sub getShadingMinElevation {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal}
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+      ->{minVal}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
@@ -4170,8 +4176,8 @@ sub getShadingMinElevation {
             $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
             ->{LASTGETTIME} ) < 2
       );
-    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{LASTGETTIME} =
-      int( gettimeofday() );
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+      ->{LASTGETTIME} = int( gettimeofday() );
     my ( $min, $max ) =
       FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
         'ASC_Shading_MinMax_Elevation', '25.0:100.0' );
@@ -4179,16 +4185,20 @@ sub getShadingMinElevation {
     ### erwartetes Ergebnis
     # MIN:MAX
 
-    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal} = $min;
-    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal} = $max;
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal} =
+      $min;
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal} =
+      $max;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal};
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+      ->{minVal};
 }
 
 sub getShadingMaxElevation {
-    my $self = shift;    
+    my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal}
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+      ->{maxVal}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
@@ -4200,7 +4210,8 @@ sub getShadingMaxElevation {
       );
     $shutters->getShadingMinElevation;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal};
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+      ->{maxVal};
 }
 
 sub getShadingStateChangeSunny {
