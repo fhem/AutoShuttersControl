@@ -5214,7 +5214,7 @@ sub getblockAscDrivesAfterManual {
 =pod
 =item device
 =item summary       Module for controlling shutters depending on various conditions
-=item summary_DE    Modul zur Automatischen Rolladensteuerung auf Basis bestimmter Ereignisse
+=item summary_DE    Modul zur automatischen Rolladensteuerung auf Basis bestimmter Ereignisse
 
 =begin html
 
