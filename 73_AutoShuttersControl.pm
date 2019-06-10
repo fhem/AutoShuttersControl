@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.3';
+my $version = '0.6.16.6';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -196,7 +196,7 @@ my %userAttrList = (
     'ASC_Shading_Angle_Right'                              => '-',
     'ASC_Shading_StateChange_Sunny'                        => '-',
     'ASC_Shading_StateChange_Cloudy'                       => '-',
-    'ASC_Shading_Min_Elevation'                            => '-',
+    'ASC_Shading_MinMax_Elevation'                         => '-',
     'ASC_Shading_Min_OutsideTemperature'                   => '-',
     'ASC_Shading_WaitingPeriod'                            => '-',
     'ASC_Drive_Offset'                                     => '-',
@@ -1951,6 +1951,7 @@ sub ShadingProcessing($@) {
     if (   $azimuth < $winPosMin
         or $azimuth > $winPosMax
         or $elevation < $shutters->getShadingMinElevation
+        or $elevation > $shutters->getShadingMaxElevation
         or $brightness < $shutters->getShadingStateChangeCloudy
         or $outTemp < $shutters->getShadingMinOutsideTemperature )
     {
@@ -1986,6 +1987,7 @@ sub ShadingProcessing($@) {
     elsif ( $azimuth > $winPosMin
         and $azimuth < $winPosMax
         and $elevation > $shutters->getShadingMinElevation
+        and $elevation < $shutters->getShadingMaxElevation
         and $brightness > $shutters->getShadingStateChangeSunny
         and $outTemp > $shutters->getShadingMinOutsideTemperature )
     {
@@ -2356,11 +2358,9 @@ sub CreateSunRiseSetShuttersTimer($$) {
     }
 
     InternalTimer( $shuttersSunsetUnixtime,
-        'FHEM::AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash )
-      if ( $ascDev->getAutoShuttersControlEvening eq 'on' );
+        'FHEM::AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash );
     InternalTimer( $shuttersSunriseUnixtime,
-        'FHEM::AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash )
-      if ( $ascDev->getAutoShuttersControlMorning eq 'on' );
+        'FHEM::AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash );
 
     $ascDev->setStateReading('created new drive timer');
 }
@@ -2394,7 +2394,12 @@ sub RenewSunRiseSetShuttersTimer($) {
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
 #         delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
+        $attr{$_}{'ASC_Shading_MinMax_Elevation'} =
+            AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
+            if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
 
+        delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation')
+          ;    # temporär muss später gelöscht werden ab Version 0.6.17
     }
 }
 
@@ -2479,14 +2484,14 @@ sub SunSetShuttersAfterTimerFn($) {
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
-    if (
-        (
+    if (  $ascDev->getAutoShuttersControlEvening eq 'on'
+      and IsAfterShuttersManualBlocking($shuttersDev)
+      and (
             $shutters->getModeDown eq $homemode
             or (    $shutters->getModeDown eq 'absent'
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
-        )
-        and IsAfterShuttersManualBlocking($shuttersDev)
+          )
       )
     {
         #         my $queryShuttersPosPrivacyDown = (
@@ -2525,11 +2530,11 @@ sub SunRiseShuttersAfterTimerFn($) {
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
-    if (
-        $shutters->getModeUp eq $homemode
+    if (  $ascDev->getAutoShuttersControlMorning eq 'on'
+      and ( $shutters->getModeUp eq $homemode
         or (    $shutters->getModeUp eq 'absent'
             and $homemode eq 'gone' )
-        or $shutters->getModeUp eq 'always'
+        or $shutters->getModeUp eq 'always' )
       )
     {
         if (
@@ -2552,6 +2557,7 @@ sub SunRiseShuttersAfterTimerFn($) {
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getOpenPos );
         }
     }
+
     CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
 }
 
@@ -4154,7 +4160,47 @@ sub getShadingMinOutsideTemperature {
 sub getShadingMinElevation {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Min_Elevation', 25.0 );
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+            ->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{LASTGETTIME} =
+      int( gettimeofday() );
+    my ( $min, $max ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_Shading_MinMax_Elevation', '25.0:100.0' );
+
+    ### erwartetes Ergebnis
+    # MIN:MAX
+
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal} = $min;
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal} = $max;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal};
+}
+
+sub getShadingMaxElevation {
+    my $self = shift;    
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getShadingMinElevation;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal};
 }
 
 sub getShadingStateChangeSunny {
@@ -5643,8 +5689,8 @@ sub getblockAscDrivesAfterManual {
                         points. East is 90 &deg;, South 180 &deg;, West is 270 &deg; and North is 0 &deg;.
                         Defaults to South (180).
                     </li>
-                    <li><strong>ASC_Shading_Min_Elevation</strong> - Shading starts as this point of sun elevation is
-                        reached, depending also on other sensor values. Defaults to 25.0.
+                    <li><strong>ASC_Shading_MinMax_Elevation</strong> - Shading starts as min point of sun elevation is
+                        reached and end as max point of sun elevation is reached, depending also on other sensor values. Defaults to 25.0:100.0.
                     </li>
                     <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - Shading starts at this outdoor temperature,
                         depending also on other sensor values. Defaults to 18.0.
@@ -5978,10 +6024,10 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Pos_Reading</strong> - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
             <li><strong>ASC_PrivacyDownTime_beforNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
             <li><strong>ASC_PrivacyDown_Pos</strong> - Position den Rollladens f&uuml;r den Sichtschutz (default: 50)</li>
-            <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. On=JA, off=NEIN.</li>
+            <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
             <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
-            <li><strong>SC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li></p>
+            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li></p>
             <ul>
                 <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
                 </br>Damit die Beschattung Funktion hat, m&uuml;ssen folgende Anforderungen erf&uuml;llt sein.
@@ -5991,7 +6037,7 @@ sub getblockAscDrivesAfterManual {
                 <li><strong>ASC_Shading_Angle_Left</strong> - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180° - 85° ==> ab Sonnenpos. 95° wird abgeschattet (default: 75)</li>
                 <li><strong>ASC_Shading_Angle_Right</strong> - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180° + 85° ==> bis Sonnenpos. 265° wird abgeschattet (default: 75)</li>
                 <li><strong>ASC_Shading_Direction</strong> -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 (default: 180)</li>
-                <li><strong>ASC_Shading_Min_Elevation</strong> - ab welcher H&ouml;he des Sonnenstandes soll beschattet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 25.0)</li>
+                <li><strong>ASC_Shading_MinMax_Elevation</strong> - ab welcher min H&ouml;he des Sonnenstandes soll beschattet und ab welcher max H&ouml;he wieder beendet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 25.0:100.0)</li>
                 <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 18)</li>
                 <li><strong>ASC_Shading_Mode - absent,always,off,home</strong> / wann soll die Beschattung nur stattfinden. (default: off)</li>
                 <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung</li>
