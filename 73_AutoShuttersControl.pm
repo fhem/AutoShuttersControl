@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.12';
+my $version = '0.6.16.13';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -119,8 +119,78 @@ use GPUtils qw(:all)
 use Data::Dumper;    #only for Debugging
 use Date::Parse;
 
-my $missingModul = '';
-eval "use JSON qw(decode_json encode_json);1" or $missingModul .= 'JSON ';
+# my $missingModul = '';
+# eval "use JSON qw(decode_json encode_json);1" or $missingModul .= 'JSON ';
+
+# try to use JSON::MaybeXS wrapper
+#   for chance of better performance + open code
+eval {
+    require JSON::MaybeXS;
+    import JSON::MaybeXS qw( decode_json encode_json );
+    1;
+};
+if ($@) {
+    $@ = undef;
+
+    # try to use JSON wrapper
+    #   for chance of better performance
+    eval {
+
+        # JSON preference order
+        local $ENV{PERL_JSON_BACKEND} =
+          'Cpanel::JSON::XS,JSON::XS,JSON::PP,JSON::backportPP'
+          unless ( defined( $ENV{PERL_JSON_BACKEND} ) );
+
+        require JSON;
+        import JSON qw( decode_json encode_json );
+        1;
+    };
+
+    if ($@) {
+        $@ = undef;
+
+        # In rare cases, Cpanel::JSON::XS may
+        #   be installed but JSON|JSON::MaybeXS not ...
+        eval {
+            require Cpanel::JSON::XS;
+            import Cpanel::JSON::XS qw(decode_json encode_json);
+            1;
+        };
+
+        if ($@) {
+            $@ = undef;
+
+            # In rare cases, JSON::XS may
+            #   be installed but JSON not ...
+            eval {
+                require JSON::XS;
+                import JSON::XS qw(decode_json encode_json);
+                1;
+            };
+
+            if ($@) {
+                $@ = undef;
+
+                # Fallback to built-in JSON which SHOULD
+                #   be available since 5.014 ...
+                eval {
+                    require JSON::PP;
+                    import JSON::PP qw(decode_json encode_json);
+                    1;
+                };
+
+                if ($@) {
+                    $@ = undef;
+
+                    # Fallback to JSON::backportPP in really rare cases
+                    require JSON::backportPP;
+                    import JSON::backportPP qw(decode_json encode_json);
+                    1;
+                }
+            }
+        }
+    }
+}
 
 ## Import der FHEM Funktionen
 BEGIN {
@@ -257,12 +327,12 @@ sub Define($$) {
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
-    return
-        'Cannot define ShuttersControl device. Perl modul '
-      . ${missingModul}
-      . 'is missing.'
-      if ($missingModul)
-      ; # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
+#     return
+#         'Cannot define ShuttersControl device. Perl modul '
+#       . ${missingModul}
+#       . 'is missing.'
+#       if ($missingModul)
+#       ; # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
 
     my $name = $a[0];
 
