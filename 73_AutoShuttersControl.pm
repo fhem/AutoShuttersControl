@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.9';
+my $version = '0.6.16.10';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -844,8 +844,6 @@ sub AddNotifyDev($@) {
     %hash = map { ( $_ => 1 ) }
       split( ',', "$notifyDev,$dev" );
 
-    my $match
-      ; # CK: added local variable to save matched event type (open|opened|close|closed|tilt|tilted)
     $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
     my @devs = split( ',', $dev );
@@ -912,9 +910,9 @@ sub EventProcessingWindowRec($@) {
 
         #### Hardware Lock der Rollläden
         $shutters->setHardLockOut('off')
-          if ( $match =~ /close/ and $shutters->getShuttersPlace eq 'terrace' );
+          if ( $match =~ /[Cc]lose/ and $shutters->getShuttersPlace eq 'terrace' );
         $shutters->setHardLockOut('on')
-          if (  $match =~ /open/
+          if (  $match =~ /[Oo]pen/
             and $shutters->getShuttersPlace eq 'terrace' );
 
         #         my $queryShuttersPosWinRecTilted = (
@@ -3376,7 +3374,7 @@ sub CheckIfShuttersWindowRecOpen($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if ( $shutters->getWinStatus =~ /open/ )    # CK: covers: open|opened
+    if ( $shutters->getWinStatus =~ /[Oo]pen/ )    # CK: covers: open|opened
     {
         return 2;
     }
@@ -3385,7 +3383,7 @@ sub CheckIfShuttersWindowRecOpen($) {
     {
         return 1;
     }
-    elsif ( $shutters->getWinStatus =~ /close/ ) {
+    elsif ( $shutters->getWinStatus =~ /[Cc]lose/ ) {
         return 0;
     }                                                 # CK: covers: close|closed
 }
