@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.7';
+my $version = '0.6.16.8';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1002,7 +1002,7 @@ sub EventProcessingWindowRec($@) {
             $shutters->setNoOffset(1);
             $shutters->setDriveCmd( $shutters->getVentilatePos );
         }
-        elsif ( $match =~ /[Oop]en/
+        elsif ( $match =~ /[Oo]pen/
             and $shutters->getSubTyp eq 'threestate' )
         {
             my $posValue;
