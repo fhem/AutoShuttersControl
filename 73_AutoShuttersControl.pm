@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.6';
+my $version = '0.6.16.7';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -892,7 +892,7 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if ( $events =~ m#.*state:.*(open(?>ed)?|closed?|tilt(?>ed)?)#
+    if ( $events =~ m#.*state:.*([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?)#
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         my $match = $1;
@@ -939,7 +939,7 @@ sub EventProcessingWindowRec($@) {
         );
 
         if (
-                $match =~ /close/
+                $match =~ /[Cc]lose/
             and IsAfterShuttersTimeBlocking($shuttersDev)
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
@@ -991,7 +991,7 @@ sub EventProcessingWindowRec($@) {
         elsif (
             (
                 $match =~ /tilt/
-                or (    $match =~ /open/
+                or (    $match =~ /[Oo]pen/
                     and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
@@ -1002,7 +1002,7 @@ sub EventProcessingWindowRec($@) {
             $shutters->setNoOffset(1);
             $shutters->setDriveCmd( $shutters->getVentilatePos );
         }
-        elsif ( $match =~ /open/
+        elsif ( $match =~ /[Oop]en/
             and $shutters->getSubTyp eq 'threestate' )
         {
             my $posValue;
