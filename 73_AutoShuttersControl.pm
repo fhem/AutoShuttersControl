@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.8';
+my $version = '0.6.16.9';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -4188,7 +4188,7 @@ sub getShadingMinElevation {
     $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{minVal} =
       $min;
     $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}->{maxVal} =
-      $max;
+      ( $max ne 'none' ? $max : 100 );
 
     return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
       ->{minVal};
