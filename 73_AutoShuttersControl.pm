@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.11';
+my $version = '0.6.16.12';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -4098,15 +4098,13 @@ sub _getBrightnessSensor {
 
     ### erwartetes Ergebnis
     # DEVICE:READING MAX:MIN
-
-    return $device if ( $device eq 'none' );
     $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device} = $device;
     $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{reading} =
       ( $reading ne 'none' ? $reading : 'brightness' );
     $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermin} =
-      ( $min ne 'none' ? $min : '-1' );
+      ( $min ne 'none' ? $min : -1 );
     $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{triggermax} =
-      ( $max ne 'none' ? $max : '-1' );
+      ( $max ne 'none' ? $max : -1 );
 
     return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}->{device};
 }
