@@ -5216,6 +5216,7 @@ sub getblockAscDrivesAfterManual {
 =item summary       Module for controlling shutters depending on various conditions
 =item summary_DE    Modul zur automatischen Rolladensteuerung auf Basis bestimmter Ereignisse
 
+
 =begin html
 
 <a name="AutoShuttersControl"></a>
@@ -5372,21 +5373,21 @@ sub getblockAscDrivesAfterManual {
                 if the <em>ASC_autoAstroModeMorning</em> attribute is set to <em>HORIZON</em>. Defaults to <em>0</em>.
             </li>
             <a name="ASC_autoShuttersControlComfort"></a>
-            <li><strong>ASC_autoShuttersControlComfort - on/off</strong> -
+            <li><strong>ASC_autoShuttersControlComfort - on|off</strong> -
                 Controls the comfort functions: If a three state sensor, like the <abbr>HmIP-SRH</abbr> window handle
                 sensor, is installed, <abbr>ASC</abbr> will open the window if the sensor signals open position. The
                 <em>ASC_ComfortOpen_Pos</em> attribute has to be set for the shutter to <em>on</em>, defaults to <em>off</em>.
             </li>
             <a name="ASC_autoShuttersControlEvening"></a>
-            <li><strong>ASC_autoShuttersControlEvening - on/off</strong> - Enables the automatic control by <abbr>ASC</abbr>
+            <li><strong>ASC_autoShuttersControlEvening - on|off</strong> - Enables the automatic control by <abbr>ASC</abbr>
                 at the evenings.
             </li>
             <a name="ASC_autoShuttersControlMorning"></a>
-            <li><strong>ASC_autoShuttersControlMorning - on/off</strong> - Enables the automatic control by <abbr>ASC</abbr>
+            <li><strong>ASC_autoShuttersControlMorning - on|off</strong> - Enables the automatic control by <abbr>ASC</abbr>
                 at the mornings.
             </li>
             <a name="ASC_blockAscDrivesAfterManual"></a>
-            <li><strong>ASC_blockAscDrivesAfterManual - 0,1</strong> - If set to <em>1</em>, <abbr>ASC</abbr> will not
+            <li><strong>ASC_blockAscDrivesAfterManual 0|1</strong> - If set to <em>1</em>, <abbr>ASC</abbr> will not
                 automatically control a shutter if there was an manual control to the shutter. To be considered, the
                 <em>ASC_ShuttersLastDrive</em> reading has to contain the value <em>manual</em> and the shutter is in
                 an unknown (i.e. not otherwise configured in <abbr>ASC</abbr>) position.
@@ -5468,7 +5469,7 @@ sub getblockAscDrivesAfterManual {
 
         <p>At shutter devices, controlled by <abbr>ASC</abbr>:</p>
         <ul>
-            <li><strong>ASC - 0/1/2</strong>
+            <li><strong>ASC - 0|1|2</strong>
                 <ul>
                     <li>0 - don't create attributes for <abbr>ASC</abbr> at the first scan and don't be controlled
                     by <abbr>ASC</abbr></li>
@@ -5478,7 +5479,7 @@ sub getblockAscDrivesAfterManual {
                     controlled by <em><abbr>pct</abbr></em> values.</li>
                 </ul>
             </li>
-            <li><strong>ASC_Antifreeze - soft/am/pm/hard/off</strong> - Freeze protection.
+            <li><strong>ASC_Antifreeze - soft|am|pm|hard|off</strong> - Freeze protection.
                 <ul>
                     <li>soft - see <em>ASC_Antifreeze_Pos</em>.</li>
                     <li>hard / <abbr>am</abbr> / <abbr>pm</abbr> - freeze protection will be active (everytime,
