@@ -129,6 +129,7 @@ eval {
     import JSON::MaybeXS qw( decode_json encode_json );
     1;
 };
+
 if ($@) {
     $@ = undef;
 
