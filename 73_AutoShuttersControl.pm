@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.17.3';
+my $version = '0.6.17.5';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -1907,11 +1907,11 @@ sub EventProcessingTwilightDevice($@) {
                 );
             }
 
-            if (  not IsDay($shuttersDev)
-              and $shutters->getShadingStatus ne 'out' )
+            if ( not IsDay($shuttersDev)
+                and $shutters->getShadingStatus ne 'out' )
             {
-                $shutters->setShadingStatus('out')
-                $shutters->setShadingLastStatus('in')
+                $shutters->setShadingStatus('out');
+                $shutters->setShadingLastStatus('in');
             }
         }
     }
@@ -1927,11 +1927,12 @@ sub ShadingProcessing($@) {
     ) = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
-    $shutters->setShadingLastStatus($shutters->getShadingStatus)
-      if (  $shutters->getShadingLastStatus ne $shutters->getShadingStatus
-        and ($shutters->getShadingStatus eq 'in'
-          or $shutters->getShadingStatus eq 'out')
-         );
+    $shutters->setShadingLastStatus( $shutters->getShadingStatus )
+      if (
+        $shutters->getShadingLastStatus ne $shutters->getShadingStatus
+        and (  $shutters->getShadingStatus eq 'in'
+            or $shutters->getShadingStatus eq 'out' )
+      );
 
     ASC_Debug(
             'ShadingProcessing: '
@@ -2100,11 +2101,14 @@ sub ShadingProcessing($@) {
     }
 
     ShadingProcessingDriveCommand( $hash, $shuttersDev )
-      if ( ($shutters->getShadingStatus eq 'out'
-          and $shutters->getShadingLastStatus eq 'in')
-        or ($shutters->getShadingStatus eq 'in'
-          and $shutters->getShadingLastStatus eq 'out')
-        );
+      if (
+        (
+                $shutters->getShadingStatus eq 'out'
+            and $shutters->getShadingLastStatus eq 'in'
+        )
+        or (    $shutters->getShadingStatus eq 'in'
+            and $shutters->getShadingLastStatus eq 'out' )
+      );
 }
 
 sub ShadingProcessingDriveCommand($$) {
@@ -4024,7 +4028,8 @@ sub setShadingLastStatus {
 
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} = $value
       if ( defined($value) );
-    $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} = int( gettimeofday() )
+    $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} =
+      int( gettimeofday() )
       if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
     return 0;
 }
@@ -4053,12 +4058,13 @@ sub getShadingStatus {   # Werte für value = in, out, in reserved, out reserved
         and defined( $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} ) );
 }
 
-sub getShadingLastStatus {   # Werte für value = in, out
+sub getShadingLastStatus {    # Werte für value = in, out
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL}
       if (  defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} )
-        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} ) );
+        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} )
+      );
 }
 
 sub getIfInShading {
