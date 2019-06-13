@@ -48,7 +48,7 @@ use strict;
 use warnings;
 use FHEM::Meta;
 
-my $version = '0.6.16.13';
+my $version = '0.6.17';
 
 sub AutoShuttersControl_Initialize($) {
     my ($hash) = @_;
@@ -328,6 +328,7 @@ sub Define($$) {
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
+
 #     return
 #         'Cannot define ShuttersControl device. Perl modul '
 #       . ${missingModul}
@@ -981,7 +982,8 @@ sub EventProcessingWindowRec($@) {
 
         #### Hardware Lock der Rollläden
         $shutters->setHardLockOut('off')
-          if ( $match =~ /[Cc]lose/ and $shutters->getShuttersPlace eq 'terrace' );
+          if (  $match =~ /[Cc]lose/
+            and $shutters->getShuttersPlace eq 'terrace' );
         $shutters->setHardLockOut('on')
           if (  $match =~ /[Oo]pen/
             and $shutters->getShuttersPlace eq 'terrace' );
