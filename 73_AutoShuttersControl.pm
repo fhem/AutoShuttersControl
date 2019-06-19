@@ -61,12 +61,9 @@ use warnings;
 use POSIX;
 use utf8;
 use FHEM::Meta;
-
-use GPUtils qw(:all)
-  ;    # wird für den Import der FHEM Funktionen aus der fhem.pl benötigt
+use GPUtils qw(GP_Import GP_Export);
 use Data::Dumper;    #only for Debugging
 use Date::Parse;
-our $VERSION = 'v0.6.19';
 
 # try to use JSON::MaybeXS wrapper
 #   for chance of better performance + open code
@@ -179,26 +176,14 @@ BEGIN {
           computeAlignTime
           ReplaceEventMap)
     );
+    
+    GP_Export(
+        qw(
+          Initialize
+          ascAPIget
+          )
+    );
 }
-
-# _Export - Export references to main context using a different naming schema
-sub _Export {
-    no strict qw/refs/;    ## no critic
-    my $pkg  = caller(0);
-    my $main = $pkg;
-    $main =~ s/^(?:.+::)?([^:]+)$/main::$1\_/g;
-    foreach (@_) {
-        *{ $main . $_ } = *{ $pkg . '::' . $_ };
-    }
-}
-
-#-- Export to main context with different name
-_Export(
-    qw(
-      Initialize
-      ascAPIget
-      )
-);
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 my %userAttrList = (
@@ -344,21 +329,16 @@ sub Define($$) {
     my @a = split( '[ \t][ \t]*', $def );
 
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
+    use version 0.1; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
+
     return 'only one AutoShuttersControl instance allowed'
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
 
-#     return
-#         'Cannot define ShuttersControl device. Perl modul '
-#       . ${missingModul}
-#       . 'is missing.'
-#       if ($missingModul)
-#       ; # Abbruch wenn benötigte Hilfsmodule nicht vorhanden sind / vorerst unwichtig
-
     my $name = $a[0];
+    $hash->{VERPON} = '0.6.19';
 
-    $hash->{VERSION} = $VERSION;
     $hash->{MID}     = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
     $hash->{NOTIFYDEV} = 'global,'
@@ -718,12 +698,6 @@ sub ShuttersDeviceScan($) {
 
 #         delFromDevAttrList( $_, 'ASC_Wind_SensorDevice' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
-#         delFromDevAttrList( $_, 'ASC_Wind_SensorReading' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.0.10
-#         delFromDevAttrList( $_, 'ASC_Wind_minMaxSpeed' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
-#         delFromDevAttrList( $_, 'ASC_Wind_Pos' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta6
 #         CommandDeleteReading( undef, $_ . ' ASC_Time_PrivacyDriveUp' )
 #           if ( ReadingsVal( $_, 'ASC_Time_PrivacyDriveUp', 'none' ) ne 'none' )
 #           ;    # temporär muss später gelöscht werden ab Version 0.6.3
@@ -748,47 +722,11 @@ sub ShuttersDeviceScan($) {
 #    ### Temporär und muss später entfernt werden
 #     CommandAttr( undef,
 #             $name
-#           . ' ASC_tempSensor '
-#           . AttrVal( $name, 'ASC_temperatureSensor',  'none' ) . ':'
-#           . AttrVal( $name, 'ASC_temperatureReading', 'temperature' ) )
-#       if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
-#     CommandAttr( undef,
-#             $name
-#           . ' ASC_residentsDev '
-#           . AttrVal( $name, 'ASC_residentsDevice',        'none' ) . ':'
-#           . AttrVal( $name, 'ASC_residentsDeviceReading', 'state' ) )
-#       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
-#     CommandAttr( undef,
-#             $name
-#           . ' ASC_rainSensor '
-#           . AttrVal( $name, 'ASC_rainSensorDevice',  'none' ) . ':'
-#           . AttrVal( $name, 'ASC_rainSensorReading', 'rain' ) . ' 100 '
-#           . AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 50 ) )
-#       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
-#     CommandAttr( undef,
-#             $name
 #           . ' ASC_brightnessDriveUpDown '
 #           . AttrVal( $name, 'ASC_brightnessMinVal', 500 ) . ':'
 #           . AttrVal( $name, 'ASC_brightnessMaxVal', 800 ) )
 #       if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
 #
-#     CommandDeleteAttr( undef, $name . ' ASC_temperatureSensor' )
-#       if ( AttrVal( $name, 'ASC_temperatureSensor', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_temperatureReading' )
-#       if ( AttrVal( $name, 'ASC_temperatureReading', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_residentsDevice' )
-#       if ( AttrVal( $name, 'ASC_residentsDevice', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_residentsDeviceReading' )
-#       if ( AttrVal( $name, 'ASC_residentsDeviceReading', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorDevice' )
-#       if ( AttrVal( $name, 'ASC_rainSensorDevice', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorReading' )
-#       if ( AttrVal( $name, 'ASC_rainSensorReading', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_rainSensorShuttersClosedPos' )
-#       if (
-#         AttrVal( $name, 'ASC_rainSensorShuttersClosedPos', 'none' ) ne 'none' );
-#     CommandDeleteAttr( undef, $name . ' ASC_brightnessMinVal' )
-#       if ( AttrVal( $name, 'ASC_brightnessMinVal', 'none' ) ne 'none' );
 #     CommandDeleteAttr( undef, $name . ' ASC_brightnessMaxVal' )
 #       if ( AttrVal( $name, 'ASC_brightnessMaxVal', 'none' ) ne 'none' );
 
@@ -1011,17 +949,6 @@ sub EventProcessingWindowRec($@) {
           if (  $match =~ /[Oo]pen/
             and $shutters->getShuttersPlace eq 'terrace' );
 
-        #         my $queryShuttersPosWinRecTilted = (
-        #               $shutters->getShuttersPosCmdValueNegate
-        #             ? $shutters->getStatus > $shutters->getVentilatePos
-        #             : $shutters->getStatus < $shutters->getVentilatePos
-        #         );
-        #         my $queryShuttersPosWinRecComfort = (
-        #               $shutters->getShuttersPosCmdValueNegate
-        #             ? $shutters->getStatus > $shutters->getComfortOpenPos
-        #             : $shutters->getStatus < $shutters->getComfortOpenPos
-        #         );
-
         ASC_Debug( 'EventProcessingWindowRec: '
               . $shutters->getShuttersDev
               . ' - HOMEMODE: '
@@ -1182,8 +1109,6 @@ sub EventProcessingRoommate($@) {
                 (
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
-
-                    #                     or $getRoommatesLastStatus eq 'home'
                 )
                 and $shutters->getRoommatesStatus eq 'home'
               )
@@ -1768,8 +1693,6 @@ sub EventProcessingBrightness($@) {
             );
         }
     }
-    ### Wenn es kein Brightness Reading ist muss auch die Shading Funktion nicht aufgerufen werden.
-#     else { EventProcessingShadingBrightness( $hash, $shuttersDev, $events ); }
     else {
         ASC_Debug( 'EventProcessingBrightness: '
               . $shutters->getShuttersDev
@@ -2148,12 +2071,6 @@ sub ShadingProcessingDriveCommand($$) {
     if (    $shutters->getShadingStatus eq 'in'
         and $getShadingPos != $getStatus )
     {
-        #         my $queryShuttersShadingPos = (
-        #               $shutters->getShuttersPosCmdValueNegate
-        #             ? $getStatus > $getShadingPos
-        #             : $getStatus < $getShadingPos
-        #         );
-
         if (
             not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
             and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
@@ -2311,12 +2228,6 @@ sub ShuttersCommandSet($$$) {
     my ( $hash, $shuttersDev, $posValue ) = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
-
-    #     my $queryShuttersPosValue = (
-    #           $shutters->getShuttersPosCmdValueNegate
-    #         ? $shutters->getStatus > $posValue
-    #         : $shutters->getStatus < $posValue
-    #     );
 
     if (
         $posValue != $shutters->getShadingPos
@@ -2487,23 +2398,6 @@ sub RenewSunRiseSetShuttersTimer($) {
         CreateSunRiseSetShuttersTimer( $hash, $_ );
 
 #        ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
-#         CommandAttr(undef, $_ . ' ASC_BrightnessSensor '.AttrVal($_, 'ASC_Brightness_Sensor', 'none').':'.AttrVal($_, 'ASC_Brightness_Reading', 'brightness').' '.AttrVal($_, 'ASC_BrightnessMinVal', 500).':'.AttrVal($_, 'ASC_BrightnessMaxVal', 700)) if ( AttrVal($_, 'ASC_Brightness_Sensor', 'none') ne 'none' );
-
-#         $attr{$_}{'ASC_BrightnessSensor'} =
-#             AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) . ':'
-#           . AttrVal( $_, 'ASC_Brightness_Reading', 'brightness' ) . ' '
-#           . AttrVal( $_, 'ASC_BrightnessMinVal',   500 ) . ':'
-#           . AttrVal( $_, 'ASC_BrightnessMaxVal',   700 )
-#           if ( AttrVal( $_, 'ASC_Brightness_Sensor', 'none' ) ne 'none' );
-#
-#         delFromDevAttrList( $_, 'ASC_Brightness_Sensor' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-#         delFromDevAttrList( $_, 'ASC_Brightness_Reading' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-#         delFromDevAttrList( $_, 'ASC_BrightnessMinVal' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
-#         delFromDevAttrList( $_, 'ASC_BrightnessMaxVal' )
-#           ;    # temporär muss später gelöscht werden ab Version 0.4.11beta9
         $attr{$_}{'ASC_Shading_MinMax_Elevation'} =
           AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
           if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
@@ -2605,12 +2499,6 @@ sub SunSetShuttersAfterTimerFn($) {
         )
       )
     {
-        #         my $queryShuttersPosPrivacyDown = (
-        #               $shutters->getShuttersPosCmdValueNegate
-        #             ? $shutters->getStatus > $shutters->getPrivacyDownPos
-        #             : $shutters->getStatus < $shutters->getPrivacyDownPos
-        #         );
-
         if ( $funcHash->{privacyMode} == 1
             and
             not $shutters->getQueryShuttersPos( $shutters->getPrivacyDownPos ) )
@@ -6277,6 +6165,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
+  "version": "v0.6.19",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
