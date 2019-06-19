@@ -329,7 +329,7 @@ sub Define($$) {
     my @a = split( '[ \t][ \t]*', $def );
 
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
-    use version 0.1; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
+    use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
 
     return 'only one AutoShuttersControl instance allowed'
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
@@ -337,11 +337,11 @@ sub Define($$) {
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
 
     my $name = $a[0];
-    $hash->{VERPON} = '0.6.19';
 
-    $hash->{MID}     = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
+    $hash->{MID}        = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-    $hash->{NOTIFYDEV} = 'global,'
+    $hash->{VERSION}    = version->parse($VERSION)->normal;
+    $hash->{NOTIFYDEV}  = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
                   #$hash->{shutters} = $shutters;
                   #$hash->{ascDev} = $ascDev;
