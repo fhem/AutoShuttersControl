@@ -176,14 +176,15 @@ BEGIN {
           computeAlignTime
           ReplaceEventMap)
     );
-    
-    GP_Export(
-        qw(
-          Initialize
-          ascAPIget
-          )
-    );
 }
+
+#-- Export to main context with different name
+GP_Export(
+    qw(
+      Initialize
+      ascAPIget
+      )
+);
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 my %userAttrList = (
@@ -340,7 +341,13 @@ sub Define($$) {
 
     $hash->{MID}        = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-    $hash->{VERSION}    = version->parse($VERSION)->normal;
+      
+#   ### Versionierung ###
+    # Stable Version
+#     $hash->{VERSION}    = version->parse($VERSION)->normal;
+    # Developer Version
+    $hash->{VERSION}    = FHEM::Meta::Get( $hash, 'x_developmentversion' );
+
     $hash->{NOTIFYDEV}  = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
                   #$hash->{shutters} = $shutters;
@@ -6166,6 +6173,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
+  "x_developmentversion": "v0.6.19.4",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
