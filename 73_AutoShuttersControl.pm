@@ -1310,7 +1310,13 @@ sub EventProcessingResidents($@) {
               )
             {
                 $shutters->setLastDrive('selfeDefense inactive');
-                $shutters->setDriveCmd( $shutters->getLastPos );
+                $shutters->setDriveCmd(
+                    (
+                          $shutters->getPrivacyDownStatus
+                        ? $shutters->getPrivacyDownPos
+                        : $shutters->getLastPos
+                    )
+                );
                 $shutters->setHardLockOut('on')
                   if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' );
@@ -2354,10 +2360,14 @@ sub CreateSunRiseSetShuttersTimer($$) {
     my %funcHash = (
         hash           => $hash,
         shuttersdevice => $shuttersDev,
-        privacyMode    => 0,
-        sunsettime     => $shuttersSunsetUnixtime,
-        sunrisetime    => $shuttersSunriseUnixtime
+
+        #         privacyMode    => 0,
+        sunsettime  => $shuttersSunsetUnixtime,
+        sunrisetime => $shuttersSunriseUnixtime
     );
+
+    ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
+    $shutters->setPrivacyDownStatus(0);
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
     $shutters->setInTimerFuncHash( \%funcHash );
@@ -2378,7 +2388,10 @@ sub CreateSunRiseSetShuttersTimer($$) {
                 ),
                 0
             );
-            $funcHash{privacyMode} = 1;
+
+            #             $funcHash{privacyMode} = 1;
+            ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
+            $shutters->setPrivacyDownStatus(0);
         }
     }
 
@@ -2507,11 +2520,13 @@ sub SunSetShuttersAfterTimerFn($) {
             and
             not $shutters->getQueryShuttersPos( $shutters->getPrivacyDownPos ) )
         {
+            $shutters->setPrivacyDownStatus(1);
             $shutters->setLastDrive('privacy position');
             ShuttersCommandSet( $hash, $shuttersDev,
                 $shutters->getPrivacyDownPos );
         }
         elsif ( $funcHash->{privacyMode} == 0 ) {
+            $shutters->setPrivacyDownStatus(0);
             $shutters->setLastDrive('night close');
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
@@ -3731,6 +3746,19 @@ sub setInTimerFuncHash {
     $self->{ $self->{shuttersDev} }{inTimerFuncHash} = $inTimerFuncHash
       if ( defined($inTimerFuncHash) );
     return 0;
+}
+
+sub setPrivacyDownStatus {
+    my ( $self, $statusValue ) = @_;
+
+    $self->{ $self->{shuttersDev} }->{privacyDownStatus} = $statusValue;
+    return 0;
+}
+
+sub getPrivacyDownStatus {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{privacyDownStatus};
 }
 
 sub getIsDay {
@@ -5852,6 +5880,10 @@ sub getblockAscDrivesAfterManual {
             <td>ASCenable</td>
             <td>Does <abbr>ASC</abbr> control the shutter?</td>
         </tr>
+        <tr>
+            <td>PrivacyDownStatus</td>
+            <td>Is the shutter currently in privacyDown mode</td>
+        </tr>
     <table/>
     </p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
@@ -6131,6 +6163,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
         <tr><td>IsDay</td><td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td></tr>
+        <tr><td>PrivacyDownStatus</td><td>Abfrage ob das Rollo aktuell im PrivacyDown Status steht</td></tr>
     <table/>
         </p>
         <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
