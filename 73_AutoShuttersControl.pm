@@ -209,6 +209,7 @@ my %userAttrList = (
     'ASC_PrivacyDownTime_beforNightClose'        => '-',
     'ASC_PrivacyDown_Pos'                        => '-',
     'ASC_WindowRec'                              => '-',
+    'ASC_TempSensor'                             => '-',
     'ASC_Ventilate_Window_Open:on,off'           => '-',
     'ASC_LockOut:soft,hard,off'                  => '-',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
@@ -3957,6 +3958,12 @@ sub getRoommatesLastStatus {
     return $revStatePrio{$minPrio};
 }
 
+sub getOutTemp {
+    my $self = shift;
+
+    return ReadingsVal( $shutters->_getTempSensor, $shutters->getTempSensorReading, -100 );
+}
+
 ### Begin Beschattung Objekt mit Daten befüllen
 sub setShadingStatus {
     my ( $self, $value ) = @_;
@@ -4134,6 +4141,58 @@ sub getShadingMode {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'off' );
+}
+
+sub _getTempSensor {
+    my $self = shift;
+    
+    return $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{device}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_TempSensor}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_TempSensor}
+            ->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{LASTGETTIME} =
+      int( gettimeofday() );
+    my ( $device, $reading ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_TempSensor', 'none' );
+
+    ### erwartetes Ergebnis
+    # DEVICE:READING
+    $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{device} = $device;
+    $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading} =
+      ( $reading ne 'none' ? $reading : 'temperature' );
+
+    return $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{device};
+}
+
+sub getTempSensorReading {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_TempSensor}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_TempSensor}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->_getTempSensor;
+
+    return (
+        defined(
+            $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading}
+          )
+        ? $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading}
+        : 'temperature'
+    );
 }
 
 sub _getBrightnessSensor {
@@ -4869,7 +4928,7 @@ sub getMonitoredDevs {
 sub getOutTemp {
     my $self = shift;
 
-    return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempReading,
+    return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempSensorReading,
         -100 );
 }
 
@@ -5106,7 +5165,7 @@ sub _getTempSensor {
     return $self->{ASC_tempSensor}->{device};
 }
 
-sub getTempReading {
+sub getTempSensorReading {
     my $self = shift;
     my $name = $self->{name};
 
@@ -5884,6 +5943,10 @@ sub getblockAscDrivesAfterManual {
             <td>PrivacyDownStatus</td>
             <td>Is the shutter currently in privacyDown mode</td>
         </tr>
+        <tr>
+            <td>outTemp</td>
+            <td>Current temperature of a configured temperature device, return -100 is no device configured</td>
+        </tr>
     <table/>
     </p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
@@ -5897,7 +5960,7 @@ sub getblockAscDrivesAfterManual {
             </tr>
             <tr>
                 <td>outTemp</td>
-                <td>Current temperature of a configured temperature device</td>
+                <td>Current temperature of a configured temperature device, return -100 is no device configured</td>
             </tr>
             <tr>
                 <td>ResidentsStatus</td>
@@ -6164,6 +6227,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
         <tr><td>IsDay</td><td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td></tr>
         <tr><td>PrivacyDownStatus</td><td>Abfrage ob das Rollo aktuell im PrivacyDown Status steht</td></tr>
+        <tr><td>OutTemp</td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
     <table/>
         </p>
         <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
@@ -6172,7 +6236,7 @@ sub getblockAscDrivesAfterManual {
         </ul>
         <table border="1">
             <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
-            <tr><td>outTemp </td><td>aktuelle Außentemperatur sofern Sensor definiert</td></tr>
+            <tr><td>outTemp </td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
             <tr><td>ResidentsStatus</td><td>aktueller Status des Residents Devices</td></tr>
             <tr><td>ResidentsLastStatus</td><td>letzter Status des Residents Devices</td></tr>
             <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
@@ -6203,7 +6267,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.6",
+  "x_developmentversion": "v0.6.19.7",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
