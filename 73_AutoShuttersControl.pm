@@ -1814,7 +1814,7 @@ sub EventProcessingTwilightDevice($@) {
                   . ' WindProtection: '
                   . $shutters->getWindProtectionStatus );
 
-            if (and $ascDev->getAutoShuttersControlShading eq 'on'
+            if (    $ascDev->getAutoShuttersControlShading eq 'on'
                 and $shutters->getRainProtectionStatus eq 'unprotected'
                 and $shutters->getWindProtectionStatus eq 'unprotected'
               )
