@@ -1814,12 +1814,7 @@ sub EventProcessingTwilightDevice($@) {
                   . ' WindProtection: '
                   . $shutters->getWindProtectionStatus );
 
-            if (
-                (
-                       $shutters->getShadingMode eq 'always'
-                    or $shutters->getShadingMode eq $homemode
-                )
-                and $ascDev->getAutoShuttersControlShading eq 'on'
+            if (and $ascDev->getAutoShuttersControlShading eq 'on'
                 and $shutters->getRainProtectionStatus eq 'unprotected'
                 and $shutters->getWindProtectionStatus eq 'unprotected'
               )
@@ -1910,7 +1905,8 @@ sub ShadingProcessing($@) {
         or ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
         ( $shutters->getShadingWaitingPeriod / 2 )
         or not IsAfterShuttersTimeBlocking($shuttersDev)
-        or not IsAfterShuttersManualBlocking($shuttersDev) );
+        or not IsAfterShuttersManualBlocking($shuttersDev)
+        or $shutters->getShadingMode eq 'off' );
 
     Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
@@ -1937,13 +1933,10 @@ sub ShadingProcessing($@) {
             or $azimuth > $winPosMax
         )
         and $shutters->getShadingStatus ne 'out'
-        and $getStatus != $getShadingPos
       )
     {
+        $shutters->setShadingLastStatus('in');
         $shutters->setShadingStatus('out');
-        $shutters->setLastDrive('shading out');
-
-        ShuttersCommandSet( $hash, $shuttersDev, $shutters->getLastPos );
 
         ASC_Debug( 'ShadingProcessing: '
               . $shutters->getShuttersDev
@@ -1954,8 +1947,7 @@ sub ShadingProcessing($@) {
 "AutoShuttersControl ($name) - Shading Processing - Es ist Sonnenuntergang vorbei oder die Aussentemperatur unterhalb der Shading Temperatur "
         );
     }
-
-    if (   $azimuth < $winPosMin
+    elsif (   $azimuth < $winPosMin
         or $azimuth > $winPosMax
         or $elevation < $shutters->getShadingMinElevation
         or $elevation > $shutters->getShadingMaxElevation
@@ -6264,7 +6256,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.10",
+  "x_developmentversion": "v0.6.19.11",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
