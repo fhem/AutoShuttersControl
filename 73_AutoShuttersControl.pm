@@ -988,7 +988,6 @@ sub EventProcessingWindowRec($@) {
               )
             {
                 if (    $shutters->getShadingStatus eq 'in'
-                    and $shutters->getShuttersPlace eq 'terrace'
                     and $shutters->getShadingPos != $shutters->getStatus )
                 {
                     $shutters->setLastDrive('shading in');
@@ -1001,7 +1000,6 @@ sub EventProcessingWindowRec($@) {
                     $shutters->setDriveCmd( $shutters->getOpenPos );
                 }
             }
-
             elsif (
                     $shutters->getModeUp ne 'absent'
                 and $shutters->getModeUp ne 'off'
