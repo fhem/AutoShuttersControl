@@ -1746,8 +1746,7 @@ sub EventProcessingShadingBrightness($@) {
               . ' WindProtection: '
               . $shutters->getWindProtectionStatus );
 
-        if (    IsDay($shuttersDev)
-            and $ascDev->getAutoShuttersControlShading eq 'on'
+        if (    $ascDev->getAutoShuttersControlShading eq 'on'
             and $shutters->getRainProtectionStatus eq 'unprotected'
             and $shutters->getWindProtectionStatus eq 'unprotected' )
         {
@@ -1767,14 +1766,6 @@ sub EventProcessingShadingBrightness($@) {
                   . $shutters->getShuttersDev
                   . ' - Alle Bedingungen zur weiteren Beschattungsverarbeitung sind erfüllt. Es wird nun die eigentliche Beschattungsfunktion aufgerufen'
             );
-        }
-        elsif ( $shutters->getShadingStatus eq 'in'
-            and $shutters->getRainProtectionStatus eq 'unprotected'
-            and $shutters->getWindProtectionStatus eq 'unprotected' )
-        {
-            $shutters->setShadingStatus('out');
-            $shutters->setShadingLastStatus('in');
-            ShadingProcessingDriveCommand( $hash, $shuttersDev );
         }
     }
 }
@@ -1830,7 +1821,6 @@ sub EventProcessingTwilightDevice($@) {
                        $shutters->getShadingMode eq 'always'
                     or $shutters->getShadingMode eq $homemode
                 )
-                and IsDay($shuttersDev)
                 and $ascDev->getAutoShuttersControlShading eq 'on'
                 and $shutters->getRainProtectionStatus eq 'unprotected'
                 and $shutters->getWindProtectionStatus eq 'unprotected'
@@ -1852,13 +1842,6 @@ sub EventProcessingTwilightDevice($@) {
                       . $shutters->getShuttersDev
                       . ' - Alle Bedingungen zur weiteren Beschattungsverarbeitung sind erfüllt. Es wird nun die Beschattungsfunktion ausgeführt'
                 );
-            }
-
-            if ( not IsDay($shuttersDev)
-                and $shutters->getShadingStatus ne 'out' )
-            {
-                $shutters->setShadingStatus('out');
-                $shutters->setShadingLastStatus('in');
             }
         }
     }
@@ -1909,10 +1892,6 @@ sub ShadingProcessing($@) {
           )
     );
 
-    $shutters->setShadingStatus('out')
-      if ( not IsDay($shuttersDev)
-        and $shutters->getShadingStatus ne 'out' );
-
     Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
@@ -1956,7 +1935,6 @@ sub ShadingProcessing($@) {
     if (
         (
                $outTemp < $shutters->getShadingMinOutsideTemperature - 3
-            or not IsDay($shuttersDev)
             or $azimuth < $winPosMin
             or $azimuth > $winPosMax
         )
@@ -6267,7 +6245,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.7",
+  "x_developmentversion": "v0.6.19.8",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
