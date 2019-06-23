@@ -2231,11 +2231,15 @@ sub ShuttersCommandSet($$$) {
                 and (  $ascDev->getAutoShuttersControlComfort eq 'off'
                     or $shutters->getComfortOpenPos != $posValue )
                 and $shutters->getVentilateOpen eq 'on'
+                and $shutters->getShuttersPlace eq 'window'
+                and $shutters->getLockOut ne 'off'
             )
             or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getSubTyp eq 'threestate'
                 and $ascDev->getAutoShuttersControlComfort eq 'on'
-                and $shutters->getVentilateOpen eq 'off' )
+                and $shutters->getVentilateOpen eq 'off'
+                and $shutters->getShuttersPlace eq 'window'
+                and $shutters->getLockOut ne 'off')
             or (
                 CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and (  $shutters->getLockOut eq 'soft'
@@ -2245,7 +2249,7 @@ sub ShuttersCommandSet($$$) {
             )
             or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace'
-                and $shutters->getQueryShuttersPos($posValue) )
+                and not $shutters->getQueryShuttersPos($posValue) )
         )
       )
     {
@@ -2469,18 +2473,6 @@ sub SunSetShuttersAfterTimerFn($) {
     $shutters->setSunset(1);
     $shutters->setSunrise(0);
 
-    my $posValue;
-
-    if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-        or $shutters->getVentilateOpen eq 'off' )
-    {
-        $posValue = $shutters->getClosedPos;
-    }
-    elsif ( $shutters->getQueryShuttersPos( $shutters->getVentilatePos ) ) {
-        $posValue = $shutters->getStatus;
-    }
-    else { $posValue = $shutters->getVentilatePos; }
-
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
@@ -2495,19 +2487,17 @@ sub SunSetShuttersAfterTimerFn($) {
         )
       )
     {
-        if ( $funcHash->{privacyMode} == 1
-            and
-            not $shutters->getQueryShuttersPos( $shutters->getPrivacyDownPos ) )
+        if ( $funcHash->{privacyMode} == 1 )
         {
             $shutters->setPrivacyDownStatus(1);
             $shutters->setLastDrive('privacy position');
             ShuttersCommandSet( $hash, $shuttersDev,
-                $shutters->getPrivacyDownPos );
+                PositionValueWindowRec($shuttersDev,$shutters->getClosedPos) );
         }
         elsif ( $funcHash->{privacyMode} == 0 ) {
             $shutters->setPrivacyDownStatus(0);
             $shutters->setLastDrive('night close');
-            ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+            ShuttersCommandSet( $hash, $shuttersDev, PositionValueWindowRec($shuttersDev,$shutters->getClosedPos) );
         }
     }
 
@@ -2736,6 +2726,37 @@ sub GetMonitoredDevs($) {
 #################################
 ## my little helper
 #################################
+
+sub PositionValueWindowRec($$) {
+    my ($shuttersDev,$posValue) = @_;
+
+    if (  CheckIfShuttersWindowRecOpen($shuttersDev) == 1
+      and $shutters->getVentilateOpen eq 'on')
+    {
+        $posValue = $shutters->getVentilatePos;
+    }
+    elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+        and $shutters->getSubTyp eq 'threestate'
+        and $ascDev->getAutoShuttersControlComfort eq 'on'
+      )
+    {
+        $posValue = $shutters->getComfortOpenPos;
+    }
+    elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+        and ($shutters->getSubTyp eq 'threestate'
+          or $shutters->getSubTyp eq 'twostate')
+        and $shutters->getVentilateOpen eq 'on'
+      )
+    {
+        $posValue = $shutters->getVentilatePos;
+    }
+
+    if ( $shutters->getQueryShuttersPos( $posValue ) ) {
+        $posValue = $shutters->getStatus;
+    }
+
+    return $posValue;
+}
 
 sub AutoSearchTwilightDev($) {
     my $hash = shift;
@@ -6245,7 +6266,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.8",
+  "x_developmentversion": "v0.6.19.10",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
