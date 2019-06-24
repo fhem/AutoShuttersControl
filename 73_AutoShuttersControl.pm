@@ -1719,6 +1719,7 @@ sub EventProcessingShadingBrightness($@) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
+    my $outTemp = $ascDev->getOutTemp;
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -1749,13 +1750,14 @@ sub EventProcessingShadingBrightness($@) {
             and $shutters->getRainProtectionStatus eq 'unprotected'
             and $shutters->getWindProtectionStatus eq 'unprotected' )
         {
+            $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );
             ShadingProcessing(
                 $hash,
                 $shuttersDev,
                 $ascDev->getAzimuth,
                 $ascDev->getElevation,
                 $1,
-                $ascDev->getOutTemp,
+                $outTemp,
                 $shutters->getDirection,
                 $shutters->getShadingAngleLeft,
                 $shutters->getShadingAngleRight
@@ -1788,6 +1790,7 @@ sub EventProcessingTwilightDevice($@) {
     if ( $events =~ m#(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)# ) {
         my $name = $device;
         my ( $azimuth, $elevation );
+        my $outTemp = $ascDev->getOutTemp;
 
         $azimuth   = $2 if ( $1 eq 'azimuth'   or $1 eq 'SunAz' );
         $elevation = $2 if ( $1 eq 'elevation' or $1 eq 'SunAlt' );
@@ -1807,6 +1810,7 @@ sub EventProcessingTwilightDevice($@) {
 
             my $homemode = $shutters->getRoommatesStatus;
             $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+            $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );
 
             ASC_Debug( 'EventProcessingTwilightDevice: '
                   . $shutters->getShuttersDev
@@ -1826,7 +1830,7 @@ sub EventProcessingTwilightDevice($@) {
                     $azimuth,
                     $elevation,
                     $shutters->getBrightness,
-                    $ascDev->getOutTemp,
+                    $outTemp,
                     $shutters->getDirection,
                     $shutters->getShadingAngleLeft,
                     $shutters->getShadingAngleRight
@@ -3762,9 +3766,11 @@ sub getFreezeStatus {
     use POSIX qw(strftime);
     my $self = shift;
     my $daytime = strftime( "%P", localtime() );
+    my $outTemp = $ascDev->getOutTemp;
+       $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );
 
     if (    $shutters->getAntiFreeze ne 'off'
-        and $ascDev->getOutTemp <= $ascDev->getFreezeTemp )
+        and $outTemp <= $ascDev->getFreezeTemp )
     {
 
         if ( $shutters->getAntiFreeze eq 'soft' ) {
@@ -6257,7 +6263,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.12",
+  "x_developmentversion": "v0.6.19.13",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
