@@ -1274,7 +1274,8 @@ sub EventProcessingResidents($@) {
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
             elsif (
-                    $shutters->getShadingMode eq 'home'
+                    ( $shutters->getShadingMode eq 'home'
+                   or $shutters->getShadingMode eq 'always' )
                 and IsDay($shuttersDev)
                 and $shutters->getIfInShading
                 and $shutters->getStatus != $shutters->getShadingPos
@@ -6256,7 +6257,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.11",
+  "x_developmentversion": "v0.6.19.12",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
