@@ -237,15 +237,16 @@ my %userAttrList = (
     'ASC_Antifreeze:off,soft,hard,am,pm'                   => '-',
 'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
       => [ '', 85, 15 ],
-    'ASC_Partymode:on,off'            => '-',
-    'ASC_Roommate_Device'             => '-',
-    'ASC_Roommate_Reading'            => '-',
-    'ASC_Self_Defense_Exclude:on,off' => '-',
-    'ASC_WiggleValue'                 => '-',
-    'ASC_WindParameters'              => '-',
-    'ASC_DriveUpMaxDuration'          => '-',
-    'ASC_WindProtection:on,off'       => '-',
-    'ASC_RainProtection:on,off'       => '-',
+    'ASC_Partymode:on,off'              => '-',
+    'ASC_Roommate_Device'               => '-',
+    'ASC_Roommate_Reading'              => '-',
+    'ASC_Self_Defense_Exclude:on,off'   => '-',
+    'ASC_Self_Defense_Mode:absent,gone' => '-',
+    'ASC_WiggleValue'                   => '-',
+    'ASC_WindParameters'                => '-',
+    'ASC_DriveUpMaxDuration'            => '-',
+    'ASC_WindProtection:on,off'         => '-',
+    'ASC_RainProtection:on,off'         => '-'
 );
 
 my %posSetCmds = (
@@ -369,7 +370,7 @@ sub Define($$) {
 
     CommandAttr( undef,
         $name
-          . ' devStateIcon selfeDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfeDefense.active:status_locked selfeDefense.inactive:status_open day.open:scene_day night.close:scene_night shading.in:weather_sun shading.out:weather_cloudy'
+          . ' devStateIcon selfDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfDefense.active:status_locked selfDefense.inactive:status_open day.open:scene_day night.close:scene_night shading.in:weather_sun shading.out:weather_cloudy'
     ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
@@ -1207,8 +1208,7 @@ sub EventProcessingResidents($@) {
             my $getModeDown = $shutters->getModeDown;
             $shutters->setHardLockOut('off');
             if (
-                    CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                and $ascDev->getSelfDefense eq 'on'
+                    $ascDev->getSelfDefense eq 'on'
                 and $shutters->getSelfDefenseExclude eq 'off'
                 or (
                     (
@@ -1220,11 +1220,12 @@ sub EventProcessingResidents($@) {
                 )
               )
             {
-                if (    CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+                if ( ( CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+                      or $shutters->getSelfDefenseMode eq 'absent' )
                     and $ascDev->getSelfDefense eq 'on'
                     and $shutters->getSelfDefenseExclude eq 'off' )
                 {
-                    $shutters->setLastDrive('selfeDefense active');
+                    $shutters->setLastDrive('selfDefense active');
                 }
                 else { $shutters->setLastDrive('residents absent'); }
 
@@ -1233,7 +1234,8 @@ sub EventProcessingResidents($@) {
         }
     }
     elsif ( $events =~ m#$reading:\s(gone)#
-        and $ascDev->getSelfDefense eq 'on' )
+        and $ascDev->getSelfDefense eq 'on'
+        and $shutters->getSelfDefenseMode eq 'gone')
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
@@ -1241,7 +1243,7 @@ sub EventProcessingResidents($@) {
             my $getModeDown = $shutters->getModeDown;
             $shutters->setHardLockOut('off');
             if ( $shutters->getShuttersPlace eq 'terrace' ) {
-                $shutters->setLastDrive('selfeDefense terrace');
+                $shutters->setLastDrive('selfDefense terrace');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
         }
@@ -1309,7 +1311,7 @@ sub EventProcessingResidents($@) {
                 and not $shutters->getIfInShading
               )
             {
-                $shutters->setLastDrive('selfeDefense inactive');
+                $shutters->setLastDrive('selfDefense inactive');
                 $shutters->setDriveCmd(
                     (
                           $shutters->getPrivacyDownStatus
@@ -3937,10 +3939,10 @@ sub getRoommatesLastStatus {
         'asleep'    => 1,
         'gotosleep' => 2,
         'awoken'    => 3,
-        'home'      => 4,
-        'absent'    => 5,
-        'gone'      => 6,
-        'none'      => 7
+        'home'      => 7,
+        'absent'    => 6,
+        'gone'      => 5,
+        'none'      => 4
     );
     my $minPrio = 10;
 
@@ -4116,6 +4118,12 @@ sub getSelfDefenseExclude {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_Exclude', 'off' );
+}
+
+sub getSelfDefenseMode {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_Mode', 'gone' );
 }
 
 sub getWiggleValue {
@@ -6263,7 +6271,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.13",
+  "x_developmentversion": "v0.6.19.14",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
