@@ -1212,13 +1212,8 @@ sub EventProcessingResidents($@) {
             if (
                     $ascDev->getSelfDefense eq 'on'
                 and $shutters->getSelfDefenseExclude eq 'off'
-                or (
-                    (
-                           $getModeDown eq 'absent'
-                        or $getModeDown eq 'always'
-                    )
-                    and not IsDay($shuttersDev)
-                    and IsAfterShuttersTimeBlocking($shuttersDev)
+                or (   $getModeDown eq 'absent'
+                    or $getModeDown eq 'always'
                 )
               )
             {
@@ -1236,10 +1231,19 @@ sub EventProcessingResidents($@) {
                       ) # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
                       if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                         and $shutters->getSelfDefenseMode eq 'absent' );
+                    $shutters->setDriveCmd( $shutters->getClosedPos );
                 }
-                else { $shutters->setLastDrive('residents absent'); }
-
-                $shutters->setDriveCmd( $shutters->getClosedPos );
+                elsif (
+                    (   $getModeDown eq 'absent'
+                     or $getModeDown eq 'always'
+                    )
+                    and not IsDay($shuttersDev)
+                    and IsAfterShuttersTimeBlocking($shuttersDev)
+                  )
+                {
+                    $shutters->setLastDrive('residents absent');
+                    $shutters->setDriveCmd( $shutters->getClosedPos );
+                }
             }
         }
     }
@@ -1322,6 +1326,7 @@ sub EventProcessingResidents($@) {
                 and not $shutters->getIfInShading
                 and (  $getResidentsLastStatus eq 'gone'
                     or $getResidentsLastStatus eq 'absent' )
+                and $shutters->getLastDrive eq 'selfDefense active'
               )
             {
                 RemoveInternalTimer( $shutters->getSelfDefenseAbsentTimerhash )
@@ -6363,7 +6368,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.17",
+  "x_developmentversion": "v0.6.19.18",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
