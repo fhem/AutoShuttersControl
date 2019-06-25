@@ -4191,7 +4191,7 @@ sub getSelfDefenseMode {
 sub getSelfDefenseAbsentDelay {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_AbsentDelay', 1 );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_AbsentDelay', 300 );
 }
 
 sub getWiggleValue {
@@ -5796,7 +5796,7 @@ sub getblockAscDrivesAfterManual {
                 aktiv werden ohne das Fenster auf sind. (default: gone)
             </li>
             <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei
-                Residents absent verz&ouml;gert werden. (default: 1)
+                Residents absent verz&ouml;gert werden. (default: 300)
             </li>
             <li><strong>ASC_ShuttersPlace window|terrace</strong> - If set to <em>terrace</em>, and the
                 residents device is set to <em>gone</em>, and <em>selfDefense</em> is activated, the shutter will
@@ -6241,7 +6241,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
             <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li>
             <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - ab welchen Residents Status soll Selfdefense aktiv werden ohne das Fenster auf sind. (default: gone)</li>
-            <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 1)</li>
+            <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 300)</li>
             <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li></p>
             <ul>
                 <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
@@ -6348,7 +6348,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.15",
+  "x_developmentversion": "v0.6.19.16",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
