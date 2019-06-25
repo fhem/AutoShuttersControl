@@ -242,6 +242,7 @@ my %userAttrList = (
     'ASC_Roommate_Reading'              => '-',
     'ASC_Self_Defense_Exclude:on,off'   => '-',
     'ASC_Self_Defense_Mode:absent,gone' => '-',
+    'ASC_Self_Defense_AbsentDelay'      => '-',
     'ASC_WiggleValue'                   => '-',
     'ASC_WindParameters'                => '-',
     'ASC_DriveUpMaxDuration'            => '-',
@@ -717,6 +718,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
         $shutters->setNoOffset(0);
+        $shutters->setSelfDefenseAbsent(0,0);
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
         $shutters->setShadingStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'out' : 'in' )
@@ -1226,6 +1228,9 @@ sub EventProcessingResidents($@) {
                     and $shutters->getSelfDefenseExclude eq 'off' )
                 {
                     $shutters->setLastDrive('selfDefense active');
+                    $shutters->setSelfDefenseAbsent(0,1)        # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
+                      if (  CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                        and $shutters->getSelfDefenseMode eq 'absent' );
                 }
                 else { $shutters->setLastDrive('residents absent'); }
 
@@ -1300,28 +1305,41 @@ sub EventProcessingResidents($@) {
                 $shutters->setLastDrive('shading out');
                 $shutters->setDriveCmd( $shutters->getLastPos );
             }
-            elsif (
-                    $ascDev->getSelfDefense eq 'on'
-                and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                and $shutters->getSelfDefenseExclude eq 'off'
-                or (    $getResidentsLastStatus eq 'gone'
-                    and $shutters->getShuttersPlace eq 'terrace' )
-                and (  $getModeUp eq 'absent'
-                    or $getModeUp eq 'off' )
+            elsif ( (
+                      $ascDev->getSelfDefense eq 'on'
+                  and $shutters->getSelfDefenseExclude eq 'off'
+                  or (    $getResidentsLastStatus eq 'gone'
+                      and $shutters->getShuttersPlace eq 'terrace' ) )
                 and not $shutters->getIfInShading
+                and ( $getResidentsLastStatus eq 'gone'
+                   or $getResidentsLastStatus eq 'absent' )
               )
             {
-                $shutters->setLastDrive('selfDefense inactive');
-                $shutters->setDriveCmd(
-                    (
-                          $shutters->getPrivacyDownStatus
-                        ? $shutters->getPrivacyDownPos
-                        : $shutters->getLastPos
-                    )
-                );
-                $shutters->setHardLockOut('on')
-                  if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    and $shutters->getShuttersPlace eq 'terrace' );
+                RemoveInternalTimer($shutters->getSelfDefenseAbsentTimerhash)
+                  if (     $getResidentsLastStatus eq 'absent'
+                       and $ascDev->getSelfDefense eq 'on'
+                       and $shutters->getSelfDefenseExclude eq 'off'
+                       and CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                       and not $shutters->getSelfDefenseAbsent
+                       and $shutters->getSelfDefenseAbsentTimerrun);
+
+                if ( $shutters->getStatus == $shutters->getClosedPos ) {
+                    $shutters->setHardLockOut('on')
+                    if (  CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                        and $shutters->getShuttersPlace eq 'terrace'
+                        and ($getModeUp eq 'absent'
+                        or $getModeUp eq 'off')
+                        and CheckIfShuttersWindowRecOpen($shuttersDev) != 0);
+
+                    $shutters->setLastDrive('selfDefense inactive');
+                    $shutters->setDriveCmd(
+                            (
+                                $shutters->getPrivacyDownStatus
+                                ? $shutters->getPrivacyDownPos
+                                : $shutters->getOpenPos
+                            )
+                        );
+                }
             }
             elsif (
                     $shutters->getStatus == $shutters->getClosedPos
@@ -3491,6 +3509,10 @@ sub SetCmdFn($) {
           . $posValue . ' '
           . $shutters->getPosSetCmd . ' '
           . $posValue );
+
+    $shutters->setSelfDefenseAbsent(0,0)
+      if ( not $shutters->getSelfDefenseAbsent
+        and $shutters->getSelfDefenseAbsentTimerrun );
 }
 
 sub ASC_Debug($) {
@@ -3585,6 +3607,16 @@ sub setNoOffset {
     return 0;
 }
 
+sub setSelfDefenseAbsent {
+    my ( $self, $timerrun, $active, $timerhash ) = @_;
+
+    $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerrun} = $timerrun;
+    $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{active} = $active;
+    $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerhash} = $timerhash
+      if (  defined($timerhash) );
+    return 0;
+}
+
 sub setDriveCmd {
     my ( $self, $posValue ) = @_;
     my $offSet;
@@ -3615,7 +3647,18 @@ sub setDriveCmd {
     $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset < 0 );
     $offSetStart = $shutters->getOffsetStart;
 
-    if ( $offSetStart > 0 and not $shutters->getNoOffset ) {
+    if (  $shutters->getSelfDefenseAbsent
+      and not $shutters->getSelfDefenseAbsentTimerrun
+      and $shutters->getSelfDefenseExclude eq 'off'
+      and $shutters->getLastDrive eq 'selfDefense active'
+      and $ascDev->getSelfDefense eq 'on' )
+    {
+        InternalTimer(
+            gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
+            'FHEM::AutoShuttersControl::SetCmdFn', \%h );
+        $shutters->setSelfDefenseAbsent(1,0,\%h);
+    }
+    elsif ( $offSetStart > 0 and not $shutters->getNoOffset ) {
         InternalTimer(
             gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
             'FHEM::AutoShuttersControl::SetCmdFn', \%h );
@@ -3820,6 +3863,25 @@ sub getNoOffset {
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{noOffset};
+}
+
+sub getSelfDefenseAbsent {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{active};
+}
+
+sub getSelfDefenseAbsentTimerrun {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerrun};
+}
+
+sub getSelfDefenseAbsentTimerhash {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerhash}
+      if ( defined($self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerhash}) );
 }
 
 sub getLastDrive {
@@ -4124,6 +4186,12 @@ sub getSelfDefenseMode {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_Mode', 'gone' );
+}
+
+sub getSelfDefenseAbsentDelay {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_AbsentDelay', 1 );
 }
 
 sub getWiggleValue {
@@ -5724,6 +5792,12 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Self_Defense_Exclude on|off</strong> - If set to on, the shutter will not be closed
                 if the self defense mode is activated and residents are absent. Defaults to off.
             </li>
+            <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - ab welchen Residents Status soll Selfdefense
+                aktiv werden ohne das Fenster auf sind. (default: gone)
+            </li>
+            <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei
+                Residents absent verz&ouml;gert werden. (default: 1)
+            </li>
             <li><strong>ASC_ShuttersPlace window|terrace</strong> - If set to <em>terrace</em>, and the
                 residents device is set to <em>gone</em>, and <em>selfDefense</em> is activated, the shutter will
                 be closed. If set to window, will not. Defaults to window.
@@ -6165,6 +6239,9 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
             <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
+            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li>
+            <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - ab welchen Residents Status soll Selfdefense aktiv werden ohne das Fenster auf sind. (default: gone)</li>
+            <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 1)</li>
             <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li></p>
             <ul>
                 <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
@@ -6271,7 +6348,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.14",
+  "x_developmentversion": "v0.6.19.15",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
