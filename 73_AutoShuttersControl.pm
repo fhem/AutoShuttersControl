@@ -4106,7 +4106,7 @@ sub getIfInShading {
     return (
         (
                   $shutters->getShadingMode ne 'off'
-              and $shutters->getShadingStatus eq 'in'
+              and $shutters->getShadingLastStatus eq 'out'
         ) ? 1 : 0
     );
 }
