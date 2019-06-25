@@ -2695,7 +2695,7 @@ sub GetShuttersInformation($) {
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getLockOut . "</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getLastDrive . "</td>";
+        $ret .= "<td>" . ReadingsVal( $shutter, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getStatus . "</td>";
         $ret .= "<td> </td>";
