@@ -2344,6 +2344,8 @@ sub ShuttersCommandSet($$$) {
             or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 and $shutters->getShuttersPlace eq 'terrace'
                 and not $shutters->getQueryShuttersPos($posValue) )
+            or (    $shutters->getRainProtectionStatus eq 'protected'
+                and $shutters->getWindProtectionStatus eq 'protected' )
         )
       )
     {
@@ -6434,7 +6436,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.22",
+  "x_developmentversion": "v0.6.19.23",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
