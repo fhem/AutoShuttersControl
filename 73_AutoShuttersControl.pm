@@ -1980,13 +1980,6 @@ sub ShadingProcessing($@) {
     my $winPosMin = $winPos - $angleMinus;
     my $winPosMax = $winPos + $anglePlus;
 
-    #     $shutters->setShadingLastStatus( $shutters->getShadingStatus )
-    #       if (
-    #         $shutters->getShadingLastStatus ne $shutters->getShadingStatus
-    #         and (  $shutters->getShadingStatus eq 'in'
-    #             or $shutters->getShadingStatus eq 'out' )
-    #       );
-
     if (
         (
                $outTemp < $shutters->getShadingMinOutsideTemperature - 3
@@ -2019,15 +2012,17 @@ sub ShadingProcessing($@) {
           if ( $shutters->getShadingStatus eq 'in'
             or $shutters->getShadingStatus eq 'in reserved' );
 
-        $shutters->setShadingStatus('out')
-          if (
+        if (
             (
                 $shutters->getShadingStatus eq 'out reserved'
                 and
                 ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp )
-                > $shutters->getShadingWaitingPeriod
-            )
-          );
+            ) > $shutters->getShadingWaitingPeriod
+          )
+        {
+            $shutters->setShadingStatus('out');
+            $shutters->setShadingLastStatus('in');
+        }
 
         Log3( $name, 4,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
@@ -2055,11 +2050,15 @@ sub ShadingProcessing($@) {
           if ( $shutters->getShadingStatus eq 'out'
             or $shutters->getShadingStatus eq 'out reserved' );
 
-        $shutters->setShadingStatus('in')
-          if ( $shutters->getShadingStatus eq 'in reserved'
+        if ( $shutters->getShadingStatus eq 'in reserved'
             and
             ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
-            ( $shutters->getShadingWaitingPeriod / 2 ) );
+            ( $shutters->getShadingWaitingPeriod / 2 ) )
+        {
+            $shutters->setShadingStatus('in');
+            $shutters->setShadingLastStatus('out');
+        }
+
         Log3( $name, 4,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
               . $shuttersDev
