@@ -1213,8 +1213,7 @@ sub EventProcessingResidents($@) {
                     $ascDev->getSelfDefense eq 'on'
                 and $shutters->getSelfDefenseExclude eq 'off'
                 or (   $getModeDown eq 'absent'
-                    or $getModeDown eq 'always'
-                )
+                    or $getModeDown eq 'always' )
               )
             {
                 if (
@@ -1234,8 +1233,9 @@ sub EventProcessingResidents($@) {
                     $shutters->setDriveCmd( $shutters->getClosedPos );
                 }
                 elsif (
-                    (   $getModeDown eq 'absent'
-                     or $getModeDown eq 'always'
+                    (
+                           $getModeDown eq 'absent'
+                        or $getModeDown eq 'always'
                     )
                     and not IsDay($shuttersDev)
                     and IsAfterShuttersTimeBlocking($shuttersDev)
@@ -1350,7 +1350,7 @@ sub EventProcessingResidents($@) {
                     $shutters->setLastDrive('selfDefense inactive');
                     $shutters->setDriveCmd(
                         (
-                              $shutters->getPrivacyDownStatus
+                              $shutters->getPrivacyDownStatus == 2
                             ? $shutters->getPrivacyDownPos
                             : $shutters->getOpenPos
                         )
@@ -1415,7 +1415,14 @@ sub EventProcessingRain($@) {
                 and $shutters->getRainProtectionStatus eq 'protected' )
             {
                 $shutters->setLastDrive('rain un-protected');
-                $shutters->setDriveCmd( $shutters->getLastPos );
+                $shutters->setDriveCmd(
+                    (
+                        IsDay($shuttersDev) ? $shutters->getLastPos
+                        : (   $shutters->getPrivacyDownStatus == 2
+                            ? $shutters->getPrivacyDownPos
+                            : $shutters->getClosedPos )
+                    )
+                );
                 $shutters->setRainProtectionStatus('unprotected');
             }
         }
@@ -1463,7 +1470,14 @@ sub EventProcessingWind($@) {
                 and $shutters->getWindProtectionStatus eq 'protected' )
             {
                 $shutters->setLastDrive('wind un-protected');
-                $shutters->setDriveCmd( $shutters->getLastPos );
+                $shutters->setDriveCmd(
+                    (
+                        IsDay($shuttersDev) ? $shutters->getLastPos
+                        : (   $shutters->getPrivacyDownStatus == 2
+                            ? $shutters->getPrivacyDownPos
+                            : $shutters->getClosedPos )
+                    )
+                );
                 $shutters->setWindProtectionStatus('unprotected');
             }
 
@@ -2375,14 +2389,15 @@ sub CreateSunRiseSetShuttersTimer($$) {
     my %funcHash = (
         hash           => $hash,
         shuttersdevice => $shuttersDev,
-
-        #         privacyMode    => 0,
-        sunsettime  => $shuttersSunsetUnixtime,
-        sunrisetime => $shuttersSunriseUnixtime
+        sunsettime     => $shuttersSunsetUnixtime,
+        sunrisetime    => $shuttersSunriseUnixtime
     );
 
     ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
-    $shutters->setPrivacyDownStatus(0);
+    ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
+    ##  also das Rollo in privacyDown Position steht und VOR der endgültigen Nachfahrt
+    $shutters->setPrivacyDownStatus(0)
+      if ( not defined( $shutters->setPrivacyDownStatus ) );
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
     $shutters->setInTimerFuncHash( \%funcHash );
@@ -2403,10 +2418,8 @@ sub CreateSunRiseSetShuttersTimer($$) {
                 ),
                 0
             );
-
-            #             $funcHash{privacyMode} = 1;
             ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
-            $shutters->setPrivacyDownStatus(0);
+            $shutters->setPrivacyDownStatus(1);
         }
     }
 
@@ -2520,14 +2533,18 @@ sub SunSetShuttersAfterTimerFn($) {
       )
     {
 
-        if ( $funcHash->{privacyMode} == 1 ) {
-            $shutters->setPrivacyDownStatus(1);
+        if ( $shutters->getPrivacyDownStatus == 1 ) {
+            $shutters->setPrivacyDownStatus(2);
             $shutters->setLastDrive('privacy position');
-            ShuttersCommandSet( $hash, $shuttersDev,
-                PositionValueWindowRec( $shuttersDev, $shutters->getClosedPos )
+            ShuttersCommandSet(
+                $hash,
+                $shuttersDev,
+                PositionValueWindowRec(
+                    $shuttersDev, $shutters->getPrivacyDownPos
+                )
             );
         }
-        elsif ( $funcHash->{privacyMode} == 0 ) {
+        else {
             $shutters->setPrivacyDownStatus(0);
             $shutters->setLastDrive('night close');
             ShuttersCommandSet( $hash, $shuttersDev,
@@ -2695,7 +2712,8 @@ sub GetShuttersInformation($) {
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getLockOut . "</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . ReadingsVal( $shutter, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
+        $ret .= "<td>"
+          . ReadingsVal( $shutter, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getStatus . "</td>";
         $ret .= "<td> </td>";
@@ -6368,7 +6386,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.18",
+  "x_developmentversion": "v0.6.19.19",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
