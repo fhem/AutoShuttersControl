@@ -1079,6 +1079,7 @@ sub EventProcessingRoommate($@) {
         my $getModeUp              = $shutters->getModeUp;
         my $getModeDown            = $shutters->getModeDown;
         my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
+        my $posValue;
 
         if (
             ( $1 eq 'home' or $1 eq 'awoken' )
@@ -1109,9 +1110,19 @@ sub EventProcessingRoommate($@) {
                 Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_2: $shuttersDev und Events $events"
                 );
-                $shutters->setLastDrive('roommate awoken');
-                ShuttersCommandSet( $hash, $shuttersDev,
-                    $shutters->getOpenPos );
+
+                if (    $shutters->getIfInShading
+                    and $shutters->getStatus != $shutters->getShadingPos )
+                {
+                    $shutters->setLastDrive('shading in');
+                    $posValue = $shutters->getShadingPos;
+                }
+                else {
+                    $shutters->setLastDrive('roommate awoken');
+                    $posValue = $shutters->getOpenPos;
+                }
+
+                ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
 
             if (
@@ -1129,34 +1140,52 @@ sub EventProcessingRoommate($@) {
                         or $getModeDown eq 'always' )
                   )
                 {
-                    my $position;
                     $shutters->setLastDrive('roommate home');
 
                     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                         or $shutters->getVentilateOpen eq 'off' )
                     {
-                        $position = $shutters->getClosedPos;
+                        $posValue = $shutters->getClosedPos;
                     }
                     else {
-                        $position = $shutters->getVentilatePos;
+                        $posValue = $shutters->getVentilatePos;
                         $shutters->setLastDrive(
                             $shutters->getLastDrive . ' - ventilate mode' );
                     }
 
-                    ShuttersCommandSet( $hash, $shuttersDev, $position );
+                    ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                 }
                 elsif (
                         IsDay($shuttersDev)
-                    and $shutters->getStatus == $shutters->getClosedPos
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeUp eq 'home'
                         or $getModeUp eq 'always' )
-                    and not $shutters->getIfInShading
                   )
                 {
-                    $shutters->setLastDrive('roommate home');
-                    ShuttersCommandSet( $hash, $shuttersDev,
-                        $shutters->getOpenPos );
+                    if (    $shutters->getIfInShading
+                        and $shutters->getStatus == $shutters->getOpenPos )
+                    {
+                        $shutters->setLastDrive('shading in');
+                        $posValue = $shutters->getShadingPos;
+                    }
+                    elsif (
+                        not $shutters->getIfInShading
+                        and (  $shutters->getStatus == $shutters->getClosedPos
+                            or $shutters->getStatus ==
+                            $shutters->getShadingPos )
+                      )
+                    {
+                        $shutters->setLastDrive(
+                            (
+                                $shutters->getStatus == $shutters->getClosedPos
+                                ? 'roommate home'
+                                : 'shading out'
+                            )
+                        );
+                        $posValue = $shutters->getOpenPos;
+                    }
+
+                    ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                 }
             }
         }
@@ -1170,28 +1199,43 @@ sub EventProcessingRoommate($@) {
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
-            my $position;
             $shutters->setLastDrive('roommate asleep');
 
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                 or $shutters->getVentilateOpen eq 'off' )
             {
-                $position = $shutters->getClosedPos;
+                $posValue = $shutters->getClosedPos;
             }
             else {
-                $position = $shutters->getVentilatePos;
+                $posValue = $shutters->getVentilatePos;
                 $shutters->setLastDrive(
                     $shutters->getLastDrive . ' - ventilate mode' );
             }
 
-            ShuttersCommandSet( $hash, $shuttersDev, $position );
+            ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
-        elsif ( $getModeDown eq 'absent'
+        elsif (
+                $getModeDown eq 'absent'
             and $1 eq 'absent'
-            and not IsDay($shuttersDev) )
+            and ( not IsDay($shuttersDev)
+                or $shutters->getShadingMode eq 'absent' )
+          )
         {
-            $shutters->setLastDrive('roommate absent');
-            ShuttersCommandSet( $hash, $shuttersDev, $shutters->getClosedPos );
+            if (    IsDay($shuttersDev)
+                and $shutters->getIfInShading
+                and
+                not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
+                and $shutters->getShadingMode eq 'absent' )
+            {
+                $posValue = $shutters->getShadingPos;
+                $shutters->setLastDrive('shading in');
+            }
+            else {
+                $posValue = $shutters->getClosedPos;
+                $shutters->setLastDrive('roommate absent');
+            }
+
+            ShuttersCommandSet( $hash, $shuttersDev, $$posValue );
         }
     }
 }
@@ -6390,7 +6434,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.20",
+  "x_developmentversion": "v0.6.19.22",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
