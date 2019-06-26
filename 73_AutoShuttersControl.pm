@@ -1906,12 +1906,6 @@ sub ShadingProcessing($@) {
     ) = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
-    $shutters->setShadingLastStatus( $shutters->getShadingStatus )
-      if (
-        $shutters->getShadingLastStatus ne $shutters->getShadingStatus
-        and (  $shutters->getShadingStatus eq 'in'
-            or $shutters->getShadingStatus eq 'out' )
-      );
 
     ASC_Debug(
             'ShadingProcessing: '
@@ -1982,6 +1976,13 @@ sub ShadingProcessing($@) {
     my $winPosMin = $winPos - $angleMinus;
     my $winPosMax = $winPos + $anglePlus;
 
+#     $shutters->setShadingLastStatus( $shutters->getShadingStatus )
+#       if (
+#         $shutters->getShadingLastStatus ne $shutters->getShadingStatus
+#         and (  $shutters->getShadingStatus eq 'in'
+#             or $shutters->getShadingStatus eq 'out' )
+#       );
+
     if (
         (
                $outTemp < $shutters->getShadingMinOutsideTemperature - 3
@@ -1999,8 +2000,8 @@ sub ShadingProcessing($@) {
               . ' - Es ist Nacht oder die Aussentemperatur unterhalb der Shading Temperatur. Die Beschattung wird Zwangsbeendet'
         );
 
-        return Log3( $name, 4,
-"AutoShuttersControl ($name) - Shading Processing - Es ist Sonnenuntergang vorbei oder die Aussentemperatur unterhalb der Shading Temperatur "
+        Log3( $name, 4,
+"AutoShuttersControl ($name) - Shading Processing - Der Sonnenstand ist ausserhalb der Winkelangaben oder die Aussentemperatur unterhalb der Shading Temperatur "
         );
     }
     elsif ($azimuth < $winPosMin
