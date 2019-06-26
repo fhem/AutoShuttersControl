@@ -1418,9 +1418,11 @@ sub EventProcessingRain($@) {
                 $shutters->setDriveCmd(
                     (
                         IsDay($shuttersDev) ? $shutters->getLastPos
-                        : (   $shutters->getPrivacyDownStatus == 2
+                        : (
+                              $shutters->getPrivacyDownStatus == 2
                             ? $shutters->getPrivacyDownPos
-                            : $shutters->getClosedPos )
+                            : $shutters->getClosedPos
+                        )
                     )
                 );
                 $shutters->setRainProtectionStatus('unprotected');
@@ -1473,9 +1475,11 @@ sub EventProcessingWind($@) {
                 $shutters->setDriveCmd(
                     (
                         IsDay($shuttersDev) ? $shutters->getLastPos
-                        : (   $shutters->getPrivacyDownStatus == 2
+                        : (
+                              $shutters->getPrivacyDownStatus == 2
                             ? $shutters->getPrivacyDownPos
-                            : $shutters->getClosedPos )
+                            : $shutters->getClosedPos
+                        )
                     )
                 );
                 $shutters->setWindProtectionStatus('unprotected');
@@ -1976,12 +1980,12 @@ sub ShadingProcessing($@) {
     my $winPosMin = $winPos - $angleMinus;
     my $winPosMax = $winPos + $anglePlus;
 
-#     $shutters->setShadingLastStatus( $shutters->getShadingStatus )
-#       if (
-#         $shutters->getShadingLastStatus ne $shutters->getShadingStatus
-#         and (  $shutters->getShadingStatus eq 'in'
-#             or $shutters->getShadingStatus eq 'out' )
-#       );
+    #     $shutters->setShadingLastStatus( $shutters->getShadingStatus )
+    #       if (
+    #         $shutters->getShadingLastStatus ne $shutters->getShadingStatus
+    #         and (  $shutters->getShadingStatus eq 'in'
+    #             or $shutters->getShadingStatus eq 'out' )
+    #       );
 
     if (
         (
@@ -2023,8 +2027,8 @@ sub ShadingProcessing($@) {
                 ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp )
                 > $shutters->getShadingWaitingPeriod
             )
-            or $azimuth > $winPosMax
           );
+
         Log3( $name, 4,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
               . $shuttersDev
@@ -6387,7 +6391,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.19",
+  "x_developmentversion": "v0.6.19.20",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
