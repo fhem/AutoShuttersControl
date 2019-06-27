@@ -2184,7 +2184,11 @@ sub ShadingProcessingDriveCommand($$) {
                 (
                       $shutters->getShadingPos == $shutters->getLastPos
                     ? $shutters->getOpenPos
-                    : $shutters->getLastPos
+                    : (
+                        not $shutters->getQueryShuttersPos(
+                            $shutters->getLastPos
+                        ) ? $shutters->getLastPos : $shutters->getOpenPos
+                    )
                 )
             );
 
