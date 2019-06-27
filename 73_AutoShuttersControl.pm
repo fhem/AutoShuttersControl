@@ -983,7 +983,7 @@ sub EventProcessingWindowRec($@) {
                   . ' Event Closed' );
 
             if (
-                IsDay($shuttersDev)
+                $shutters->getIsDay
                 and ( ( $homemode ne 'asleep' and $homemode ne 'gotosleep' )
                     or $homemode eq 'none' )
                 and $shutters->getModeUp ne 'absent'
@@ -1006,7 +1006,7 @@ sub EventProcessingWindowRec($@) {
             elsif (
                     $shutters->getModeUp ne 'absent'
                 and $shutters->getModeUp ne 'off'
-                and (  not IsDay($shuttersDev)
+                and (  not $shutters->getIsDay
                     or $homemode eq 'asleep'
                     or $homemode eq 'gotosleep' )
                 and $shutters->getModeDown ne 'absent'
@@ -1101,7 +1101,7 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'asleep'
                     or $getRoommatesLastStatus eq 'awoken'
                 )
-                and IsDay($shuttersDev)
+                and $shutters->getIsDay
                 and IsAfterShuttersTimeBlocking($shuttersDev)
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
@@ -1134,7 +1134,7 @@ sub EventProcessingRoommate($@) {
               )
             {
                 if (
-                        not IsDay($shuttersDev)
+                        not $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeDown eq 'home'
                         or $getModeDown eq 'always' )
@@ -1156,7 +1156,7 @@ sub EventProcessingRoommate($@) {
                     ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                 }
                 elsif (
-                        IsDay($shuttersDev)
+                        $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeUp eq 'home'
                         or $getModeUp eq 'always' )
@@ -1217,11 +1217,11 @@ sub EventProcessingRoommate($@) {
         elsif (
                 $getModeDown eq 'absent'
             and $1 eq 'absent'
-            and ( not IsDay($shuttersDev)
+            and ( not $shutters->getIsDay
                 or $shutters->getShadingMode eq 'absent' )
           )
         {
-            if (    IsDay($shuttersDev)
+            if (    $shutters->getIsDay
                 and $shutters->getIfInShading
                 and
                 not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
@@ -1281,7 +1281,7 @@ sub EventProcessingResidents($@) {
                            $getModeDown eq 'absent'
                         or $getModeDown eq 'always'
                     )
-                    and not IsDay($shuttersDev)
+                    and not $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                   )
                 {
@@ -1321,7 +1321,7 @@ sub EventProcessingResidents($@) {
 
             if (
                     $shutters->getStatus != $shutters->getClosedPos
-                and not IsDay($shuttersDev)
+                and not $shutters->getIsDay
                 and $shutters->getRoommatesStatus eq 'none'
                 and (  $getModeDown eq 'home'
                     or $getModeDown eq 'always' )
@@ -1338,7 +1338,7 @@ sub EventProcessingResidents($@) {
                        $shutters->getShadingMode eq 'home'
                     or $shutters->getShadingMode eq 'always'
                 )
-                and IsDay($shuttersDev)
+                and $shutters->getIsDay
                 and $shutters->getIfInShading
                 and $shutters->getStatus != $shutters->getShadingPos
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
@@ -1350,7 +1350,7 @@ sub EventProcessingResidents($@) {
             }
             elsif (
                     $shutters->getShadingMode eq 'absent'
-                and IsDay($shuttersDev)
+                and $shutters->getIsDay
                 and $shutters->getIfInShading
                 and $shutters->getStatus == $shutters->getShadingPos
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
@@ -1403,7 +1403,7 @@ sub EventProcessingResidents($@) {
             }
             elsif (
                     $shutters->getStatus == $shutters->getClosedPos
-                and IsDay($shuttersDev)
+                and $shutters->getIsDay
                 and $shutters->getRoommatesStatus eq 'none'
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
@@ -1461,7 +1461,7 @@ sub EventProcessingRain($@) {
                 $shutters->setLastDrive('rain un-protected');
                 $shutters->setDriveCmd(
                     (
-                        IsDay($shuttersDev) ? $shutters->getLastPos
+                        $shutters->getIsDay ? $shutters->getLastPos
                         : (
                               $shutters->getPrivacyDownStatus == 2
                             ? $shutters->getPrivacyDownPos
@@ -1518,7 +1518,7 @@ sub EventProcessingWind($@) {
                 $shutters->setLastDrive('wind un-protected');
                 $shutters->setDriveCmd(
                     (
-                        IsDay($shuttersDev) ? $shutters->getLastPos
+                        $shutters->getIsDay ? $shutters->getLastPos
                         : (
                               $shutters->getPrivacyDownStatus == 2
                             ? $shutters->getPrivacyDownPos
@@ -2121,12 +2121,15 @@ sub ShadingProcessing($@) {
 
     ShadingProcessingDriveCommand( $hash, $shuttersDev )
       if (
-        (
-                $shutters->getShadingStatus eq 'out'
-            and $shutters->getShadingLastStatus eq 'in'
+        $shutters->getIsDay
+        and (
+            (
+                    $shutters->getShadingStatus eq 'out'
+                and $shutters->getShadingLastStatus eq 'in'
+            )
+            or (    $shutters->getShadingStatus eq 'in'
+                and $shutters->getShadingLastStatus eq 'out' )
         )
-        or (    $shutters->getShadingStatus eq 'in'
-            and $shutters->getShadingLastStatus eq 'out' )
       );
 }
 
@@ -2220,7 +2223,7 @@ sub EventProcessingPartyMode($) {
         next
           if ( $shutters->getPartyMode eq 'off' );
 
-        if (    not IsDay($shuttersDev)
+        if (    not $shutters->getIsDay
             and $shutters->getModeDown ne 'off'
             and IsAfterShuttersManualBlocking($shuttersDev) )
         {
@@ -2251,7 +2254,7 @@ sub EventProcessingPartyMode($) {
                 );
             }
         }
-        elsif ( IsDay($shuttersDev)
+        elsif ( $shutters->getIsDay
             and IsAfterShuttersManualBlocking($shuttersDev) )
         {
             $shutters->setLastDrive('drive after party mode');
@@ -2928,7 +2931,7 @@ sub ExtractNotifyDevFromEvent($$$) {
 }
 
 ## Ist Tag oder Nacht für den entsprechende Rolladen
-sub IsDay($) {
+sub _IsDay($) {
     my ($shuttersDev) = @_;
     $shutters->setShuttersDev($shuttersDev);
 
@@ -3397,10 +3400,10 @@ sub IsAfterShuttersTimeBlocking($) {
     if (
         ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual
-        or ( not IsDay($shuttersDev)
+        or ( not $shutters->getIsDay
             and $shutters->getSunriseUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforDayOpen )
-        or ( IsDay($shuttersDev)
+        or (    $shutters->getIsDay
             and $shutters->getSunsetUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforNightClose )
       )
@@ -3891,7 +3894,7 @@ sub getPrivacyDownStatus {
 sub getIsDay {
     my $self = shift;
 
-    return FHEM::AutoShuttersControl::IsDay( $self->{shuttersDev} );
+    return FHEM::AutoShuttersControl::_IsDay( $self->{shuttersDev} );
 }
 
 sub getFreezeStatus {
@@ -6436,7 +6439,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.23",
+  "x_developmentversion": "v0.6.19.24",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
