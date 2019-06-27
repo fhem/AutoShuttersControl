@@ -1283,6 +1283,7 @@ sub EventProcessingResidents($@) {
                     )
                     and not $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
+                    and $shutters->getRoommatesStatus eq 'none'
                   )
                 {
                     $shutters->setLastDrive('residents absent');
@@ -1328,6 +1329,7 @@ sub EventProcessingResidents($@) {
                 and (  $getResidentsLastStatus ne 'asleep'
                     or $getResidentsLastStatus ne 'awoken' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
+                and $shutters->getRoommatesStatus eq 'none'
               )
             {
                 $shutters->setLastDrive('residents home');
@@ -1340,6 +1342,7 @@ sub EventProcessingResidents($@) {
                 )
                 and $shutters->getIsDay
                 and $shutters->getIfInShading
+                and $shutters->getRoommatesStatus eq 'none'
                 and $shutters->getStatus != $shutters->getShadingPos
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
@@ -1353,6 +1356,7 @@ sub EventProcessingResidents($@) {
                 and $shutters->getIsDay
                 and $shutters->getIfInShading
                 and $shutters->getStatus == $shutters->getShadingPos
+                and $shutters->getRoommatesStatus eq 'none'
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
               )
@@ -1408,6 +1412,7 @@ sub EventProcessingResidents($@) {
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
+                and $shutters->getRoommatesStatus eq 'none'
                 and not $shutters->getIfInShading
               )
             {
@@ -2157,7 +2162,7 @@ sub ShadingProcessingDriveCommand($$) {
             and $getShadingPos != $getStatus )
         {
             if (
-                not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
+                not $shutters->getQueryShuttersPos($getShadingPos)
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
               )
@@ -2178,17 +2183,16 @@ sub ShadingProcessingDriveCommand($$) {
             and $getShadingPos == $getStatus )
         {
             $shutters->setLastDrive('shading out');
+
             ShuttersCommandSet(
                 $hash,
                 $shuttersDev,
                 (
-                      $shutters->getShadingPos == $shutters->getLastPos
+                      $getShadingPos == $shutters->getLastPos
                     ? $shutters->getOpenPos
-                    : (
-                        not $shutters->getQueryShuttersPos(
-                            $shutters->getLastPos
-                        ) ? $shutters->getLastPos : $shutters->getOpenPos
-                    )
+                    : ( $shutters->getQueryShuttersPos( $shutters->getLastPos )
+                        ? $shutters->getLastPos
+                        : $shutters->getOpenPos )
                 )
             );
 
@@ -6443,7 +6447,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.24",
+  "x_developmentversion": "v0.6.19.25",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
