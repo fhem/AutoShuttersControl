@@ -1124,8 +1124,7 @@ sub EventProcessingRoommate($@) {
 
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-
-            if (
+            elsif (
                 (
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
@@ -1167,6 +1166,8 @@ sub EventProcessingRoommate($@) {
                     {
                         $shutters->setLastDrive('shading in');
                         $posValue = $shutters->getShadingPos;
+
+                        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                     }
                     elsif (
                         not $shutters->getIfInShading
@@ -1183,9 +1184,9 @@ sub EventProcessingRoommate($@) {
                             )
                         );
                         $posValue = $shutters->getOpenPos;
-                    }
 
-                    ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                    }
                 }
             }
         }
@@ -6447,7 +6448,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.25",
+  "x_developmentversion": "v0.6.19.26",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
