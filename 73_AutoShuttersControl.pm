@@ -2191,9 +2191,11 @@ sub ShadingProcessingDriveCommand($$) {
                 (
                       $getShadingPos == $shutters->getLastPos
                     ? $shutters->getOpenPos
-                    : ( $shutters->getQueryShuttersPos( $shutters->getLastPos )
+                    : (
+                        $shutters->getQueryShuttersPos( $shutters->getLastPos )
                         ? $shutters->getLastPos
-                        : $shutters->getOpenPos )
+                        : $shutters->getOpenPos
+                    )
                 )
             );
 
@@ -3897,7 +3899,10 @@ sub setPrivacyDownStatus {
 sub getPrivacyDownStatus {
     my $self = shift;
 
-    return ( defined($self->{ $self->{shuttersDev} }->{privacyDownStatus}) ?  $self->{ $self->{shuttersDev} }->{privacyDownStatus} : undef );
+    return (
+        defined( $self->{ $self->{shuttersDev} }->{privacyDownStatus} )
+        ? $self->{ $self->{shuttersDev} }->{privacyDownStatus}
+        : undef );
 }
 
 sub getIsDay {
