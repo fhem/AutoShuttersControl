@@ -2459,7 +2459,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
     ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
     ##  also das Rollo in privacyDown Position steht und VOR der endgültigen Nachfahrt
     $shutters->setPrivacyDownStatus(0)
-      if ( not defined( $shutters->setPrivacyDownStatus ) );
+      if ( not defined( $shutters->getPrivacyDownStatus ) );
 
     ## Ich brauche beim löschen des InternalTimer den Hash welchen ich mitgegeben habe,dieser muss gesichert werden
     $shutters->setInTimerFuncHash( \%funcHash );
@@ -3897,7 +3897,7 @@ sub setPrivacyDownStatus {
 sub getPrivacyDownStatus {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{privacyDownStatus};
+    return ( defined($self->{ $self->{shuttersDev} }->{privacyDownStatus}) ?  $self->{ $self->{shuttersDev} }->{privacyDownStatus} : undef );
 }
 
 sub getIsDay {
