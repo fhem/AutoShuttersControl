@@ -2008,8 +2008,6 @@ sub ShadingProcessing($@) {
         or $outTemp == -100
         or ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
         ( $shutters->getShadingWaitingPeriod / 2 )
-        or not IsAfterShuttersTimeBlocking($shuttersDev)
-        or not IsAfterShuttersManualBlocking($shuttersDev)
         or $shutters->getShadingMode eq 'off' );
 
     Log3( $name, 4,
@@ -2128,6 +2126,9 @@ sub ShadingProcessing($@) {
     ShadingProcessingDriveCommand( $hash, $shuttersDev )
       if (
         $shutters->getIsDay
+        and IsAfterShuttersTimeBlocking($shuttersDev)
+        and IsAfterShuttersManualBlocking($shuttersDev)
+        and not $shutters->getShadingManualDriveStatus
         and (
             (
                     $shutters->getShadingStatus eq 'out'
@@ -2305,6 +2306,12 @@ sub EventProcessingShutters($@) {
             $shutters->setLastDriveReading;
             $ascDev->setStateReading;
             $shutters->setLastManPos($1);
+
+            $shutters->setShadingManualDriveStatus(1)
+                if (
+                    $shutters->getIsDay
+                    and $shutters->getIfInShading
+                );
 
             ASC_Debug(
                 'EventProcessingShutters: eine manualle Fahrt wurde erkannt!');
@@ -4154,6 +4161,17 @@ sub setShadingLastStatus {
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} =
       int( gettimeofday() )
       if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
+    $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = 0
+      if ( $value eq 'out' );
+    return 0;
+}
+
+sub setShadingManualDriveStatus {
+    my ( $self, $value ) = @_;
+    ### Werte für value = in, out
+
+    $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = $value
+      if ( defined($value) );
     return 0;
 }
 
@@ -4188,6 +4206,16 @@ sub getShadingLastStatus {    # Werte für value = in, out
       if (  defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} )
         and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} )
       );
+}
+
+sub getShadingManualDriveStatus {    # Werte für value = in, out
+    my $self = shift;
+
+    return ( defined( $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus} )
+                and defined( $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} )
+                ? $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL}
+                : 0
+            );
 }
 
 sub getIfInShading {
@@ -6453,7 +6481,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.26",
+  "x_developmentversion": "v0.6.19.28",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
