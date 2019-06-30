@@ -2069,7 +2069,8 @@ sub ShadingProcessing($@) {
           )
         {
             $shutters->setShadingStatus('out');
-            $shutters->setShadingLastStatus('in');
+            $shutters->setShadingLastStatus('in')
+              if ( $shutters->getShadingLastStatus eq 'out';
         }
 
         Log3( $name, 4,
@@ -2104,7 +2105,8 @@ sub ShadingProcessing($@) {
             ( $shutters->getShadingWaitingPeriod / 2 ) )
         {
             $shutters->setShadingStatus('in');
-            $shutters->setShadingLastStatus('out');
+            $shutters->setShadingLastStatus('out')
+              if ( $shutters->getShadingLastStatus eq 'in';
         }
 
         Log3( $name, 4,
