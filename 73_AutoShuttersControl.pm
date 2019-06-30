@@ -1980,8 +1980,8 @@ sub ShadingProcessing($@) {
           . $anglePlus
           . ', Ist es nach der Zeitblockadezeit: '
           . ( IsAfterShuttersTimeBlocking($shuttersDev) ? 'JA' : 'NEIN' )
-          . ', Ist es nach der manuellen Blockadezeit: '
-          . ( IsAfterShuttersManualBlocking($shuttersDev) ? 'JA' : 'NEIN' )
+          . ', Das Rollo ist in der Beschattung und wurde manuell gefahren: '
+          . ( $shutters->getShadingManualDriveStatus ? 'JA' : 'NEIN' )
           . ', Ist es nach der Hälfte der Beschattungswartezeit: '
           . (
             ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
@@ -2127,7 +2127,6 @@ sub ShadingProcessing($@) {
       if (
         $shutters->getIsDay
         and IsAfterShuttersTimeBlocking($shuttersDev)
-        and IsAfterShuttersManualBlocking($shuttersDev)
         and not $shutters->getShadingManualDriveStatus
         and (
             (
@@ -6481,7 +6480,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.28",
+  "x_developmentversion": "v0.6.19.29",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
