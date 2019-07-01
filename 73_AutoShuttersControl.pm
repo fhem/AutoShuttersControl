@@ -4277,6 +4277,15 @@ sub getShadingStatusTimestamp {
         and defined( $self->{ $self->{shuttersDev} }{ShadingStatus} )
         and defined( $self->{ $self->{shuttersDev} }{ShadingStatus}{TIME} ) );
 }
+
+sub getShadingLastStatusTimestamp {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME}
+      if (  defined( $self->{ $self->{shuttersDev} } )
+        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} )
+        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} ) );
+}
 ### Ende Beschattung
 
 ## Subklasse Attr von ASC_Shutters##
