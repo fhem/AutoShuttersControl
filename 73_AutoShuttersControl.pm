@@ -2662,6 +2662,9 @@ sub SunRiseShuttersAfterTimerFn($) {
                 $ascDev->getSelfDefense eq 'off'
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
+                or ( $ascDev->getSelfDefense eq 'on'
+                    and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+                    and $ascDev->getResidentsStatus eq 'home')
             )
           )
         {
@@ -6484,7 +6487,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.29",
+  "x_developmentversion": "v0.6.19.30",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
