@@ -1112,6 +1112,7 @@ sub EventProcessingRoommate($@) {
                 );
 
                 if (    $shutters->getIfInShading
+                    and not $shutters->getShadingManualDriveStatus
                     and $shutters->getStatus != $shutters->getShadingPos )
                 {
                     $shutters->setLastDrive('shading in');
@@ -1162,6 +1163,7 @@ sub EventProcessingRoommate($@) {
                   )
                 {
                     if (    $shutters->getIfInShading
+                        and not $shutters->getShadingManualDriveStatus
                         and $shutters->getStatus == $shutters->getOpenPos )
                     {
                         $shutters->setLastDrive('shading in');
@@ -1345,6 +1347,7 @@ sub EventProcessingResidents($@) {
                 and $shutters->getIfInShading
                 and $shutters->getRoommatesStatus eq 'none'
                 and $shutters->getStatus != $shutters->getShadingPos
+                and not $shutters->getShadingManualDriveStatus
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
               )
@@ -1358,6 +1361,7 @@ sub EventProcessingResidents($@) {
                 and $shutters->getIfInShading
                 and $shutters->getStatus == $shutters->getShadingPos
                 and $shutters->getRoommatesStatus eq 'none'
+                and not $shutters->getShadingManualDriveStatus
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
               )
@@ -6487,7 +6491,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.30",
+  "x_developmentversion": "v0.6.19.31",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
