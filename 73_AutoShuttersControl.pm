@@ -2665,9 +2665,9 @@ sub SunRiseShuttersAfterTimerFn($) {
                 $ascDev->getSelfDefense eq 'off'
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
-                or ( $ascDev->getSelfDefense eq 'on'
+                or (    $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and $ascDev->getResidentsStatus eq 'home')
+                    and $ascDev->getResidentsStatus eq 'home' )
             )
           )
         {
@@ -3631,11 +3631,13 @@ sub _SetCmdFn($) {
 
 sub _setShuttersLastDriveDelayed($) {
     my $h = shift;
-    
+
     my $shuttersDevHash = $h->{devHash};
     my $lastDrive       = $h->{lastDrive};
 
-    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShuttersLastDrive', $lastDrive, 1 );
+    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShuttersLastDrive',
+        $lastDrive, 1 );
+
 #     print('Ausgabe Funktion wurde aufgerufen - LastDrive: ' . $lastDrive . ', DevHash and Name: ' . $shuttersDevHash . ':: ' . $shuttersDevHash->{NAME} . "\n");
 }
 
@@ -3859,13 +3861,12 @@ sub setLastDriveReading {
     my $shuttersDevHash = $defs{ $self->{shuttersDev} };
 
     my %h = (
-        devHash     => $shuttersDevHash,
-        lastDrive   => $shutters->getLastDrive,
+        devHash   => $shuttersDevHash,
+        lastDrive => $shutters->getLastDrive,
     );
 
-    InternalTimer(
-            gettimeofday() + 0.1,
-            'FHEM::AutoShuttersControl::_setShuttersLastDriveDelayed', \%h );
+    InternalTimer( gettimeofday() + 0.1,
+        'FHEM::AutoShuttersControl::_setShuttersLastDriveDelayed', \%h );
     return 0;
 }
 
@@ -4299,7 +4300,8 @@ sub getShadingLastStatusTimestamp {
     return $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME}
       if (  defined( $self->{ $self->{shuttersDev} } )
         and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} )
-        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} ) );
+        and defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} )
+      );
 }
 ### Ende Beschattung
 
