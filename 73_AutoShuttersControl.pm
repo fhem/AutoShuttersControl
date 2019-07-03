@@ -2577,7 +2577,7 @@ sub wiggle($$) {
     }
 
     InternalTimer( gettimeofday() + 60,
-        'FHEM::AutoShuttersControl::SetCmdFn', \%h );
+        'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
 }
 ####
 
@@ -3580,7 +3580,7 @@ sub IsWeTomorrow() {
     return $we;
 }
 
-sub SetCmdFn($) {
+sub _SetCmdFn($) {
     my $h           = shift;
     my $shuttersDev = $h->{shuttersDev};
     my $posValue    = $h->{posValue};
@@ -3627,6 +3627,16 @@ sub SetCmdFn($) {
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if ( not $shutters->getSelfDefenseAbsent
         and $shutters->getSelfDefenseAbsentTimerrun );
+}
+
+sub _setShuttersLastDriveDelayed($) {
+    my $h = shift;
+    
+    my $shuttersDevHash = $h->{devHash};
+    my $lastDrive       = $h->{lastDrive};
+
+    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShuttersLastDrive', $lastDrive, 1 );
+#     print('Ausgabe Funktion wurde aufgerufen - LastDrive: ' . $lastDrive . ', DevHash and Name: ' . $shuttersDevHash . ':: ' . $shuttersDevHash->{NAME} . "\n");
 }
 
 sub ASC_Debug($) {
@@ -3768,20 +3778,20 @@ sub setDriveCmd {
         and $ascDev->getSelfDefense eq 'on' )
     {
         InternalTimer( gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
-            'FHEM::AutoShuttersControl::SetCmdFn', \%h );
+            'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
         $shutters->setSelfDefenseAbsent( 1, 0, \%h );
     }
     elsif ( $offSetStart > 0 and not $shutters->getNoOffset ) {
         InternalTimer(
             gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
-            'FHEM::AutoShuttersControl::SetCmdFn', \%h );
+            'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
 
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
               . $shutters->getShuttersDev
               . ' - versetztes fahren' );
     }
     elsif ( $offSetStart < 1 or $shutters->getNoOffset ) {
-        FHEM::AutoShuttersControl::SetCmdFn( \%h );
+        FHEM::AutoShuttersControl::_SetCmdFn( \%h );
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
               . $shutters->getShuttersDev
               . ' - NICHT versetztes fahren' );
@@ -3848,8 +3858,14 @@ sub setLastDriveReading {
     my $self            = shift;
     my $shuttersDevHash = $defs{ $self->{shuttersDev} };
 
-    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShuttersLastDrive',
-        $shutters->getLastDrive, 1 );
+    my %h = (
+        devHash     => $shuttersDevHash,
+        lastDrive   => $shutters->getLastDrive,
+    );
+
+    InternalTimer(
+            gettimeofday() + 0.1,
+            'FHEM::AutoShuttersControl::_setShuttersLastDriveDelayed', \%h );
     return 0;
 }
 
@@ -6499,7 +6515,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.19",
-  "x_developmentversion": "v0.6.19.32",
+  "x_developmentversion": "v0.6.19.33",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
