@@ -5963,7 +5963,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - ab welchen Residents Status soll Selfdefense
                 aktiv werden ohne das Fenster auf sind. (default: gone)
             </li>
-            <li><strong>ASC_Self_Defense_AbsentDelay - um wie viele Sekunden soll das fahren in Selfdefense bei
+            <li><strong>ASC_Self_Defense_AbsentDelay</strong> - um wie viele Sekunden soll das fahren in Selfdefense bei
                 Residents absent verz&ouml;gert werden. (default: 300)
             </li>
             <li><strong>ASC_ShuttersPlace window|terrace</strong> - If set to <em>terrace</em>, and the
