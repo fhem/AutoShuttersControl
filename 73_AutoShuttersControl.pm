@@ -6017,7 +6017,7 @@ sub getblockAscDrivesAfterManual {
             </li>
             <li><strong>ASC_WindowRec_subType</strong> - Model type of the used <em>ASC_WindowRec</em>:
                 <ul>
-                    <li><strong>twostate</strong> - optical or magnetical sensors with two states: opened or closed</li>#
+                    <li><strong>twostate</strong> - optical or magnetical sensors with two states: opened or closed</li>
                     <li><strong>threestate</strong> - sensors with three states: opened, tilted, closed</li>
                 </ul>
                 Defaults to twostate.
