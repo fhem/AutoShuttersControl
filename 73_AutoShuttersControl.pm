@@ -1239,7 +1239,7 @@ sub EventProcessingRoommate($@) {
                 $shutters->setLastDrive('roommate absent');
             }
 
-            ShuttersCommandSet( $hash, $shuttersDev, $$posValue );
+            ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
     }
 }
@@ -1718,6 +1718,9 @@ sub EventProcessingBrightness($@) {
                     and $ascDev->getSelfDefense eq 'off'
                     or ( $ascDev->getSelfDefense eq 'on'
                         and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
+                    or (    $ascDev->getSelfDefense eq 'on'
+                        and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
+                        and $ascDev->getResidentsStatus eq 'home' )
                   )
                 {
                     $shutters->setSunrise(1);
@@ -6516,7 +6519,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.21",
+  "version": "v0.6.22",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
