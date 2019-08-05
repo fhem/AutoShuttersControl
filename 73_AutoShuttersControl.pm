@@ -1218,7 +1218,7 @@ sub EventProcessingRoommate($@) {
                 $posValue = $shutters->getShadingPos;
                 $shutters->setLastDrive('shading in');
             }
-            else {
+            elsif ( not $shutters->getIsDay ) {
                 $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
             }
@@ -5768,7 +5768,7 @@ sub getblockAscDrivesAfterManual {
             <a name="ASC_residentsDev"></a>
             <li><strong>ASC_residentsDev DEVICENAME[:READINGNAME]</strong> - <em>DEVICENAME</em> points to a device
                 for presence, e.g. of type <em>RESIDENTS</em>. <em>READINGNAME</em> points to a reading at
-                <em>DEVICENAME</em> which contains a presence state, e.g. <em>rgr_Residents:presence</em>. The target
+                <em>DEVICENAME</em> which contains a presence state, e.g. <em>rgr_Residents:state</em>. The target
                 should contain values alike the <em>RESIDENTS</em> family.
             </li>
             <a name="ASC_shuttersDriveOffset"></a>
@@ -6327,7 +6327,7 @@ sub getblockAscDrivesAfterManual {
             <a name="ASC_rainSensor"></a>
             <li><strong>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS]</strong> - der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben werden soll und der "wegen Regen geschlossen Position".</li>
             <a name="ASC_residentsDev"></a>
-            <li><strong>ASC_residentsDev - DEVICENAME[:READINGNAME]</strong> - der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents-Device der obersten Ebene (z.B. rgr_Residents:presence)</li>
+            <li><strong>ASC_residentsDev - DEVICENAME[:READINGNAME]</strong> - der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents-Device der obersten Ebene (z.B. rgr_Residents:state)</li>
             <a name="ASC_shuttersDriveOffset"></a>
             <li><strong>ASC_shuttersDriveOffset</strong> - maximale Zufallsverz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten. 0 bedeutet keine Verz&ouml;gerung</li>
             <a name="ASC_tempSensor"></a>
@@ -6487,7 +6487,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.25",
+  "version": "v0.6.26",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
