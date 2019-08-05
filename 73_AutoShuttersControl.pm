@@ -1217,13 +1217,13 @@ sub EventProcessingRoommate($@) {
             {
                 $posValue = $shutters->getShadingPos;
                 $shutters->setLastDrive('shading in');
+                ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
             elsif ( not $shutters->getIsDay ) {
                 $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
+                ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-
-            ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
     }
 }
