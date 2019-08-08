@@ -1553,8 +1553,8 @@ sub EventProcessingBrightness($@) {
     return EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
       unless (
         (
-               $shutters->getModeDown eq 'brightness'
-            or $shutters->getModeUp eq 'brightness'
+               $shutters->getDown eq 'brightness'
+            or $shutters->getUp eq 'brightness'
         )
         or (
             (
