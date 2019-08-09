@@ -3413,9 +3413,11 @@ sub IsAfterShuttersTimeBlocking($) {
         ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual
         or ( not $shutters->getIsDay
+            and defined( $shutters->getSunriseUnixTime )
             and $shutters->getSunriseUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforDayOpen )
         or (    $shutters->getIsDay
+            and defined( $shutters->getSunriseUnixTime )
             and $shutters->getSunsetUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforNightClose )
       )
