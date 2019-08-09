@@ -3413,9 +3413,11 @@ sub IsAfterShuttersTimeBlocking($) {
         ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual
         or ( not $shutters->getIsDay
+            and defined( $shutters->getSunriseUnixTime )
             and $shutters->getSunriseUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforDayOpen )
         or (    $shutters->getIsDay
+            and defined( $shutters->getSunriseUnixTime )
             and $shutters->getSunsetUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforNightClose )
       )
@@ -3535,18 +3537,18 @@ sub CheckIfShuttersWindowRecOpen($) {
 sub makeReadingName($) {
     my ($rname) = @_;
     my %charHash = (
-        "ä" => "ae",
-        "Ä" => "Ae",
-        "ü" => "ue",
-        "Ü" => "Ue",
-        "ö" => "oe",
-        "Ö" => "Oe",
-        "ß" => "ss"
+        chr(0xe4) => "ae",      # ä
+        chr(0xc4) => "Ae",      # Ä
+        chr(0xfc) => "ue",      # ü
+        chr(0xdc) => "Ue",      # Ü
+        chr(0xf6) => "oe",      # ö
+        chr(0xd6) => "Oe",      # Ö
+        chr(0xdf) => "ss"       # ß
     );
-    my $charHashkeys = join( "|", keys(%charHash) );
+    my $charHashkeys = join( "", keys(%charHash) );
 
     return $rname if ( $rname =~ m/^\./ );
-    $rname =~ s/($charHashkeys)/$charHash{$1}/gi;
+    $rname =~ s/([$charHashkeys])/$charHash{$1}/gi;
     $rname =~ s/[^a-z0-9._\-\/]/_/gi;
     return $rname;
 }
