@@ -1682,7 +1682,6 @@ sub EventProcessingBrightness($@) {
             my $homemode = $shutters->getRoommatesStatus;
             $homemode = $ascDev->getResidentsStatus
               if ( $homemode eq 'none' );
-            $shutters->setLastDrive('maximum brightness threshold exceeded');
 
             if (
                 $shutters->getModeUp eq $homemode
@@ -1707,6 +1706,7 @@ sub EventProcessingBrightness($@) {
                         and $ascDev->getResidentsStatus eq 'home' )
                   )
                 {
+                    $shutters->setLastDrive('maximum brightness threshold exceeded');
                     $shutters->setSunrise(1);
                     $shutters->setSunset(0);
                     ShuttersCommandSet( $hash, $shuttersDev,
@@ -1749,24 +1749,9 @@ sub EventProcessingBrightness($@) {
                   . ' - Verarbeitungszeit für Sunset wurd erkannt. Prüfe Status der Roommates'
             );
 
-            my $posValue;
-            if (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getSubTyp eq 'threestate'
-                and $ascDev->getAutoShuttersControlComfort eq 'on' )
-            {
-                $posValue = $shutters->getComfortOpenPos;
-            }
-            elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                or $shutters->getVentilateOpen eq 'off' )
-            {
-                $posValue = $shutters->getClosedPos;
-            }
-            else { $posValue = $shutters->getVentilatePos; }
-
             my $homemode = $shutters->getRoommatesStatus;
             $homemode = $ascDev->getResidentsStatus
               if ( $homemode eq 'none' );
-            $shutters->setLastDrive('minimum brightness threshold fell below');
 
             if (
                 $shutters->getModeDown eq $homemode
@@ -1775,6 +1760,21 @@ sub EventProcessingBrightness($@) {
                 or $shutters->getModeDown eq 'always'
               )
             {
+                my $posValue;
+                if (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getSubTyp eq 'threestate'
+                    and $ascDev->getAutoShuttersControlComfort eq 'on' )
+                {
+                    $posValue = $shutters->getComfortOpenPos;
+                }
+                elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                    or $shutters->getVentilateOpen eq 'off' )
+                {
+                    $posValue = $shutters->getClosedPos;
+                }
+                else { $posValue = $shutters->getVentilatePos; }
+
+                $shutters->setLastDrive('minimum brightness threshold fell below');
                 $shutters->setSunrise(0);
                 $shutters->setSunset(1);
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
