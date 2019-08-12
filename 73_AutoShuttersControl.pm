@@ -1149,7 +1149,8 @@ sub EventProcessingRoommate($@) {
                 {
                     if (    $shutters->getIfInShading
                         and not $shutters->getShadingManualDriveStatus
-                        and $shutters->getStatus == $shutters->getOpenPos )
+                        and $shutters->getStatus == $shutters->getOpenPos
+                        and $shutters->getShadingMode 'home')
                     {
                         $shutters->setLastDrive('shading in');
                         $posValue = $shutters->getShadingPos;
@@ -1157,7 +1158,8 @@ sub EventProcessingRoommate($@) {
                         ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                     }
                     elsif (
-                        not $shutters->getIfInShading
+                        ( not $shutters->getIfInShading
+                          or  $shutters->getShadingMode eq 'absent' )
                         and (  $shutters->getStatus == $shutters->getClosedPos
                             or $shutters->getStatus ==
                             $shutters->getShadingPos )
