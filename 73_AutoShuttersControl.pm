@@ -189,8 +189,8 @@ GP_Export(
 my %userAttrList = (
     'ASC_Mode_Up:absent,always,off,home'                            => '-',
     'ASC_Mode_Down:absent,always,off,home'                          => '-',
-    'ASC_Up:time,astro,brightness'                                  => '-',
-    'ASC_Down:time,astro,brightness'                                => '-',
+    'ASC_Up:time,astro,brightness,roommate'                         => '-',
+    'ASC_Down:time,astro,brightness,roommate'                       => '-',
     'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
 'ASC_AutoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9'
       => '-',
@@ -1071,10 +1071,6 @@ sub EventProcessingRoommate($@) {
             and (  $shutters->getRoommatesStatus eq 'home'
                 or $shutters->getRoommatesStatus eq 'awoken' )
             and $ascDev->getAutoShuttersControlMorning eq 'on'
-            and (  $getModeUp eq 'home'
-                or $getModeUp eq 'always'
-                or $getModeDown eq 'home'
-                or $getModeDown eq 'always' )
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
@@ -1088,8 +1084,6 @@ sub EventProcessingRoommate($@) {
                 )
                 and $shutters->getIsDay
                 and IsAfterShuttersTimeBlocking($shuttersDev)
-                and (  $getModeUp eq 'home'
-                    or $getModeUp eq 'always' )
               )
             {
                 Log3( $name, 4,
@@ -1181,12 +1175,7 @@ sub EventProcessingRoommate($@) {
                 }
             }
         }
-        elsif (
-            (
-                   $getModeDown eq 'always'
-                or $getModeDown eq 'home'
-            )
-            and ( $1 eq 'gotosleep' or $1 eq 'asleep' )
+        elsif ( ( $1 eq 'gotosleep' or $1 eq 'asleep' )
             and $ascDev->getAutoShuttersControlEvening eq 'on'
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
@@ -6495,7 +6484,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.27",
+  "version": "v0.6.28",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
