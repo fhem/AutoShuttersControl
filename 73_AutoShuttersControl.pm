@@ -1061,15 +1061,16 @@ sub EventProcessingRoommate($@) {
 "AutoShuttersControl ($name) - EventProcessingRoommate: $shuttersDev und Events $events"
         );
 
-        my $getModeUp              = $shutters->getModeUp;
-        my $getModeDown            = $shutters->getModeDown;
-        my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
+        my $getModeUp               = $shutters->getModeUp;
+        my $getModeDown             = $shutters->getModeDown;
+        my $getRoommatesStatus      = $shutters->getRoommatesStatus;
+        my $getRoommatesLastStatus  = $shutters->getRoommatesLastStatus;
         my $posValue;
 
         if (
             ( $1 eq 'home' or $1 eq 'awoken' )
-            and (  $shutters->getRoommatesStatus eq 'home'
-                or $shutters->getRoommatesStatus eq 'awoken' )
+            and (  $getRoommatesStatus eq 'home'
+                or $getRoommatesStatus eq 'awoken' )
             and $ascDev->getAutoShuttersControlMorning eq 'on'
             and (  $getModeUp eq 'home'
                 or $getModeUp eq 'always'
@@ -1115,7 +1116,7 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
                 )
-                and $shutters->getRoommatesStatus eq 'home'
+                and $getRoommatesStatus eq 'home'
               )
             {
                 if (
@@ -1206,9 +1207,7 @@ sub EventProcessingRoommate($@) {
 
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
-        elsif (
-                $getModeDown eq 'absent'
-            and $1 eq 'absent'
+        elsif ( $1 eq 'absent'
             and ( not $shutters->getIsDay
                 or $shutters->getShadingMode eq 'absent' )
           )
@@ -1223,7 +1222,10 @@ sub EventProcessingRoommate($@) {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-            elsif ( not $shutters->getIsDay ) {
+            elsif ( not $shutters->getIsDay
+                and $getModeDown eq 'absent'
+                and $getRoommatesStatus eq 'absent' )
+            {
                 $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
@@ -2598,6 +2600,13 @@ sub SunSetShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
         )
+        and ( $ascDev->getSelfDefense eq 'off'
+           or $shutters->getSelfDefenseExclude eq 'on'
+           or ($ascDev->getSelfDefense eq 'on'
+             and ($ascDev->getResidentsStatus ne 'absent'
+               or $ascDev->getResidentsStatus ne 'gone')
+           )
+        )
       )
     {
 
@@ -2645,6 +2654,13 @@ sub SunRiseShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeUp eq 'always'
         )
+        and ( $ascDev->getSelfDefense eq 'off'
+           or $shutters->getSelfDefenseExclude eq 'on'
+           or ($ascDev->getSelfDefense eq 'on'
+             and $ascDev->getResidentsStatus ne 'absent'
+             and $ascDev->getResidentsStatus ne 'gone'
+           )
+        )
       )
     {
 
@@ -2662,7 +2678,9 @@ sub SunRiseShuttersAfterTimerFn($) {
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
                 or (    $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and $ascDev->getResidentsStatus eq 'home' )
+                    and ( $ascDev->getResidentsStatus ne 'absent'
+                       or $ascDev->getResidentsStatus ne 'gone' )
+                    )
             )
           )
         {
@@ -6495,7 +6513,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.27",
+  "version": "v0.6.28",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
