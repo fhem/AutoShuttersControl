@@ -1382,14 +1382,15 @@ sub EventProcessingResidents($@) {
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
-                if ( $shutters->getStatus == $shutters->getClosedPos ) {
+                if (  $shutters->getStatus == $shutters->getClosedPos
+                  and $shutters->getIsDay )
+                {
                     $shutters->setHardLockOut('on')
                       if (
                             CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                         and $shutters->getShuttersPlace eq 'terrace'
                         and (  $getModeUp eq 'absent'
                             or $getModeUp eq 'off' )
-                        and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                       );
 
                     $shutters->setLastDrive('selfDefense inactive');
