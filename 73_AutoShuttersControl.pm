@@ -262,6 +262,7 @@ my %posSetCmds = (
     HM485       => 'level',
     SELVECommeo => 'position',
     SELVE       => 'position',
+    EnOcean     => 'position',
 );
 
 my $shutters = new ASC_Shutters();
