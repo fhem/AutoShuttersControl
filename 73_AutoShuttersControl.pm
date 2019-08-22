@@ -252,17 +252,18 @@ my %userAttrList = (
 );
 
 my %posSetCmds = (
-    ZWave      => 'dim',
-    Siro       => 'pct',
-    CUL_HM     => 'pct',
-    ROLLO      => 'pct',
-    SOMFY      => 'position',
-    tahoma     => 'dim',
-    KLF200Node => 'pct',
-    DUOFERN    => 'position',
-    HM485      => 'level',
+    ZWave       => 'dim',
+    Siro        => 'pct',
+    CUL_HM      => 'pct',
+    ROLLO       => 'pct',
+    SOMFY       => 'position',
+    tahoma      => 'dim',
+    KLF200Node  => 'pct',
+    DUOFERN     => 'position',
+    HM485       => 'level',
     SELVECommeo => 'position',
     SELVE       => 'position',
+    EnOcean     => 'position',
 );
 
 my $shutters = new ASC_Shutters();
@@ -1064,13 +1065,14 @@ sub EventProcessingRoommate($@) {
 
         my $getModeUp              = $shutters->getModeUp;
         my $getModeDown            = $shutters->getModeDown;
+        my $getRoommatesStatus     = $shutters->getRoommatesStatus;
         my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
         my $posValue;
 
         if (
             ( $1 eq 'home' or $1 eq 'awoken' )
-            and (  $shutters->getRoommatesStatus eq 'home'
-                or $shutters->getRoommatesStatus eq 'awoken' )
+            and (  $getRoommatesStatus eq 'home'
+                or $getRoommatesStatus eq 'awoken' )
             and $ascDev->getAutoShuttersControlMorning eq 'on'
             and (  $getModeUp eq 'home'
                 or $getModeUp eq 'always'
@@ -1116,7 +1118,7 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
                 )
-                and $shutters->getRoommatesStatus eq 'home'
+                and $getRoommatesStatus eq 'home'
               )
             {
                 if (
@@ -1150,7 +1152,8 @@ sub EventProcessingRoommate($@) {
                 {
                     if (    $shutters->getIfInShading
                         and not $shutters->getShadingManualDriveStatus
-                        and $shutters->getStatus == $shutters->getOpenPos )
+                        and $shutters->getStatus == $shutters->getOpenPos
+                        and $shutters->getShadingMode eq 'home' )
                     {
                         $shutters->setLastDrive('shading in');
                         $posValue = $shutters->getShadingPos;
@@ -1158,7 +1161,10 @@ sub EventProcessingRoommate($@) {
                         ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                     }
                     elsif (
-                        not $shutters->getIfInShading
+                        (
+                            not $shutters->getIfInShading
+                            or $shutters->getShadingMode eq 'absent'
+                        )
                         and (  $shutters->getStatus == $shutters->getClosedPos
                             or $shutters->getStatus ==
                             $shutters->getShadingPos )
@@ -1204,8 +1210,7 @@ sub EventProcessingRoommate($@) {
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
         elsif (
-                $getModeDown eq 'absent'
-            and $1 eq 'absent'
+            $1 eq 'absent'
             and ( not $shutters->getIsDay
                 or $shutters->getShadingMode eq 'absent' )
           )
@@ -1220,7 +1225,10 @@ sub EventProcessingRoommate($@) {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-            elsif ( not $shutters->getIsDay ) {
+            elsif ( not $shutters->getIsDay
+                and $getModeDown eq 'absent'
+                and $getRoommatesStatus eq 'absent' )
+            {
                 $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
@@ -1377,14 +1385,15 @@ sub EventProcessingResidents($@) {
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
-                if ( $shutters->getStatus == $shutters->getClosedPos ) {
+                if (    $shutters->getStatus == $shutters->getClosedPos
+                    and $shutters->getIsDay )
+                {
                     $shutters->setHardLockOut('on')
                       if (
                             CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                         and $shutters->getShuttersPlace eq 'terrace'
                         and (  $getModeUp eq 'absent'
                             or $getModeUp eq 'off' )
-                        and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                       );
 
                     $shutters->setLastDrive('selfDefense inactive');
@@ -1683,7 +1692,6 @@ sub EventProcessingBrightness($@) {
             my $homemode = $shutters->getRoommatesStatus;
             $homemode = $ascDev->getResidentsStatus
               if ( $homemode eq 'none' );
-            $shutters->setLastDrive('maximum brightness threshold exceeded');
 
             if (
                 $shutters->getModeUp eq $homemode
@@ -1708,6 +1716,8 @@ sub EventProcessingBrightness($@) {
                         and $ascDev->getResidentsStatus eq 'home' )
                   )
                 {
+                    $shutters->setLastDrive(
+                        'maximum brightness threshold exceeded');
                     $shutters->setSunrise(1);
                     $shutters->setSunset(0);
                     ShuttersCommandSet( $hash, $shuttersDev,
@@ -1750,24 +1760,9 @@ sub EventProcessingBrightness($@) {
                   . ' - Verarbeitungszeit für Sunset wurd erkannt. Prüfe Status der Roommates'
             );
 
-            my $posValue;
-            if (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getSubTyp eq 'threestate'
-                and $ascDev->getAutoShuttersControlComfort eq 'on' )
-            {
-                $posValue = $shutters->getComfortOpenPos;
-            }
-            elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                or $shutters->getVentilateOpen eq 'off' )
-            {
-                $posValue = $shutters->getClosedPos;
-            }
-            else { $posValue = $shutters->getVentilatePos; }
-
             my $homemode = $shutters->getRoommatesStatus;
             $homemode = $ascDev->getResidentsStatus
               if ( $homemode eq 'none' );
-            $shutters->setLastDrive('minimum brightness threshold fell below');
 
             if (
                 $shutters->getModeDown eq $homemode
@@ -1776,6 +1771,22 @@ sub EventProcessingBrightness($@) {
                 or $shutters->getModeDown eq 'always'
               )
             {
+                my $posValue;
+                if (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getSubTyp eq 'threestate'
+                    and $ascDev->getAutoShuttersControlComfort eq 'on' )
+                {
+                    $posValue = $shutters->getComfortOpenPos;
+                }
+                elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
+                    or $shutters->getVentilateOpen eq 'off' )
+                {
+                    $posValue = $shutters->getClosedPos;
+                }
+                else { $posValue = $shutters->getVentilatePos; }
+
+                $shutters->setLastDrive(
+                    'minimum brightness threshold fell below');
                 $shutters->setSunrise(0);
                 $shutters->setSunset(1);
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
@@ -2593,19 +2604,23 @@ sub SunSetShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
         )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (
+                $ascDev->getSelfDefense eq 'on'
+                and (  $ascDev->getResidentsStatus ne 'absent'
+                    or $ascDev->getResidentsStatus ne 'gone' )
+            )
+        )
       )
     {
 
         if ( $shutters->getPrivacyDownStatus == 1 ) {
             $shutters->setPrivacyDownStatus(2);
             $shutters->setLastDrive('privacy position');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                PositionValueWindowRec(
-                    $shuttersDev, $shutters->getPrivacyDownPos
-                )
-            );
+            ShuttersCommandSet( $hash, $shuttersDev,
+                $shutters->getPrivacyDownPos );
         }
         else {
             $shutters->setPrivacyDownStatus(0);
@@ -2640,6 +2655,13 @@ sub SunRiseShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeUp eq 'always'
         )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (    $ascDev->getSelfDefense eq 'on'
+                and $ascDev->getResidentsStatus ne 'absent'
+                and $ascDev->getResidentsStatus ne 'gone' )
+        )
       )
     {
 
@@ -2655,9 +2677,12 @@ sub SunRiseShuttersAfterTimerFn($) {
                 $ascDev->getSelfDefense eq 'off'
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
-                or (    $ascDev->getSelfDefense eq 'on'
+                or (
+                        $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and $ascDev->getResidentsStatus eq 'home' )
+                    and (  $ascDev->getResidentsStatus ne 'absent'
+                        or $ascDev->getResidentsStatus ne 'gone' )
+                )
             )
           )
         {
@@ -3413,7 +3438,7 @@ sub IsAfterShuttersTimeBlocking($) {
     if (
         ( int( gettimeofday() ) - $shutters->getLastManPosTimestamp ) <
         $shutters->getBlockingTimeAfterManual
-        or ( not $shutters->getIsDay
+        or (    not $shutters->getIsDay
             and defined( $shutters->getSunriseUnixTime )
             and $shutters->getSunriseUnixTime - ( int( gettimeofday() ) ) <
             $shutters->getBlockingTimeBeforDayOpen )
@@ -3538,13 +3563,13 @@ sub CheckIfShuttersWindowRecOpen($) {
 sub makeReadingName($) {
     my ($rname) = @_;
     my %charHash = (
-        chr(0xe4) => "ae",      # ä
-        chr(0xc4) => "Ae",      # Ä
-        chr(0xfc) => "ue",      # ü
-        chr(0xdc) => "Ue",      # Ü
-        chr(0xf6) => "oe",      # ö
-        chr(0xd6) => "Oe",      # Ö
-        chr(0xdf) => "ss"       # ß
+        chr(0xe4) => "ae",                            # ä
+        chr(0xc4) => "Ae",                            # Ä
+        chr(0xfc) => "ue",                            # ü
+        chr(0xdc) => "Ue",                            # Ü
+        chr(0xf6) => "oe",                            # ö
+        chr(0xd6) => "Oe",                            # Ö
+        chr(0xdf) => "ss"                             # ß
     );
     my $charHashkeys = join( "", keys(%charHash) );
 
@@ -6490,7 +6515,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.26",
+  "version": "v0.6.29",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
