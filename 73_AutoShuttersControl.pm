@@ -1061,10 +1061,10 @@ sub EventProcessingRoommate($@) {
 "AutoShuttersControl ($name) - EventProcessingRoommate: $shuttersDev und Events $events"
         );
 
-        my $getModeUp               = $shutters->getModeUp;
-        my $getModeDown             = $shutters->getModeDown;
-        my $getRoommatesStatus      = $shutters->getRoommatesStatus;
-        my $getRoommatesLastStatus  = $shutters->getRoommatesLastStatus;
+        my $getModeUp              = $shutters->getModeUp;
+        my $getModeDown            = $shutters->getModeDown;
+        my $getRoommatesStatus     = $shutters->getRoommatesStatus;
+        my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
         my $posValue;
 
         if (
@@ -1207,7 +1207,8 @@ sub EventProcessingRoommate($@) {
 
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
-        elsif ( $1 eq 'absent'
+        elsif (
+            $1 eq 'absent'
             and ( not $shutters->getIsDay
                 or $shutters->getShadingMode eq 'absent' )
           )
@@ -1382,8 +1383,8 @@ sub EventProcessingResidents($@) {
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
-                if (  $shutters->getStatus == $shutters->getClosedPos
-                  and $shutters->getIsDay )
+                if (    $shutters->getStatus == $shutters->getClosedPos
+                    and $shutters->getIsDay )
                 {
                     $shutters->setHardLockOut('on')
                       if (
@@ -2601,12 +2602,14 @@ sub SunSetShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
         )
-        and ( $ascDev->getSelfDefense eq 'off'
-           or $shutters->getSelfDefenseExclude eq 'on'
-           or ($ascDev->getSelfDefense eq 'on'
-             and ($ascDev->getResidentsStatus ne 'absent'
-               or $ascDev->getResidentsStatus ne 'gone')
-           )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (
+                $ascDev->getSelfDefense eq 'on'
+                and (  $ascDev->getResidentsStatus ne 'absent'
+                    or $ascDev->getResidentsStatus ne 'gone' )
+            )
         )
       )
     {
@@ -2614,13 +2617,8 @@ sub SunSetShuttersAfterTimerFn($) {
         if ( $shutters->getPrivacyDownStatus == 1 ) {
             $shutters->setPrivacyDownStatus(2);
             $shutters->setLastDrive('privacy position');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                PositionValueWindowRec(
-                    $shuttersDev, $shutters->getPrivacyDownPos
-                )
-            );
+            ShuttersCommandSet( $hash, $shuttersDev,
+                $shutters->getPrivacyDownPos );
         }
         else {
             $shutters->setPrivacyDownStatus(0);
@@ -2655,12 +2653,12 @@ sub SunRiseShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeUp eq 'always'
         )
-        and ( $ascDev->getSelfDefense eq 'off'
-           or $shutters->getSelfDefenseExclude eq 'on'
-           or ($ascDev->getSelfDefense eq 'on'
-             and $ascDev->getResidentsStatus ne 'absent'
-             and $ascDev->getResidentsStatus ne 'gone'
-           )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (    $ascDev->getSelfDefense eq 'on'
+                and $ascDev->getResidentsStatus ne 'absent'
+                and $ascDev->getResidentsStatus ne 'gone' )
         )
       )
     {
@@ -2677,11 +2675,12 @@ sub SunRiseShuttersAfterTimerFn($) {
                 $ascDev->getSelfDefense eq 'off'
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
-                or (    $ascDev->getSelfDefense eq 'on'
+                or (
+                        $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and ( $ascDev->getResidentsStatus ne 'absent'
-                       or $ascDev->getResidentsStatus ne 'gone' )
-                    )
+                    and (  $ascDev->getResidentsStatus ne 'absent'
+                        or $ascDev->getResidentsStatus ne 'gone' )
+                )
             )
           )
         {
@@ -6514,7 +6513,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.28",
+  "version": "v0.6.29",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
