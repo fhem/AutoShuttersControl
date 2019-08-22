@@ -60,6 +60,7 @@ use strict;
 use warnings;
 use POSIX;
 use utf8;
+use Encode;
 use FHEM::Meta;
 use GPUtils qw(GP_Import GP_Export);
 use Data::Dumper;    #only for Debugging
@@ -1900,7 +1901,7 @@ sub EventProcessingTwilightDevice($@) {
 
         ASC_Debug( 'EventProcessingTwilightDevice: '
               . $name
-              . ' - Passendes Event wurde erkannt. Verarbeitung über alle Rolllos beginnt'
+              . ' - Passendes Event wurde erkannt. Verarbeitung über alle Rollos beginnt'
         );
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -2279,7 +2280,7 @@ sub EventProcessingShutters($@) {
 
         ASC_Debug( 'EventProcessingShutters: '
               . $shutters->getShuttersDev
-              . ' - Event vom Rolllo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
+              . ' - Event vom Rollo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
               . ' Int von gettimeofday: '
               . int( gettimeofday() )
               . ' Last Position Timestamp: '
@@ -3600,7 +3601,7 @@ sub _SetCmdFn($) {
 
     ASC_Debug( 'FnSetCmdFn: '
           . $shuttersDev
-          . ' - Rolllo wird gefahren, aktuelle Position: '
+          . ' - Rollo wird gefahren, aktuelle Position: '
           . $shutters->getStatus
           . ', Zielposition: '
           . $posValue
@@ -3638,7 +3639,7 @@ sub ASC_Debug($) {
     my $debugTimestamp = strftime( "%Y.%m.%e %T", localtime(time) );
 
     print(
-        "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n" );
+        encode_utf8("\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"));
 }
 
 ######################################
