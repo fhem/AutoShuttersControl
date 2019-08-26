@@ -1021,7 +1021,14 @@ sub EventProcessingWindowRec($@) {
         {
             $shutters->setLastDrive('ventilate - window open');
             $shutters->setNoOffset(1);
-            $shutters->setDriveCmd( $shutters->getVentilatePos );
+            $shutters->setDriveCmd(
+                (
+                    (
+                              $shutters->getShuttersPlace eq 'terrace'
+                          and $shutters->getSubTyp eq 'twostate'
+                    ) ? $shutters->getOpenPos : $shutters->getVentilatePos
+                )
+            );
         }
         elsif ( $match =~ /[Oo]pen/
             and $shutters->getSubTyp eq 'threestate' )
@@ -1045,7 +1052,13 @@ sub EventProcessingWindowRec($@) {
             if ( defined($posValue) and $posValue ) {
                 $shutters->setLastDrive($setLastDrive);
                 $shutters->setNoOffset(1);
-                $shutters->setDriveCmd($posValue);
+                $shutters->setDriveCmd(
+                    (
+                          $shutters->getShuttersPlace eq 'terrace'
+                        ? $shutters->getOpenPos
+                        : $posValue
+                    )
+                );
             }
         }
     }
@@ -6532,7 +6545,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.29",
+  "version": "v0.6.30",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
