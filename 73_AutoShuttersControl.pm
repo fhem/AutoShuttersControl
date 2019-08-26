@@ -487,6 +487,10 @@ sub Notify($$) {
         }
     }
     elsif ( grep /^($posReading):\s\d+$/, @{$events} ) {
+        ASC_Debug( 'Notify: '
+              . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
+              . ' - RECEIVED EVENT: '
+              . Dumper $events);
         EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
     }
     else {
@@ -2285,6 +2289,11 @@ sub EventProcessingShutters($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
+    ASC_Debug( 'EventProcessingShutters: '
+          . ' Fn wurde durch Notify aufgerufen da ASC_Pos_Reading Event erkannt wurde '
+          . ' - RECEIVED EVENT: '
+          . Dumper $events);
+
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
         $ascDev->setPosReading;
@@ -2329,6 +2338,11 @@ sub EventProcessingShutters($@) {
             );
         }
     }
+
+    ASC_Debug( 'EventProcessingShutters: '
+          . ' Fn wurde durlaufen und es sollten Debugausgaben gekommen sein. '
+          . ' !!!Wenn nicht!!! wurde der Event nicht korrekt als Nummerisch erkannt. '
+    );
 }
 
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
@@ -3664,7 +3678,10 @@ sub ASC_Debug($) {
     my $debugTimestamp = strftime( "%Y.%m.%e %T", localtime(time) );
 
     print(
-        encode_utf8("\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"));
+        encode_utf8(
+            "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"
+        )
+    );
 }
 
 ######################################
