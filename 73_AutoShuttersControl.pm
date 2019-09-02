@@ -720,6 +720,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setShadingLastStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'in' : 'out' )
         );
+        $shutters->setPushBrightnessInArray( $shutters->getBrightness );
         readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
     }
@@ -1863,10 +1864,13 @@ sub EventProcessingShadingBrightness($@) {
             Brightness: " . $1
         );
 
+        ## Brightness Wert in ein Array schieben zur Berechnung eines Average Wertes
+        $shutters->setPushBrightnessInArray($1);
+
         ASC_Debug( 'EventProcessingShadingBrightness: '
               . $shutters->getShuttersDev
-              . ' - Nummerischer Brightness-Wert wurde erkannt. Der Wert ist: '
-              . $1
+              . ' - Nummerischer Brightness-Wert wurde erkannt. Der Brightness Average Wert ist: '
+              . $shutters->getBrightnessAverage
               . ' RainProtection: '
               . $shutters->getRainProtectionStatus
               . ' WindProtection: '
@@ -1883,7 +1887,6 @@ sub EventProcessingShadingBrightness($@) {
                 $shuttersDev,
                 $ascDev->getAzimuth,
                 $ascDev->getElevation,
-                $1,
                 $outTemp,
                 $shutters->getDirection,
                 $shutters->getShadingAngleLeft,
@@ -1956,7 +1959,6 @@ sub EventProcessingTwilightDevice($@) {
                     $shuttersDev,
                     $azimuth,
                     $elevation,
-                    $shutters->getBrightness,
                     $outTemp,
                     $shutters->getDirection,
                     $shutters->getShadingAngleLeft,
@@ -1976,12 +1978,12 @@ sub ShadingProcessing($@) {
 ### angleMinus ist $shutters->getShadingAngleLeft
 ### anglePlus ist $shutters->getShadingAngleRight
 ### winPos ist die Fensterposition $shutters->getDirection
-    my (
-        $hash,    $shuttersDev, $azimuth,    $elevation, $brightness,
-        $outTemp, $winPos,      $angleMinus, $anglePlus
-    ) = @_;
+    my ( $hash, $shuttersDev, $azimuth, $elevation, $outTemp,
+        $winPos, $angleMinus, $anglePlus )
+      = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
+    my $brightness = $shutters->getBrightnessAverage;
 
     ASC_Debug(
             'ShadingProcessing: '
@@ -3697,6 +3699,13 @@ sub ASC_Debug($) {
     );
 }
 
+sub _averageBrightness(@) {
+    my @input = @_;
+    use List::Util qw(sum);
+
+    return int( sum(@input) / @input );
+}
+
 ######################################
 ######################################
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -4257,6 +4266,37 @@ sub setRainProtectionStatus {    # Werte protected, unprotected
     $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
       if ( defined($value) );
     return 0;
+}
+
+sub setPushBrightnessInArray {
+    my ( $self, $value ) = @_;
+
+    unshift(
+        @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} },
+        $value
+    );
+    pop( @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} } )
+      if (
+        scalar(
+            @{
+                $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
+            }
+        ) > 3
+      );
+}
+
+sub getBrightnessAverage {
+    my $self = shift;
+
+    return &FHEM::AutoShuttersControl::_averageBrightness(
+        @{$self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}} )
+      if (
+        scalar(
+            @{
+                $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
+            }
+        ) > 0
+      );
 }
 
 sub getShadingStatus {   # Werte für value = in, out, in reserved, out reserved
@@ -6545,7 +6585,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.30",
+  "version": "v0.6.31",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
