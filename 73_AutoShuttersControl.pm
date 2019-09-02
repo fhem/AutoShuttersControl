@@ -60,6 +60,7 @@ use strict;
 use warnings;
 use POSIX;
 use utf8;
+use Encode;
 use FHEM::Meta;
 use GPUtils qw(GP_Import GP_Export);
 use Data::Dumper;    #only for Debugging
@@ -262,6 +263,7 @@ my %posSetCmds = (
     HM485       => 'level',
     SELVECommeo => 'position',
     SELVE       => 'position',
+    EnOcean     => 'position',
 );
 
 my $shutters = new ASC_Shutters();
@@ -485,6 +487,10 @@ sub Notify($$) {
         }
     }
     elsif ( grep /^($posReading):\s\d+$/, @{$events} ) {
+        ASC_Debug( 'Notify: '
+              . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
+              . ' - RECEIVED EVENT: '
+              . Dumper $events);
         EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
     }
     else {
@@ -714,6 +720,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setShadingLastStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'in' : 'out' )
         );
+        $shutters->setPushBrightnessInArray( $shutters->getBrightness );
         readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
     }
@@ -1015,7 +1022,14 @@ sub EventProcessingWindowRec($@) {
         {
             $shutters->setLastDrive('ventilate - window open');
             $shutters->setNoOffset(1);
-            $shutters->setDriveCmd( $shutters->getVentilatePos );
+            $shutters->setDriveCmd(
+                (
+                    (
+                              $shutters->getShuttersPlace eq 'terrace'
+                          and $shutters->getSubTyp eq 'twostate'
+                    ) ? $shutters->getOpenPos : $shutters->getVentilatePos
+                )
+            );
         }
         elsif ( $match =~ /[Oo]pen/
             and $shutters->getSubTyp eq 'threestate' )
@@ -1039,7 +1053,13 @@ sub EventProcessingWindowRec($@) {
             if ( defined($posValue) and $posValue ) {
                 $shutters->setLastDrive($setLastDrive);
                 $shutters->setNoOffset(1);
-                $shutters->setDriveCmd($posValue);
+                $shutters->setDriveCmd(
+                    (
+                          $shutters->getShuttersPlace eq 'terrace'
+                        ? $shutters->getOpenPos
+                        : $posValue
+                    )
+                );
             }
         }
     }
@@ -1063,13 +1083,14 @@ sub EventProcessingRoommate($@) {
 
         my $getModeUp              = $shutters->getModeUp;
         my $getModeDown            = $shutters->getModeDown;
+        my $getRoommatesStatus     = $shutters->getRoommatesStatus;
         my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
         my $posValue;
 
         if (
             ( $1 eq 'home' or $1 eq 'awoken' )
-            and (  $shutters->getRoommatesStatus eq 'home'
-                or $shutters->getRoommatesStatus eq 'awoken' )
+            and (  $getRoommatesStatus eq 'home'
+                or $getRoommatesStatus eq 'awoken' )
             and $ascDev->getAutoShuttersControlMorning eq 'on'
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
@@ -1109,7 +1130,7 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'absent'
                     or $getRoommatesLastStatus eq 'gone'
                 )
-                and $shutters->getRoommatesStatus eq 'home'
+                and $getRoommatesStatus eq 'home'
               )
             {
                 if (
@@ -1196,8 +1217,7 @@ sub EventProcessingRoommate($@) {
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
         elsif (
-                $getModeDown eq 'absent'
-            and $1 eq 'absent'
+            $1 eq 'absent'
             and ( not $shutters->getIsDay
                 or $shutters->getShadingMode eq 'absent' )
           )
@@ -1212,7 +1232,10 @@ sub EventProcessingRoommate($@) {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-            elsif ( not $shutters->getIsDay ) {
+            elsif ( not $shutters->getIsDay
+                and $getModeDown eq 'absent'
+                and $getRoommatesStatus eq 'absent' )
+            {
                 $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
@@ -1369,14 +1392,15 @@ sub EventProcessingResidents($@) {
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
-                if ( $shutters->getStatus == $shutters->getClosedPos ) {
+                if (    $shutters->getStatus == $shutters->getClosedPos
+                    and $shutters->getIsDay )
+                {
                     $shutters->setHardLockOut('on')
                       if (
                             CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                         and $shutters->getShuttersPlace eq 'terrace'
                         and (  $getModeUp eq 'absent'
                             or $getModeUp eq 'off' )
-                        and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
                       );
 
                     $shutters->setLastDrive('selfDefense inactive');
@@ -1829,10 +1853,13 @@ sub EventProcessingShadingBrightness($@) {
             Brightness: " . $1
         );
 
+        ## Brightness Wert in ein Array schieben zur Berechnung eines Average Wertes
+        $shutters->setPushBrightnessInArray($1);
+
         ASC_Debug( 'EventProcessingShadingBrightness: '
               . $shutters->getShuttersDev
-              . ' - Nummerischer Brightness-Wert wurde erkannt. Der Wert ist: '
-              . $1
+              . ' - Nummerischer Brightness-Wert wurde erkannt. Der Brightness Average Wert ist: '
+              . $shutters->getBrightnessAverage
               . ' RainProtection: '
               . $shutters->getRainProtectionStatus
               . ' WindProtection: '
@@ -1849,7 +1876,6 @@ sub EventProcessingShadingBrightness($@) {
                 $shuttersDev,
                 $ascDev->getAzimuth,
                 $ascDev->getElevation,
-                $1,
                 $outTemp,
                 $shutters->getDirection,
                 $shutters->getShadingAngleLeft,
@@ -1895,7 +1921,7 @@ sub EventProcessingTwilightDevice($@) {
 
         ASC_Debug( 'EventProcessingTwilightDevice: '
               . $name
-              . ' - Passendes Event wurde erkannt. Verarbeitung über alle Rolllos beginnt'
+              . ' - Passendes Event wurde erkannt. Verarbeitung über alle Rollos beginnt'
         );
 
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -1922,7 +1948,6 @@ sub EventProcessingTwilightDevice($@) {
                     $shuttersDev,
                     $azimuth,
                     $elevation,
-                    $shutters->getBrightness,
                     $outTemp,
                     $shutters->getDirection,
                     $shutters->getShadingAngleLeft,
@@ -1942,12 +1967,12 @@ sub ShadingProcessing($@) {
 ### angleMinus ist $shutters->getShadingAngleLeft
 ### anglePlus ist $shutters->getShadingAngleRight
 ### winPos ist die Fensterposition $shutters->getDirection
-    my (
-        $hash,    $shuttersDev, $azimuth,    $elevation, $brightness,
-        $outTemp, $winPos,      $angleMinus, $anglePlus
-    ) = @_;
+    my ( $hash, $shuttersDev, $azimuth, $elevation, $outTemp,
+        $winPos, $angleMinus, $anglePlus )
+      = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
+    my $brightness = $shutters->getBrightnessAverage;
 
     ASC_Debug(
             'ShadingProcessing: '
@@ -2268,13 +2293,18 @@ sub EventProcessingShutters($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
+    ASC_Debug( 'EventProcessingShutters: '
+          . ' Fn wurde durch Notify aufgerufen da ASC_Pos_Reading Event erkannt wurde '
+          . ' - RECEIVED EVENT: '
+          . Dumper $events);
+
     if ( $events =~ m#.*:\s(\d+)# ) {
         $shutters->setShuttersDev($shuttersDev);
         $ascDev->setPosReading;
 
         ASC_Debug( 'EventProcessingShutters: '
               . $shutters->getShuttersDev
-              . ' - Event vom Rolllo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
+              . ' - Event vom Rollo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
               . ' Int von gettimeofday: '
               . int( gettimeofday() )
               . ' Last Position Timestamp: '
@@ -2312,6 +2342,11 @@ sub EventProcessingShutters($@) {
             );
         }
     }
+
+    ASC_Debug( 'EventProcessingShutters: '
+          . ' Fn wurde durlaufen und es sollten Debugausgaben gekommen sein. '
+          . ' !!!Wenn nicht!!! wurde der Event nicht korrekt als Nummerisch erkannt. '
+    );
 }
 
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
@@ -2587,19 +2622,23 @@ sub SunSetShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeDown eq 'always'
         )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (
+                $ascDev->getSelfDefense eq 'on'
+                and (  $ascDev->getResidentsStatus ne 'absent'
+                    or $ascDev->getResidentsStatus ne 'gone' )
+            )
+        )
       )
     {
 
         if ( $shutters->getPrivacyDownStatus == 1 ) {
             $shutters->setPrivacyDownStatus(2);
             $shutters->setLastDrive('privacy position');
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                PositionValueWindowRec(
-                    $shuttersDev, $shutters->getPrivacyDownPos
-                )
-            );
+            ShuttersCommandSet( $hash, $shuttersDev,
+                $shutters->getPrivacyDownPos );
         }
         else {
             $shutters->setPrivacyDownStatus(0);
@@ -2634,6 +2673,13 @@ sub SunRiseShuttersAfterTimerFn($) {
                 and $homemode eq 'gone' )
             or $shutters->getModeUp eq 'always'
         )
+        and (
+               $ascDev->getSelfDefense eq 'off'
+            or $shutters->getSelfDefenseExclude eq 'on'
+            or (    $ascDev->getSelfDefense eq 'on'
+                and $ascDev->getResidentsStatus ne 'absent'
+                and $ascDev->getResidentsStatus ne 'gone' )
+        )
       )
     {
 
@@ -2649,9 +2695,12 @@ sub SunRiseShuttersAfterTimerFn($) {
                 $ascDev->getSelfDefense eq 'off'
                 or ( $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) == 0 )
-                or (    $ascDev->getSelfDefense eq 'on'
+                or (
+                        $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and $ascDev->getResidentsStatus eq 'home' )
+                    and (  $ascDev->getResidentsStatus ne 'absent'
+                        or $ascDev->getResidentsStatus ne 'gone' )
+                )
             )
           )
         {
@@ -3595,7 +3644,7 @@ sub _SetCmdFn($) {
 
     ASC_Debug( 'FnSetCmdFn: '
           . $shuttersDev
-          . ' - Rolllo wird gefahren, aktuelle Position: '
+          . ' - Rollo wird gefahren, aktuelle Position: '
           . $shutters->getStatus
           . ', Zielposition: '
           . $posValue
@@ -3633,7 +3682,17 @@ sub ASC_Debug($) {
     my $debugTimestamp = strftime( "%Y.%m.%e %T", localtime(time) );
 
     print(
-        "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n" );
+        encode_utf8(
+            "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"
+        )
+    );
+}
+
+sub _averageBrightness(@) {
+    my @input = @_;
+    use List::Util qw(sum);
+
+    return int( sum(@input) / @input );
 }
 
 ######################################
@@ -4196,6 +4255,37 @@ sub setRainProtectionStatus {    # Werte protected, unprotected
     $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
       if ( defined($value) );
     return 0;
+}
+
+sub setPushBrightnessInArray {
+    my ( $self, $value ) = @_;
+
+    unshift(
+        @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} },
+        $value
+    );
+    pop( @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} } )
+      if (
+        scalar(
+            @{
+                $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
+            }
+        ) > 3
+      );
+}
+
+sub getBrightnessAverage {
+    my $self = shift;
+
+    return &FHEM::AutoShuttersControl::_averageBrightness(
+        @{$self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}} )
+      if (
+        scalar(
+            @{
+                $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
+            }
+        ) > 0
+      );
 }
 
 sub getShadingStatus {   # Werte für value = in, out, in reserved, out reserved
@@ -6484,7 +6574,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.28",
+  "version": "v0.6.31",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
