@@ -2638,7 +2638,8 @@ sub SunSetShuttersAfterTimerFn($) {
             $shutters->setPrivacyDownStatus(2);
             $shutters->setLastDrive('privacy position');
             ShuttersCommandSet( $hash, $shuttersDev,
-                $shutters->getPrivacyDownPos );
+                $shutters->getPrivacyDownPos )
+              unless ( $shutters->getQueryShuttersPos($shutters->getPrivacyDownPos) );
         }
         else {
             $shutters->setPrivacyDownStatus(0);
