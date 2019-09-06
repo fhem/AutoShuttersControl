@@ -169,7 +169,9 @@ BEGIN {
           delFromDevAttrList
           delFromAttrList
           gettimeofday
+          sunset
           sunset_abs
+          sunrise
           sunrise_abs
           InternalTimer
           RemoveInternalTimer
@@ -705,9 +707,23 @@ sub ShuttersDeviceScan($) {
     foreach (@list) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
+        
+        $shutters->setShuttersDev($_);
+        
+        #### Ab hier können temporäre Änderungen der Attribute gesetzt werden
+        #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen hier gelöscht und die Parameter in der Funktion renewSetSunriseSunsetTimer gesetzt werden,
+        #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
+        #### 'AttrUpdateChanges' erweitert
+          if ( ReadingsVal($_,'.ASC_AttrUpdateChanges_' . $hash->{VERSION},0) == 0 ) {
+            $shutters->setAttrUpdateChanges('ASC_Up',AttrVal($_,'ASC_Up','none'));
+            delFromDevAttrList( $_, 'ASC_Up' );
+            $shutters->setAttrUpdateChanges('ASC_Down',AttrVal($_,'ASC_Down','none'));
+            delFromDevAttrList( $_, 'ASC_Down' );
+          }
+
+        ####
 
         $shuttersList = $shuttersList . ',' . $_;
-        $shutters->setShuttersDev($_);
         $shutters->setLastManPos( $shutters->getStatus );
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
@@ -830,7 +846,7 @@ sub UserAttributs_Readings_ForShutters($$) {
 
                 RemoveInternalTimer( $shutters->getInTimerFuncHash );
                 CommandDeleteReading( undef,
-                    $_ . ' .?(AutoShuttersControl|ASC)_.*' );
+                    $_ . ' .?(ASC)_.*' );
                 CommandDeleteAttr( undef, $_ . ' ASC' );
                 delFromDevAttrList( $_, $attrib );
 
@@ -2441,9 +2457,9 @@ sub CreateSunRiseSetShuttersTimer($$) {
         'ASC_Time_DriveDown',
         (
             $ascDev->getAutoShuttersControlEvening eq 'on'
-            ? strftime(
+            ? ($shutters->getDown eq 'roommate' ? 'roommate only' : strftime(
                 "%e.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime)
-              )
+              ))
             : 'AutoShuttersControl off'
         )
     );
@@ -2452,8 +2468,9 @@ sub CreateSunRiseSetShuttersTimer($$) {
         'ASC_Time_DriveUp',
         (
             $ascDev->getAutoShuttersControlMorning eq 'on'
-            ? strftime( "%e.%m.%Y - %H:%M",
-                localtime($shuttersSunriseUnixtime) )
+            ? ($shutters->getUp eq 'roommate' ? 'roommate only' : strftime( "%e.%m.%Y - %H:%M",
+                localtime($shuttersSunriseUnixtime)
+              ))
             : 'AutoShuttersControl off'
         )
     );
@@ -2514,6 +2531,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
             $shutters->setPrivacyDownStatus(1);
         }
     }
+    else { CommandDeleteReading(undef, $shuttersDev . ' ASC_Time_PrivacyDriveDown') if ( ReadingsVal($shuttersDev,'ASC_Time_PrivacyDriveDown','none') ) }
 
     InternalTimer( $shuttersSunsetUnixtime,
         'FHEM::AutoShuttersControl::SunSetShuttersAfterTimerFn', \%funcHash );
@@ -2534,13 +2552,27 @@ sub RenewSunRiseSetShuttersTimer($) {
         $shutters->setInTimerFuncHash(undef);
         CreateSunRiseSetShuttersTimer( $hash, $_ );
 
-#        ### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
-        $attr{$_}{'ASC_Shading_MinMax_Elevation'} =
-          AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
-          if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
+        
+        #### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
+        #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
+        #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
+        #### 'AttrUpdateChanges' erweitert
+          if ( (int(gettimeofday()) - $::fhem_started) < 20 and ReadingsVal($_,'.ASC_AttrUpdateChanges_' . $hash->{VERSION},0) == 0 ) {
+            $attr{$_}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
+                if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
+            $attr{$_}{'ASC_Down'} = $shutters->getAttrUpdateChanges('ASC_Down')
+                if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
 
-        delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation' )
-          ;    # temporär muss später gelöscht werden ab Version 0.6.17
+          CommandDeleteReading(undef,$_ . ' .ASC_AttrUpdateChanges_.*') if ( ReadingsVal($_,'.ASC_AttrUpdateChanges_' . $hash->{VERSION},'none') eq 'none' );
+          readingsSingleUpdate($defs{$_},'.ASC_AttrUpdateChanges_' . $hash->{VERSION},1,0);
+
+#             $attr{$_}{'ASC_Shading_MinMax_Elevation'} =
+#                 AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' )
+#                 if ( AttrVal( $_, 'ASC_Shading_Min_Elevation', 'none' ) ne 'none' );
+# 
+#             delFromDevAttrList( $_, 'ASC_Shading_Min_Elevation' )
+#                 ;    # temporär muss später gelöscht werden ab Version 0.6.17
+          }
     }
 }
 
@@ -2614,7 +2646,8 @@ sub SunSetShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (
-            $ascDev->getAutoShuttersControlEvening eq 'on'
+            $shutters->getDown ne 'roommate'
+        and $ascDev->getAutoShuttersControlEvening eq 'on'
         and IsAfterShuttersManualBlocking($shuttersDev)
         and (
             $shutters->getModeDown eq $homemode
@@ -2667,7 +2700,8 @@ sub SunRiseShuttersAfterTimerFn($) {
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
     if (
-        $ascDev->getAutoShuttersControlMorning eq 'on'
+            $shutters->getUp ne 'roommate'
+        and $ascDev->getAutoShuttersControlMorning eq 'on'
         and (
             $shutters->getModeUp eq $homemode
             or (    $shutters->getModeUp eq 'absent'
@@ -3126,7 +3160,7 @@ sub ShuttersSunrise($$) {
           if ( $autoAstroMode eq 'HORIZON' );
     }
     my $oldFuncHash = $shutters->getInTimerFuncHash;
-    my $shuttersSunriseUnixtime;
+    my $shuttersSunriseUnixtime = computeAlignTime('24:00',sunrise('REAL', 0,'4:30','8:30'));
 
     if ( $tm eq 'unix' ) {
         if ( $shutters->getUp eq 'astro' ) {
@@ -3517,7 +3551,7 @@ sub ShuttersSunset($$) {
           if ( $autoAstroMode eq 'HORIZON' );
     }
     my $oldFuncHash = $shutters->getInTimerFuncHash;
-    my $shuttersSunsetUnixtime;
+    my $shuttersSunsetUnixtime = computeAlignTime('24:00',sunset('REAL', 0,'15:30','21:30'));
 
     if ( $tm eq 'unix' ) {
         if ( $shutters->getDown eq 'astro' ) {
@@ -3750,6 +3784,13 @@ sub getShuttersDev {
     return $self->{shuttersDev};
 }
 
+sub setAttrUpdateChanges {
+    my ( $self, $attr, $value ) = @_;
+    
+    $self->{ $self->{shuttersDev} }{AttrUpdateChanges}{$attr} = $value;
+    return 0;
+}
+
 sub setHardLockOut {
     my ( $self, $cmd ) = @_;
 
@@ -3977,6 +4018,15 @@ sub getPrivacyDownStatus {
         ? $self->{ $self->{shuttersDev} }->{privacyDownStatus}
         : undef
     );
+}
+
+sub getAttrUpdateChanges {
+    my ( $self, $attr ) = @_;
+
+    return $self->{ $self->{shuttersDev} }{AttrUpdateChanges}{$attr}
+      if( defined( $self->{ $self->{shuttersDev} }{AttrUpdateChanges} )
+        and defined( $self->{ $self->{shuttersDev} }{AttrUpdateChanges}{$attr} )
+      );
 }
 
 sub getIsDay {
