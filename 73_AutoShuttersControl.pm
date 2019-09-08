@@ -6009,12 +6009,13 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_ComfortOpen_Pos</strong> - The comfort opening position, ranging
                 from 0 to 100 percent in increments of 10. Default: depends on the <em>ASC</em> attribute.
             </li>
-            <li><strong>ASC_Down - astro|time|brightness</strong> - Drive the shutter depending on this setting:
+            <li><strong>ASC_Down - astro|time|brightness|roommate</strong> - Drive the shutter depending on this setting:
                 <ul>
                     <li>astro - drive down at sunset</li>
                     <li>time - drive at <em>ASC_Time_Down_Early</em></li>
                     <li>brightness - drive between <em>ASC_Time_Down_Early</em> and <em>ASC_Time_Down_Late</em>,
                         depending on the settings of <em>ASC_BrightnessSensor</em> (see above).</li>
+                    <li>roommate - no drive by time or brightness, roommate trigger only</li>
                 </ul>
                 Defaults to <em>astro</em>.
             </li>
@@ -6121,12 +6122,13 @@ sub getblockAscDrivesAfterManual {
                 If <em>ASC_Up</em> set to <em>brightness</em>, the time for <em>ASC_Time_Up_WE_Holiday</em>
                 must be earlier then <em>ASC_Time_Up_Late</em>.
             </li>
-            <li><strong>ASC_Up astro|time|brightness</strong> - Drive the shutter depending on this setting:
+            <li><strong>ASC_Up astro|time|brightness|roommate</strong> - Drive the shutter depending on this setting:
                 <ul>
                     <li>astro - drive up at sunrise</li>
                     <li>time - drive at <em>ASC_Time_Up_Early</em></li>
                     <li>brightness - drive between <em>ASC_Time_Up_Early</em> and <em>ASC_Time_Up_Late</em>,
                         depending on the settings of <em>ASC_BrightnessSensor</em> (see above).</li>
+                    <li>roommate - no drive by time or brightness, roommate trigger only</li>
                 </ul>
                 Defaults to <em>astro</em>.
             </li>
