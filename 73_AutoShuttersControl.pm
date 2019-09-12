@@ -202,6 +202,7 @@ my %userAttrList = (
       => '-',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
+    'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100' => '-',
     'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
     'ASC_Time_Up_Early'                          => '-',
     'ASC_Time_Up_Late'                           => '-',
@@ -1026,7 +1027,7 @@ sub EventProcessingWindowRec($@) {
             {
                 $shutters->setLastDrive('window closed at night');
                 $shutters->setNoOffset(1);
-                $shutters->setDriveCmd( $shutters->getClosedPos );
+                $shutters->setDriveCmd( ($shutters->getSleepPos > 0 ? $shutters->getSleepPos : $shutters->getClosedPos) );
             }
         }
         elsif (
@@ -1164,7 +1165,7 @@ sub EventProcessingRoommate($@) {
                     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                         or $shutters->getVentilateOpen eq 'off' )
                     {
-                        $posValue = $shutters->getClosedPos;
+                        $posValue = ($shutters->getSleepPos > 0 ? $shutters->getSleepPos : $shutters->getClosedPos);
                     }
                     else {
                         $posValue = $shutters->getVentilatePos;
@@ -1224,7 +1225,7 @@ sub EventProcessingRoommate($@) {
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                 or $shutters->getVentilateOpen eq 'off' )
             {
-                $posValue = $shutters->getClosedPos;
+                $posValue = ($shutters->getSleepPos > 0 ? $shutters->getSleepPos : $shutters->getClosedPos);
             }
             else {
                 $posValue = $shutters->getVentilatePos;
@@ -2681,9 +2682,9 @@ sub SunSetShuttersAfterTimerFn($) {
                $ascDev->getSelfDefense eq 'off'
             or $shutters->getSelfDefenseExclude eq 'on'
             or (
-                $ascDev->getSelfDefense eq 'on'
-                and (  $ascDev->getResidentsStatus ne 'absent'
-                    or $ascDev->getResidentsStatus ne 'gone' )
+                    $ascDev->getSelfDefense eq 'on'
+                and $ascDev->getResidentsStatus ne 'absent'
+                and $ascDev->getResidentsStatus ne 'gone'
             )
         )
       )
@@ -2702,7 +2703,7 @@ sub SunSetShuttersAfterTimerFn($) {
             $shutters->setPrivacyDownStatus(0);
             $shutters->setLastDrive('night close');
             ShuttersCommandSet( $hash, $shuttersDev,
-                PositionValueWindowRec( $shuttersDev, $shutters->getClosedPos )
+                PositionValueWindowRec( $shuttersDev, ($shutters->getSleepPos > 0 ? $shutters->getSleepPos : $shutters->getClosedPos) )
             );
         }
     }
@@ -2737,7 +2738,8 @@ sub SunRiseShuttersAfterTimerFn($) {
             or $shutters->getSelfDefenseExclude eq 'on'
             or (    $ascDev->getSelfDefense eq 'on'
                 and $ascDev->getResidentsStatus ne 'absent'
-                and $ascDev->getResidentsStatus ne 'gone' )
+                and $ascDev->getResidentsStatus ne 'gone'
+            )
         )
       )
     {
@@ -2757,8 +2759,8 @@ sub SunRiseShuttersAfterTimerFn($) {
                 or (
                         $ascDev->getSelfDefense eq 'on'
                     and CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                    and (  $ascDev->getResidentsStatus ne 'absent'
-                        or $ascDev->getResidentsStatus ne 'gone' )
+                    and (   $ascDev->getResidentsStatus ne 'absent'
+                        and $ascDev->getResidentsStatus ne 'gone' )
                 )
             )
           )
@@ -4813,6 +4815,12 @@ sub getClosedPos {
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 }
 
+sub getSleepPos {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Sleep_Pos', -1 );
+}
+
 sub getVentilateOpen {
     my $self = shift;
 
@@ -5976,7 +5984,7 @@ sub getblockAscDrivesAfterManual {
                 </ul>
             </li>
             <li><strong>ASC_Antifreeze_Pos</strong> - Position to be operated if the shutter should be closed,
-                but <em>ASC_Antifreeze</em> is not set to <em>off</em>. Defaults to 50.
+                but <em>ASC_Antifreeze</em> is not set to <em>off</em>. (Default: dependent on attribut<em>ASC</em> 85/15).
             </li>
             <li><strong>ASC_AutoAstroModeEvening</strong> - Can be set to <em>REAL</em>, <em>CIVIL</em>,
                 <em>NAUTIC</em>, <em>ASTRONOMIC</em> or <em>HORIZON</em>. Defaults to none of those.</li>
@@ -6004,10 +6012,10 @@ sub getblockAscDrivesAfterManual {
                 <em>brightness</em> reading, unless <em>READING</em> is specified. Defaults to <em>none</em>.
             </li>
             <li><strong>ASC_Closed_Pos</strong> - The closed position value from 0 to 100 percent in increments of 10.
-                Depends on the <em>ASC</em> attribute.
+                (Default: dependent on attribut<em>ASC</em> 100/0).
             </li>
             <li><strong>ASC_ComfortOpen_Pos</strong> - The comfort opening position, ranging
-                from 0 to 100 percent in increments of 10. Default: depends on the <em>ASC</em> attribute.
+                from 0 to 100 percent in increments of 10. (Default: dependent on attribut<em>ASC</em> 20/80).
             </li>
             <li><strong>ASC_Down - astro|time|brightness|roommate</strong> - Drive the shutter depending on this setting:
                 <ul>
@@ -6065,7 +6073,10 @@ sub getblockAscDrivesAfterManual {
                 </ul>
             </li>
             <li><strong>ASC_Open_Pos</strong> - The opening position value from 0 to 100 percent in increments of 10.
-                Depends on the <em>ASC</em> attribute.
+                (Default: dependent on attribut<em>ASC</em> 0/100).
+            </li>
+            <li><strong>ASC_Sleep_Pos</strong> - The opening position value from 0 to 100 percent in increments of 10.
+                (Default: dependent on attribut<em>ASC</em> 75/25).
             </li>
             <li><strong>ASC_Partymode on|off</strong> - Party mode. If configured to on, driving orders for the
                 shutter by <abbr>ASC</abbr> will be queued if <em>partyMode</em> is set to <em>on</em> at the
@@ -6133,7 +6144,7 @@ sub getblockAscDrivesAfterManual {
                 Defaults to <em>astro</em>.
             </li>
             <li><strong>ASC_Ventilate_Pos</strong> - The opening position value for ventilation
-                from 0 to 100 percent in increments of 10. Default depending on the <em>ASC</em> attribute.
+                from 0 to 100 percent in increments of 10. (Default: dependent on attribut<em>ASC</em> 70/30).
             </li>
             <li><strong>ASC_Ventilate_Window_Open on|off</strong> - Drive to ventilation position as window is opened
                 or tilted, even when the current shutter position is lower than the <em>ASC_Ventilate_Pos</em>.
@@ -6207,7 +6218,7 @@ sub getblockAscDrivesAfterManual {
                     <li><strong>ASC_Shading_Mode absent|always|off|home</strong> - see <em>ASC_Mode_Down</em> above,
                         but for shading. Defaults to off.
                     </li>
-                    <li><strong>ASC_Shading_Pos</strong> - Shading position in percent.</li>
+                    <li><strong>ASC_Shading_Pos</strong> - Shading position in percent. (Default: dependent on attribut<em>ASC</em> 85/15)</li>
                     <li><strong>ASC_Shading_StateChange_Cloudy</strong> - Shading <strong>ends</strong> at this
                         outdoor brightness, depending also on other sensor values. Defaults to 20000.
                     </li>
@@ -6508,7 +6519,7 @@ sub getblockAscDrivesAfterManual {
         <ul>
             <li><strong>ASC - 0/1/2</strong> 0 = "kein Anlegen der Attribute beim ersten Scan bzw. keine Beachtung eines Fahrbefehles",1 = "Inverse oder Rollo - Bsp.: Rollo oben 0, Rollo unten 100 und der Befehl zum prozentualen Fahren ist position",2 = "Homematic Style - Bsp.: Rollo oben 100, Rollo unten 0 und der Befehl zum prozentualen Fahren ist pct</li>
             <li><strong>ASC_Antifreeze - soft/am/pm/hard/off</strong> - Frostschutz, wenn soft f&auml;hrt der Rollladen in die ASC_Antifreeze_Pos und wenn hard/am/pm wird gar nicht oder innerhalb der entsprechenden Tageszeit nicht gefahren (default: off)</li>
-            <li><strong>ASC_Antifreeze_Pos</strong> - Position die angefahren werden soll, wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist (default: 50)</li>
+            <li><strong>ASC_Antifreeze_Pos</strong> - Position die angefahren werden soll, wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 85/15)</li>
             <li><strong>ASC_AutoAstroModeEvening</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
             <li><strong>ASC_AutoAstroModeEveningHorizon</strong> - H&ouml;he &uuml;ber Horizont, wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt (default: none)</li>
             <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
@@ -6517,8 +6528,10 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
-            <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
-            <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
+            <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 0/100)</li>
+            <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 100/0)</li>
+            <li><strong>ASC_Sleep_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 75/25)</li>
+            <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 20/80)</li>
             <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
             <li><strong>ASC_DriveUpMaxDuration</strong> - die Dauer des Hochfahrens des Rollladens plus 5 Sekunden (default: 60)</li>
             <li><strong>ASC_Drive_Offset</strong> - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten, 0 bedeutet keine Verz&ouml;gerung, -1 bedeutet, dass das gleichwertige Attribut aus dem ASC Device ausgewertet werden soll. (default: -1)</li>
@@ -6527,7 +6540,6 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_LockOut_Cmd - inhibit/blocked/protection</strong> - set Befehl f&uuml;r das Rollladen-Device zum Hardware sperren. Dieser Befehl wird gesetzt werden, wenn man "ASC_LockOut" auf hard setzt (default: none)</li>
             <li><strong>ASC_Mode_Down - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
             <li><strong>ASC_Mode_Up - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
-            <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
             <li><strong>ASC_Partymode -  on/off</strong> - schaltet den Partymodus an oder aus. Wird am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Rolll&auml;den, welche das Attribut auf on haben, zwischengespeichert und sp&auml;ter erst ausgef&uuml;hrt (default: off)</li>
             <li><strong>ASC_Pos_Reading</strong> - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
             <li><strong>ASC_PrivacyDownTime_beforNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
@@ -6551,7 +6563,7 @@ sub getblockAscDrivesAfterManual {
                 <li><strong>ASC_Shading_MinMax_Elevation</strong> - ab welcher min H&ouml;he des Sonnenstandes soll beschattet und ab welcher max H&ouml;he wieder beendet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 25.0:100.0)</li>
                 <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 18)</li>
                 <li><strong>ASC_Shading_Mode - absent,always,off,home</strong> / wann soll die Beschattung nur stattfinden. (default: off)</li>
-                <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung</li>
+                <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 80/20)</li>
                 <li><strong>ASC_Shading_StateChange_Cloudy</strong> - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 20000)</li>
                 <li><strong>ASC_Shading_StateChange_Sunny</strong> - Brightness Wert ab welchen Beschattung stattfinden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 35000)</li>
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
@@ -6563,7 +6575,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Time_Up_Late</strong> - Sonnenaufgang sp&auml;teste Zeit zum Hochfahren (default: 08:30)</li>
             <li><strong>ASC_Time_Up_WE_Holiday</strong> - Sonnenaufgang fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). (default: 08:00) ACHTUNG!!! in Verbindung mit Brightness f&uuml;r <em>ASC_Up</em> muss die Uhrzeit kleiner sein wie die Uhrzeit aus <em>ASC_Time_Up_Late</em></li>
             <li><strong>ASC_Up - astro/time/brightness</strong> - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte Down Wert von ASC_brightnessDriveUpDown erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren (default: astro)</li>
-            <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em>)</li>
+            <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 70/30)</li>
             <li><strong>ASC_Ventilate_Window_Open</strong> - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist (default: on)</li>
             <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
             <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem f&uuml;r Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
@@ -6653,7 +6665,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.31",
+  "version": "v0.6.32",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
