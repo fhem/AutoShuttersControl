@@ -1290,19 +1290,14 @@ sub EventProcessingResidents($@) {
               )
             {
                 if (
-                    (
-                        CheckIfShuttersWindowRecOpen($shuttersDev) != 0
-                        or $shutters->getSelfDefenseMode eq 'absent'
-                    )
+                    $shutters->getSelfDefenseMode eq 'absent'
                     and $ascDev->getSelfDefense eq 'on'
                     and $shutters->getSelfDefenseExclude eq 'off'
                   )
                 {
                     $shutters->setLastDrive('selfDefense active');
                     $shutters->setSelfDefenseAbsent( 0, 1
-                      ) # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
-                      if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                        and $shutters->getSelfDefenseMode eq 'absent' );
+                      ); # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
                     $shutters->setDriveCmd( $shutters->getClosedPos );
                 }
                 elsif (
@@ -1322,15 +1317,14 @@ sub EventProcessingResidents($@) {
         }
     }
     elsif ( $events =~ m#$reading:\s(gone)#
-        and $ascDev->getSelfDefense eq 'on'
-        and $shutters->getSelfDefenseMode eq 'gone'
-        and $shutters->getSelfDefenseExclude eq 'off' )
+        and $ascDev->getSelfDefense eq 'on' )
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             $shutters->setHardLockOut('off');
-            if ( $shutters->getShuttersPlace eq 'terrace' ) {
-                $shutters->setLastDrive('selfDefense terrace');
+            if ( $shutters->getSelfDefenseExclude eq 'off' ) {
+
+                $shutters->setLastDrive('selfDefense');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
         }
@@ -1395,12 +1389,8 @@ sub EventProcessingResidents($@) {
                 $shutters->setDriveCmd( $shutters->getLastPos );
             }
             elsif (
-                (
-                        $ascDev->getSelfDefense eq 'on'
-                    and $shutters->getSelfDefenseExclude eq 'off'
-                    or (    $getResidentsLastStatus eq 'gone'
-                        and $shutters->getShuttersPlace eq 'terrace' )
-                )
+                    $ascDev->getSelfDefense eq 'on'
+                and $shutters->getSelfDefenseExclude eq 'off'
                 and not $shutters->getIfInShading
                 and (  $getResidentsLastStatus eq 'gone'
                     or $getResidentsLastStatus eq 'absent' )
@@ -1411,7 +1401,6 @@ sub EventProcessingResidents($@) {
                   if (  $getResidentsLastStatus eq 'absent'
                     and $ascDev->getSelfDefense eq 'on'
                     and $shutters->getSelfDefenseExclude eq 'off'
-                    and CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
