@@ -1291,8 +1291,8 @@ sub EventProcessingResidents($@) {
             {
                 if (
                     $shutters->getSelfDefenseMode eq 'absent'
-                    and $ascDev->getSelfDefense eq 'on'
-                    and $shutters->getSelfDefenseExclude eq 'off'
+                    or (CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getShuttersPlace eq 'terrace')
                   )
                 {
                     $shutters->setLastDrive('selfDefense active');
