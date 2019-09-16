@@ -4368,6 +4368,10 @@ sub getBrightnessAverage {
     return &FHEM::AutoShuttersControl::_averageBrightness(
         @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} } )
       if (
+        ref(
+                $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
+            ) eq 'ARRAY'
+        and
         scalar(
             @{
                 $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
