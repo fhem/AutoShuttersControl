@@ -241,17 +241,16 @@ my %userAttrList = (
     'ASC_Antifreeze:off,soft,hard,am,pm'                   => '-',
 'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
       => [ '', 85, 15 ],
-    'ASC_Partymode:on,off'              => '-',
-    'ASC_Roommate_Device'               => '-',
-    'ASC_Roommate_Reading'              => '-',
-    'ASC_Self_Defense_Exclude:on,off'   => '-',
-    'ASC_Self_Defense_Mode:absent,gone' => '-',
-    'ASC_Self_Defense_AbsentDelay'      => '-',
-    'ASC_WiggleValue'                   => '-',
-    'ASC_WindParameters'                => '-',
-    'ASC_DriveUpMaxDuration'            => '-',
-    'ASC_WindProtection:on,off'         => '-',
-    'ASC_RainProtection:on,off'         => '-'
+    'ASC_Partymode:on,off'                  => '-',
+    'ASC_Roommate_Device'                   => '-',
+    'ASC_Roommate_Reading'                  => '-',
+    'ASC_Self_Defense_Mode:absent,gone,off' => '-',
+    'ASC_Self_Defense_AbsentDelay'          => '-',
+    'ASC_WiggleValue'                       => '-',
+    'ASC_WindParameters'                    => '-',
+    'ASC_DriveUpMaxDuration'                => '-',
+    'ASC_WindProtection:on,off'             => '-',
+    'ASC_RainProtection:on,off'             => '-'
 );
 
 my %posSetCmds = (
@@ -724,6 +723,12 @@ sub ShuttersDeviceScan($) {
             $shutters->setAttrUpdateChanges( 'ASC_Down',
                 AttrVal( $_, 'ASC_Down', 'none' ) );
             delFromDevAttrList( $_, 'ASC_Down' );
+            $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
+                AttrVal( $_, 'ASC_Self_Defense_Mode', 'none' ) );
+            delFromDevAttrList( $_, 'ASC_Self_Defense_Mode' );
+            $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
+                AttrVal( $_, 'ASC_Self_Defense_Exclude', 'none' ) );
+            delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
         }
 
         ####
@@ -1284,18 +1289,18 @@ sub EventProcessingResidents($@) {
             $shutters->setHardLockOut('off');
             if (
                     $ascDev->getSelfDefense eq 'on'
-                and $shutters->getSelfDefenseExclude eq 'off'
+                and $shutters->getSelfDefenseMode ne 'off'
                 or (   $getModeDown eq 'absent'
                     or $getModeDown eq 'always' )
               )
             {
                 if (
                         $ascDev->getSelfDefense eq 'on'
-                    and $shutters->getSelfDefenseExclude eq 'off'
                     and (   $shutters->getSelfDefenseMode eq 'absent'
                       or (  CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                         and $shutters->getSelfDefenseMode eq 'gone'
                         and $shutters->getShuttersPlace eq 'terrace'
+                        and $shutters->getSelfDefenseMode ne 'off'
                          )
                         )
                     )
@@ -1327,7 +1332,7 @@ sub EventProcessingResidents($@) {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             $shutters->setHardLockOut('off');
-            if ( $shutters->getSelfDefenseExclude eq 'off' ) {
+            if ( $shutters->getSelfDefenseMode ne 'off' ) {
 
                 $shutters->setLastDrive('selfDefense');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
@@ -1395,7 +1400,7 @@ sub EventProcessingResidents($@) {
             }
             elsif (
                     $ascDev->getSelfDefense eq 'on'
-                and $shutters->getSelfDefenseExclude eq 'off'
+                and $shutters->getSelfDefenseMode ne 'off'
                 and not $shutters->getIfInShading
                 and (  $getResidentsLastStatus eq 'gone'
                     or $getResidentsLastStatus eq 'absent' )
@@ -1405,7 +1410,7 @@ sub EventProcessingResidents($@) {
                 RemoveInternalTimer( $shutters->getSelfDefenseAbsentTimerhash )
                   if (  $getResidentsLastStatus eq 'absent'
                     and $ascDev->getSelfDefense eq 'on'
-                    and $shutters->getSelfDefenseExclude eq 'off'
+                    and $shutters->getSelfDefenseMode ne 'off'
                     and not $shutters->getSelfDefenseAbsent
                     and $shutters->getSelfDefenseAbsentTimerrun );
 
@@ -2577,6 +2582,12 @@ sub RenewSunRiseSetShuttersTimer($) {
               if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
             $attr{$_}{'ASC_Down'} = $shutters->getAttrUpdateChanges('ASC_Down')
               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
+            $attr{$_}{'ASC_Self_Defense_Mode'} = $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode')
+              if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne 'none' );
+            $attr{$_}{'ASC_Self_Defense_Mode'} = 'off'
+              if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq 'on' );
+
+
 
             CommandDeleteReading( undef, $_ . ' .ASC_AttrUpdateChanges_.*' )
               if (
@@ -2678,7 +2689,7 @@ sub SunSetShuttersAfterTimerFn($) {
         )
         and (
                $ascDev->getSelfDefense eq 'off'
-            or $shutters->getSelfDefenseExclude eq 'on'
+            or $shutters->getSelfDefenseMode eq 'off'
             or (
                     $ascDev->getSelfDefense eq 'on'
                 and $ascDev->getResidentsStatus ne 'absent'
@@ -2733,7 +2744,7 @@ sub SunRiseShuttersAfterTimerFn($) {
         )
         and (
                $ascDev->getSelfDefense eq 'off'
-            or $shutters->getSelfDefenseExclude eq 'on'
+            or $shutters->getSelfDefenseMode eq 'off'
             or (    $ascDev->getSelfDefense eq 'on'
                 and $ascDev->getResidentsStatus ne 'absent'
                 and $ascDev->getResidentsStatus ne 'gone'
@@ -3886,7 +3897,7 @@ sub setDriveCmd {
 
     if (    $shutters->getSelfDefenseAbsent
         and not $shutters->getSelfDefenseAbsentTimerrun
-        and $shutters->getSelfDefenseExclude eq 'off'
+        and $shutters->getSelfDefenseMode ne 'off'
         and $shutters->getLastDrive eq 'selfDefense active'
         and $ascDev->getSelfDefense eq 'on' )
     {
@@ -4498,12 +4509,6 @@ sub getPrivacyDownPos {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50 );
-}
-
-sub getSelfDefenseExclude {
-    my $self = shift;
-
-    return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_Exclude', 'off' );
 }
 
 sub getSelfDefenseMode {
@@ -6663,7 +6668,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.33",
+  "version": "v0.6.34",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
