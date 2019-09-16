@@ -1074,11 +1074,11 @@ sub EventProcessingWindowRec($@) {
                 $shutters->setLastDrive($setLastDrive);
                 $shutters->setNoOffset(1);
                 $shutters->setDriveCmd(
-                    (
-                          $shutters->getShuttersPlace eq 'terrace'
-                        ? $shutters->getOpenPos
-                        : $posValue
-                    )
+#                     (
+#                           $shutters->getShuttersPlace eq 'terrace'
+#                         ? $shutters->getOpenPos
+                        $posValue
+#                     )
                 );
             }
         }
@@ -1123,7 +1123,8 @@ sub EventProcessingRoommate($@) {
                        $getRoommatesLastStatus eq 'asleep'
                     or $getRoommatesLastStatus eq 'awoken'
                 )
-                and $shutters->getIsDay
+                and ($shutters->getIsDay
+                  or $shutters->getUp eq 'roommate')
                 and IsAfterShuttersTimeBlocking($shuttersDev)
               )
             {
@@ -1154,7 +1155,8 @@ sub EventProcessingRoommate($@) {
               )
             {
                 if (
-                        not $shutters->getIsDay
+                        (not $shutters->getIsDay
+                      or $shutters->getDown eq 'roommate')
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeDown eq 'home'
                         or $getModeDown eq 'always' )
@@ -1176,7 +1178,8 @@ sub EventProcessingRoommate($@) {
                     ShuttersCommandSet( $hash, $shuttersDev, $posValue );
                 }
                 elsif (
-                        $shutters->getIsDay
+                        ($shutters->getIsDay
+                      or $shutters->getUp eq 'roommate')
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeUp eq 'home'
                         or $getModeUp eq 'always' )
@@ -1238,10 +1241,12 @@ sub EventProcessingRoommate($@) {
         elsif (
             $1 eq 'absent'
             and ( not $shutters->getIsDay
+                or $shutters->getDown eq 'roommate'
                 or $shutters->getShadingMode eq 'absent' )
           )
         {
-            if (    $shutters->getIsDay
+            if (    ($shutters->getIsDay
+                  or $shutters->getUp eq 'roommate')
                 and $shutters->getIfInShading
                 and
                 not $shutters->getQueryShuttersPos( $shutters->getShadingPos )
@@ -1251,7 +1256,8 @@ sub EventProcessingRoommate($@) {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
             }
-            elsif ( not $shutters->getIsDay
+            elsif ( (not $shutters->getIsDay
+                  or $shutters->getDown eq 'roommate')
                 and $getModeDown eq 'absent'
                 and $getRoommatesStatus eq 'absent' )
             {
@@ -1322,8 +1328,6 @@ sub EventProcessingResidents($@) {
     {
         foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
-            my $getModeUp   = $shutters->getModeUp;
-            my $getModeDown = $shutters->getModeDown;
             $shutters->setHardLockOut('off');
             if ( $shutters->getShuttersPlace eq 'terrace' ) {
                 $shutters->setLastDrive('selfDefense terrace');
@@ -1807,7 +1811,7 @@ sub EventProcessingBrightness($@) {
                 elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                     or $shutters->getVentilateOpen eq 'off' )
                 {
-                    $posValue = $shutters->getClosedPos;
+                    $posValue = ($shutters->getSleepPos > 0 ? $shutters->getSleepPos : $shutters->getClosedPos);
                 }
                 else { $posValue = $shutters->getVentilatePos; }
 
@@ -6665,7 +6669,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.32",
+  "version": "v0.6.33",
   "x_developmentversion": "v0.6.19.34",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
