@@ -2573,7 +2573,7 @@ sub RenewSunRiseSetShuttersTimer($) {
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
         #### 'AttrUpdateChanges' erweitert
-        if ( ( int( gettimeofday() ) - $::fhem_started ) < 20
+        if ( ( int( gettimeofday() ) - $::fhem_started ) < 30
             and
             ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
             == 0 )
@@ -6110,11 +6110,8 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Roommate_Reading</strong> - Specifies a reading name to <em>ASC_Roommate_Device</em>.
                 Defaults to <em>state</em>.
             </li>
-            <li><strong>ASC_Self_Defense_Exclude on|off</strong> - If set to on, the shutter will not be closed
-                if the self defense mode is activated and residents are absent. Defaults to off.
-            </li>
-            <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - which Residents status Self Defense should become 
-                active without the window being open. (default: gone)
+            <li><strong>ASC_Self_Defense_Mode - absent/gone/off</strong> - which Residents status Self Defense should become 
+                active without the window being open. (default: gone) off exclude from self defense
             </li>
             <li><strong>ASC_Self_Defense_AbsentDelay</strong> - um wie viele Sekunden soll das fahren in Selfdefense bei
                 Residents absent verz&ouml;gert werden. (default: 300)
@@ -6554,10 +6551,9 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
             <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
-            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li>
-            <li><strong>ASC_Self_Defense_Mode - absent/gone</strong> - ab welchen Residents Status soll Selfdefense aktiv werden ohne das Fenster auf sind. (default: gone)</li>
+            <li><strong>ASC_Self_Defense_Mode - absent/gone/off</strong> - ab welchen Residents Status soll Selfdefense aktiv werden ohne das Fenster auf sind. (default: gone)</li>
             <li><strong>ASC_Self_Defense_AbsentDelay</strong> - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 300)</li>
-            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off)</li></p>
+            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off), off bedeutet das es ausgeschlossen ist vom Self Defense</li></p>
             <ul>
                 <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
                 </br>Damit die Beschattung Funktion hat, m&uuml;ssen folgende Anforderungen erf&uuml;llt sein.
