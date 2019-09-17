@@ -708,8 +708,6 @@ sub ShuttersDeviceScan($) {
 
         $shutters->setShuttersDev($_);
 
-
-
         #### Ab hier können temporäre Änderungen der Attribute gesetzt werden
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen hier gelöscht und die Parameter in der Funktion renewSetSunriseSunsetTimer gesetzt werden,
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
@@ -731,8 +729,6 @@ sub ShuttersDeviceScan($) {
             delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
         }
 
-
-
         CommandAttr( undef,
                 $name
               . ' ASC_shuttersDriveDelay '
@@ -748,7 +744,7 @@ sub ShuttersDeviceScan($) {
         $shutters->setLastManPos( $shutters->getStatus );
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
-        $shutters->setNoOffset(0);
+        $shutters->setNoDelay(0);
         $shutters->setSelfDefenseAbsent( 0, 0 );
         $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
         $shutters->setShadingStatus(
@@ -1014,14 +1010,14 @@ sub EventProcessingWindowRec($@) {
                     and $shutters->getShadingPos != $shutters->getStatus )
                 {
                     $shutters->setLastDrive('shading in');
-                    $shutters->setNoOffset(1);
+                    $shutters->setNoDelay(1);
                     $shutters->setDriveCmd( $shutters->getShadingPos );
                 }
                 elsif ($shutters->getStatus != $shutters->getOpenPos
                     or $shutters->getStatus != $shutters->getLastManPos )
                 {
                     $shutters->setLastDrive('window closed at day');
-                    $shutters->setNoOffset(1);
+                    $shutters->setNoDelay(1);
                     $shutters->setDriveCmd(
                         (
                               $shutters->getVentilatePosAfterDayClosed eq 'open'
@@ -1042,7 +1038,7 @@ sub EventProcessingWindowRec($@) {
               )
             {
                 $shutters->setLastDrive('window closed at night');
-                $shutters->setNoOffset(1);
+                $shutters->setNoDelay(1);
                 $shutters->setDriveCmd(
                     (
                           $shutters->getSleepPos > 0
@@ -1063,7 +1059,7 @@ sub EventProcessingWindowRec($@) {
           )
         {
             $shutters->setLastDrive('ventilate - window open');
-            $shutters->setNoOffset(1);
+            $shutters->setNoDelay(1);
             $shutters->setDriveCmd(
                 (
                     (
@@ -1094,7 +1090,7 @@ sub EventProcessingWindowRec($@) {
 
             if ( defined($posValue) and $posValue ) {
                 $shutters->setLastDrive($setLastDrive);
-                $shutters->setNoOffset(1);
+                $shutters->setNoDelay(1);
                 $shutters->setDriveCmd(
 
             #                     (
@@ -1193,10 +1189,11 @@ sub EventProcessingRoommate($@) {
                     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                         or $shutters->getVentilateOpen eq 'off' )
                     {
-                        $posValue =
-                          (   $shutters->getSleepPos > 0
+                        $posValue = (
+                              $shutters->getSleepPos > 0
                             ? $shutters->getSleepPos
-                            : $shutters->getClosedPos );
+                            : $shutters->getClosedPos
+                        );
                     }
                     else {
                         $posValue = $shutters->getVentilatePos;
@@ -1259,10 +1256,11 @@ sub EventProcessingRoommate($@) {
             if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                 or $shutters->getVentilateOpen eq 'off' )
             {
-                $posValue =
-                  (   $shutters->getSleepPos > 0
+                $posValue = (
+                      $shutters->getSleepPos > 0
                     ? $shutters->getSleepPos
-                    : $shutters->getClosedPos );
+                    : $shutters->getClosedPos
+                );
             }
             else {
                 $posValue = $shutters->getVentilatePos;
@@ -1847,10 +1845,11 @@ sub EventProcessingBrightness($@) {
                 elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                     or $shutters->getVentilateOpen eq 'off' )
                 {
-                    $posValue =
-                      (   $shutters->getSleepPos > 0
+                    $posValue = (
+                          $shutters->getSleepPos > 0
                         ? $shutters->getSleepPos
-                        : $shutters->getClosedPos );
+                        : $shutters->getClosedPos
+                    );
                 }
                 else { $posValue = $shutters->getVentilatePos; }
 
@@ -2455,7 +2454,7 @@ sub ShuttersCommandSet($$$) {
     {
         $shutters->setDelayCmd($posValue);
         $ascDev->setDelayCmdReading;
-        $shutters->setNoOffset(0);
+        $shutters->setNoDelay(0);
         Log3( $name, 4,
             "AutoShuttersControl ($name) - ShuttersCommandSet in Delay" );
 
@@ -2609,8 +2608,6 @@ sub RenewSunRiseSetShuttersTimer($) {
         $shutters->setInTimerFuncHash(undef);
         CreateSunRiseSetShuttersTimer( $hash, $_ );
 
-
-
         #### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
@@ -2633,7 +2630,6 @@ sub RenewSunRiseSetShuttersTimer($) {
                 $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
                 'on' );
 
-
             CommandDeleteReading( undef, $_ . ' .ASC_AttrUpdateChanges_.*' )
               if (
                 ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
@@ -2645,13 +2641,13 @@ sub RenewSunRiseSetShuttersTimer($) {
         }
 
         $attr{$_}{ASC_Drive_Delay} = AttrVal( $_, 'ASC_Drive_Offset', 'none' )
-            if ( AttrVal( $_, 'ASC_Drive_Offset', 'none' ) ne 'none' );
+          if ( AttrVal( $_, 'ASC_Drive_Offset', 'none' ) ne 'none' );
         delFromDevAttrList( $_, 'ASC_Drive_Offset' );
 
-        $attr{$_}{ASC_Drive_DelayStart} = AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' )
-            if ( AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
+        $attr{$_}{ASC_Drive_DelayStart} =
+          AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' )
+          if ( AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
         delFromDevAttrList( $_, 'ASC_Drive_OffsetStart' );
-
 
     }
 }
@@ -2677,7 +2673,7 @@ sub wiggleAll($) {
 sub wiggle($$) {
     my ( $hash, $shuttersDev ) = @_;
     $shutters->setShuttersDev($shuttersDev);
-    $shutters->setNoOffset(1);
+    $shutters->setNoDelay(1);
     $shutters->setLastDrive('wiggle begin drive');
 
     my %h = (
@@ -3902,10 +3898,10 @@ sub setHardLockOut {
     return 0;
 }
 
-sub setNoOffset {
-    my ( $self, $noOffset ) = @_;
+sub setNoDelay {
+    my ( $self, $noDelay ) = @_;
 
-    $self->{ $self->{shuttersDev} }{noOffset} = $noOffset;
+    $self->{ $self->{shuttersDev} }{noDelay} = $noDelay;
     return 0;
 }
 
@@ -3959,7 +3955,7 @@ sub setDriveCmd {
             'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
         $shutters->setSelfDefenseAbsent( 1, 0, \%h );
     }
-    elsif ( $offSetStart > 0 and not $shutters->getNoOffset ) {
+    elsif ( $offSetStart > 0 and not $shutters->getNoDelay ) {
         InternalTimer(
             gettimeofday() + int( rand($offSet) + $shutters->getDelayStart ),
             'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
@@ -3968,7 +3964,7 @@ sub setDriveCmd {
               . $shutters->getShuttersDev
               . ' - versetztes fahren' );
     }
-    elsif ( $offSetStart < 1 or $shutters->getNoOffset ) {
+    elsif ( $offSetStart < 1 or $shutters->getNoDelay ) {
         FHEM::AutoShuttersControl::_SetCmdFn( \%h );
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
               . $shutters->getShuttersDev
@@ -3977,9 +3973,9 @@ sub setDriveCmd {
 
     FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
           . $shutters->getShuttersDev
-          . ' - NoOffset: '
-          . ( $shutters->getNoOffset ? 'JA' : 'NEIN' ) );
-    $shutters->setNoOffset(0);
+          . ' - NoDelay: '
+          . ( $shutters->getNoDelay ? 'JA' : 'NEIN' ) );
+    $shutters->setNoDelay(0);
     return 0;
 }
 
@@ -4178,10 +4174,10 @@ sub getPosSetCmd {
     );
 }
 
-sub getNoOffset {
+sub getNoDelay {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }{noOffset};
+    return $self->{ $self->{shuttersDev} }{noDelay};
 }
 
 sub getSelfDefenseAbsent {
@@ -6309,7 +6305,7 @@ sub getblockAscDrivesAfterManual {
             <td>1 = soft, 2 = daytime, 3 = hard</td>
         </tr>
         <tr>
-            <td>NoOffset</td>
+            <td>NoDelay</td>
             <td>Was the offset handling deactivated (e.g. by operations triggered by a window event)</td>
         </tr>
         <tr>
@@ -6656,7 +6652,7 @@ sub getblockAscDrivesAfterManual {
     <table border="1">
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
         <tr><td>FreezeStatus</td><td>1=soft, 2=Daytime, 3=hard</td></tr>
-        <tr><td>NoOffset</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</td></tr>
+        <tr><td>NoDelay</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</td></tr>
         <tr><td>LastDrive</td><td>Grund des letzten Fahrens</td></tr>
         <tr><td>LastPos</td><td>die letzte Position des Rollladens</td></tr>
         <tr><td>LastPosTimestamp</td><td>Timestamp der letzten festgestellten Position</td></tr>
@@ -6726,7 +6722,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.100",
+  "version": "v0.6.101",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
