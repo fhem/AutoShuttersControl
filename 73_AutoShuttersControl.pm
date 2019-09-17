@@ -3912,9 +3912,9 @@ sub setDriveCmd {
         posValue    => $posValue,
     );
 
-    $offSet = $shutters->getOffset       if ( $shutters->getOffset > -1 );
-    $offSet = $ascDev->getShuttersOffset if ( $shutters->getOffset < 0 );
-    $offSetStart = $shutters->getOffsetStart;
+    $offSet = $shutters->getDelay       if ( $shutters->getDelay > -1 );
+    $offSet = $ascDev->getShuttersOffset if ( $shutters->getDelay < 0 );
+    $offSetStart = $shutters->getDelayStart;
 
     if (    $shutters->getSelfDefenseAbsent
         and not $shutters->getSelfDefenseAbsentTimerrun
@@ -3928,7 +3928,7 @@ sub setDriveCmd {
     }
     elsif ( $offSetStart > 0 and not $shutters->getNoOffset ) {
         InternalTimer(
-            gettimeofday() + int( rand($offSet) + $shutters->getOffsetStart ),
+            gettimeofday() + int( rand($offSet) + $shutters->getDelayStart ),
             'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
 
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
@@ -4771,14 +4771,14 @@ sub getShadingWaitingPeriod {
 }
 ### Ende Beschattung
 
-sub getOffset {
+sub getDelay {
     my $self = shift;
 
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_Delay', -1 );
     return ( $val =~ /^\d+$/ ? $val : -1 );
 }
 
-sub getOffsetStart {
+sub getDelayStart {
     my $self = shift;
 
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_DelayStart', -1 );
