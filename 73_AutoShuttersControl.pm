@@ -4774,14 +4774,14 @@ sub getShadingWaitingPeriod {
 sub getOffset {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_Offset', -1 );
+    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_Delay', -1 );
     return ( $val =~ /^\d+$/ ? $val : -1 );
 }
 
 sub getOffsetStart {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_OffsetStart', -1 );
+    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Drive_DelayStart', -1 );
     return ( ( $val > 0 and $val =~ /^\d+$/ ) ? $val : -1 );
 }
 
@@ -5477,7 +5477,7 @@ sub getShuttersOffset {
     my $self = shift;
     my $name = $self->{name};
 
-    return AttrVal( $name, 'ASC_shuttersDriveOffset', -1 );
+    return AttrVal( $name, 'ASC_shuttersDriveDelay', -1 );
 }
 
 sub getBrightnessMinVal {
