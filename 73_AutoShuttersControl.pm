@@ -229,8 +229,8 @@ my %userAttrList = (
     'ASC_Shading_MinMax_Elevation'                         => '-',
     'ASC_Shading_Min_OutsideTemperature'                   => '-',
     'ASC_Shading_WaitingPeriod'                            => '-',
-    'ASC_Drive_Offset'                                     => '-',
-    'ASC_Drive_OffsetStart'                                => '-',
+    'ASC_Drive_Delay'                                      => '-',
+    'ASC_Drive_DelayStart'                                 => '-',
     'ASC_WindowRec'                                        => '-',
     'ASC_WindowRec_subType:twostate,threestate'            => '-',
     'ASC_WindowRec_PosAfterDayClosed:open,lastManual'      => '-',
@@ -292,6 +292,12 @@ sub ascAPIget($@) {
 sub Initialize($) {
     my ($hash) = @_;
 
+
+    ### alte Attribute welche entfernt werden
+    my $oldAttr =
+        'ASC_shuttersDriveOffset ';
+
+
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
     $hash->{SetFn}    = 'FHEM::AutoShuttersControl::Set';
@@ -313,12 +319,13 @@ sub Initialize($) {
       . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
       . 'ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
       . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
-      . 'ASC_shuttersDriveOffset '
+      . 'ASC_shuttersDriveDelay '
       . 'ASC_twilightDevice '
       . 'ASC_windSensor '
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
+      . $oldAttr
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
 
@@ -342,13 +349,7 @@ sub Define($$) {
     $hash->{MID} = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
 
-    #   ### Versionierung ###
-    # Stable Version
     $hash->{VERSION} = version->parse($VERSION)->normal;
-
-  # Developer Version
-  #     $hash->{DEV_VERSION} = FHEM::Meta::Get( $hash, 'x_developmentversion' );
-
     $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
                   #$hash->{shutters} = $shutters;
@@ -710,6 +711,8 @@ sub ShuttersDeviceScan($) {
 
         $shutters->setShuttersDev($_);
 
+
+
         #### Ab hier können temporäre Änderungen der Attribute gesetzt werden
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen hier gelöscht und die Parameter in der Funktion renewSetSunriseSunsetTimer gesetzt werden,
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
@@ -729,8 +732,22 @@ sub ShuttersDeviceScan($) {
             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
                 AttrVal( $_, 'ASC_Self_Defense_Exclude', 'none' ) );
             delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
+            $shutters->setAttrUpdateChanges( 'ASC_Drive_Offset',
+                AttrVal( $_, 'ASC_Drive_Offset', 'none' ) );
+            delFromDevAttrList( $_, 'ASC_Drive_Offset' );
+            $shutters->setAttrUpdateChanges( 'ASC_Drive_OffsetStart',
+                AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' ) );
+            delFromDevAttrList( $_, 'ASC_Drive_OffsetStart' );
         }
+        
+        CommandAttr(undef,$name . ' ASC_shuttersDriveDelay ' . AttrVal($name,'ASC_shuttersDriveOffset',-1))
+          if (AttrVal($name,'ASC_shuttersDriveOffset','none') ne 'none');
+        CommandDeleteAttr(undef,$name . ' ASC_shuttersDriveOffset')
+          if (AttrVal($name,'ASC_shuttersDriveOffset','none') ne 'none');
 
+
+
+        ####
         ####
 
         $shuttersList = $shuttersList . ',' . $_;
@@ -2586,6 +2603,10 @@ sub RenewSunRiseSetShuttersTimer($) {
               if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne 'none' );
             $attr{$_}{'ASC_Self_Defense_Mode'} = 'off'
               if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq 'on' );
+            $attr{$_}{'ASC_Drive_Delay'} = $shutters->getAttrUpdateChanges('ASC_Drive_Offset')
+              if ( $shutters->getAttrUpdateChanges('ASC_Drive_Offset') ne 'none' );
+            $attr{$_}{'ASC_Drive_DelayStart'} = $shutters->getAttrUpdateChanges('ASC_Drive_OffsetStart')
+              if ( $shutters->getAttrUpdateChanges('ASC_Drive_OffsetStart') ne 'none' );
 
 
 
@@ -6510,13 +6531,19 @@ sub getblockAscDrivesAfterManual {
             <a name="ASC_residentsDev"></a>
             <li><strong>ASC_residentsDev - DEVICENAME[:READINGNAME]</strong> - der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents-Device der obersten Ebene (z.B. rgr_Residents:state)</li>
             <a name="ASC_shuttersDriveOffset"></a>
-            <li><strong>ASC_shuttersDriveOffset</strong> - maximale Zufallsverz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten. 0 bedeutet keine Verz&ouml;gerung</li>
+            <li><strong>ASC_shuttersDriveDelay</strong> - maximale Zufallsverz&ouml;gerung in Sekunden bei der Berechnung der Fahrzeiten. 0 bedeutet keine Verz&ouml;gerung</li>
             <a name="ASC_tempSensor"></a>
             <li><strong>ASC_tempSensor - DEVICENAME[:READINGNAME]</strong> - der Inhalt ist eine Kombination aus Device und Reading f&uuml;r die Au&szlig;entemperatur</li>
             <a name="ASC_twilightDevice"></a>
             <li><strong>ASC_twilightDevice</strong> - das Device, welches die Informationen zum Sonnenstand liefert. Wird unter anderem f&uuml;r die Beschattung verwendet.</li>
             <a name="ASC_windSensor"></a>
             <li><strong>ASC_windSensor - DEVICE[:READING]</strong> - Sensor f&uuml;r die Windgeschwindigkeit. Kombination aus Device und Reading.</li>
+        </ul>
+        <br />
+        <ul>
+            <u>Folgende Attribute sind obsolet und sollten nicht mehr verwendet werden.</u>
+            <a name="ASC_shuttersDriveOffset"></a>
+            <li>ASC_shuttersDriveOffset - <em>WARNUNG!!! OBSOLET !!! NICHT VERWENDEN!!!</em></li>
         </ul>
         <br />
         <u> In den Rolll&auml;den-Ger&auml;ten</u>
@@ -6668,8 +6695,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.34",
-  "x_developmentversion": "v0.6.19.34",
+  "version": "v0.6.100",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
