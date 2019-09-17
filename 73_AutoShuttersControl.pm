@@ -2569,7 +2569,7 @@ sub RenewSunRiseSetShuttersTimer($) {
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
         #### 'AttrUpdateChanges' erweitert
-        if ( ( int( gettimeofday() ) - $::fhem_started ) < 20
+        if ( ( int( gettimeofday() ) - $::fhem_started ) < 30
             and
             ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
             == 0 )
