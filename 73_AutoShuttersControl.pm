@@ -219,13 +219,10 @@ my %userAttrList = (
     'ASC_BlockingTime_beforNightClose'           => '-',
     'ASC_BlockingTime_beforDayOpen'              => '-',
     'ASC_BrightnessSensor'                       => '-',
-    'ASC_Shading_Direction'                      => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
-    'ASC_Shading_Angle_Left'                               => '-',
-    'ASC_Shading_Angle_Right'                              => '-',
-    'ASC_Shading_StateChange_Sunny'                        => '-',
-    'ASC_Shading_StateChange_Cloudy'                       => '-',
+    'ASC_Shading_InOutAzimuth'                             => '-',
+    'ASC_Shading_StateChange_SunnyCloudy'                  => '-',
     'ASC_Shading_MinMax_Elevation'                         => '-',
     'ASC_Shading_Min_OutsideTemperature'                   => '-',
     'ASC_Shading_WaitingPeriod'                            => '-',
@@ -729,14 +726,6 @@ sub ShuttersDeviceScan($) {
             delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
         }
 
-        CommandAttr( undef,
-                $name
-              . ' ASC_shuttersDriveDelay '
-              . AttrVal( $name, 'ASC_shuttersDriveOffset', -1 ) )
-          if ( AttrVal( $name, 'ASC_shuttersDriveOffset', 'none' ) ne 'none' );
-        CommandDeleteAttr( undef, $name . ' ASC_shuttersDriveOffset' )
-          if ( AttrVal( $name, 'ASC_shuttersDriveOffset', 'none' ) ne 'none' );
-
         ####
         ####
 
@@ -757,6 +746,17 @@ sub ShuttersDeviceScan($) {
         readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
     }
+
+    ####
+    CommandAttr( undef,
+            $name
+          . ' ASC_shuttersDriveDelay '
+          . AttrVal( $name, 'ASC_shuttersDriveOffset', -1 ) )
+      if ( AttrVal( $name, 'ASC_shuttersDriveOffset', 'none' ) ne 'none' );
+    CommandDeleteAttr( undef, $name . ' ASC_shuttersDriveOffset' )
+      if ( AttrVal( $name, 'ASC_shuttersDriveOffset', 'none' ) ne 'none' );
+
+    ####
 
     $hash->{NOTIFYDEV} = "global," . $name . $shuttersList;
 
@@ -1938,9 +1938,8 @@ sub EventProcessingShadingBrightness($@) {
                 $ascDev->getAzimuth,
                 $ascDev->getElevation,
                 $outTemp,
-                $shutters->getDirection,
-                $shutters->getShadingAngleLeft,
-                $shutters->getShadingAngleRight
+                $shutters->getShadingAzimuthLeft,
+                $shutters->getShadingAzimuthRight
             );
 
             ASC_Debug( 'EventProcessingShadingBrightness: '
@@ -2010,9 +2009,8 @@ sub EventProcessingTwilightDevice($@) {
                     $azimuth,
                     $elevation,
                     $outTemp,
-                    $shutters->getDirection,
-                    $shutters->getShadingAngleLeft,
-                    $shutters->getShadingAngleRight
+                    $shutters->getShadingAzimuthLeft,
+                    $shutters->getShadingAzimuthRight
                 );
 
                 ASC_Debug( 'EventProcessingTwilightDevice: '
@@ -2025,11 +2023,11 @@ sub EventProcessingTwilightDevice($@) {
 }
 
 sub ShadingProcessing($@) {
-### angleMinus ist $shutters->getShadingAngleLeft
-### anglePlus ist $shutters->getShadingAngleRight
+### angleMinus ist $shutters->getShadingAzimuthLeft
+### anglePlus ist $shutters->getShadingAzimuthRight
 ### winPos ist die Fensterposition $shutters->getDirection
     my ( $hash, $shuttersDev, $azimuth, $elevation, $outTemp,
-        $winPos, $angleMinus, $anglePlus )
+        $azimuthLeft, $azimuthRight )
       = @_;
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
@@ -2046,12 +2044,10 @@ sub ShadingProcessing($@) {
           . $brightness
           . ', OutTemp: '
           . $outTemp
-          . ', Fenster Position: '
-          . $winPos
-          . ', Winkel Links: '
-          . $angleMinus
-          . ', Winkel Rechts: '
-          . $anglePlus
+          . ', Azimut Beschattung: '
+          . $azimuthLeft
+          . ', Azimut Endschattung: '
+          . $azimuthRight
           . ', Ist es nach der Zeitblockadezeit: '
           . ( IsAfterShuttersTimeBlocking($shuttersDev) ? 'JA' : 'NEIN' )
           . ', Das Rollo ist in der Beschattung und wurde manuell gefahren: '
@@ -2098,15 +2094,11 @@ sub ShadingProcessing($@) {
           . ' - Alle Werte für die weitere Verarbeitung sind korrekt vorhanden und es wird nun mit der Beschattungsverarbeitung begonnen'
     );
 
-# minimalen und maximalen Winkel des Fensters bestimmen. wenn die aktuelle Sonnenposition z.B. bei 205° läge und der Wert für angleMin/Max 85° wäre, dann würden zwischen 120° und 290° beschattet.
-    my $winPosMin = $winPos - $angleMinus;
-    my $winPosMax = $winPos + $anglePlus;
-
     if (
         (
                $outTemp < $shutters->getShadingMinOutsideTemperature - 3
-            or $azimuth < $winPosMin
-            or $azimuth > $winPosMax
+            or $azimuth < $azimuthLeft
+            or $azimuth > $azimuthRight
         )
         and $shutters->getShadingStatus ne 'out'
       )
@@ -2123,8 +2115,8 @@ sub ShadingProcessing($@) {
 "AutoShuttersControl ($name) - Shading Processing - Der Sonnenstand ist ausserhalb der Winkelangaben oder die Aussentemperatur unterhalb der Shading Temperatur "
         );
     }
-    elsif ($azimuth < $winPosMin
-        or $azimuth > $winPosMax
+    elsif ($azimuth < $azimuthLeft
+        or $azimuth > $azimuthRight
         or $elevation < $shutters->getShadingMinElevation
         or $elevation > $shutters->getShadingMaxElevation
         or $brightness < $shutters->getShadingStateChangeCloudy
@@ -2162,8 +2154,8 @@ sub ShadingProcessing($@) {
               . ' Neuer Status: '
               . $shutters->getShadingStatus );
     }
-    elsif ( $azimuth > $winPosMin
-        and $azimuth < $winPosMax
+    elsif ( $azimuth > $azimuthLeft
+        and $azimuth < $azimuthRight
         and $elevation > $shutters->getShadingMinElevation
         and $elevation < $shutters->getShadingMaxElevation
         and $brightness > $shutters->getShadingStateChangeSunny
@@ -2649,6 +2641,27 @@ sub RenewSunRiseSetShuttersTimer($) {
           if ( AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
         delFromDevAttrList( $_, 'ASC_Drive_OffsetStart' );
 
+        $attr{$_}{ASC_Shading_StateChange_SunnyCloudy} =
+            AttrVal( $_, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
+          . AttrVal( $_, 'ASC_Shading_StateChange_Cloudy', 'none' )
+          if (  AttrVal( $_, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
+            and AttrVal( $_, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
+            'none' );
+        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Sunny' );
+        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Cloudy' );
+
+        $attr{$_}{ASC_Shading_InOutAzimuth} =
+          ( AttrVal( $_, 'ASC_Shading_Direction', 180 ) -
+              AttrVal( $_, 'ASC_Shading_Angle_Left', 85 ) )
+          . ':'
+          . ( AttrVal( $_, 'ASC_Shading_Direction', 180 ) +
+              AttrVal( $_, 'ASC_Shading_Angle_Right', 85 ) )
+          if ( AttrVal( $_, 'ASC_Shading_Direction', 'none' ) ne 'none'
+            or AttrVal( $_, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
+            or AttrVal( $_, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
+        delFromDevAttrList( $_, 'ASC_Shading_Direction' );
+        delFromDevAttrList( $_, 'ASC_Shading_Angle_Left' );
+        delFromDevAttrList( $_, 'ASC_Shading_Angle_Right' );
     }
 }
 
@@ -4631,10 +4644,12 @@ sub getShadingPos {
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
     }
 
-    return ( $val =~ /^\d+(\.\d+)?$/
+    return (
+          $val =~ /^\d+(\.\d+)?$/
         ? $val
         : $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+    );
 }
 
 sub getShadingMode {
@@ -4747,22 +4762,56 @@ sub getBrightnessReading {
     );
 }
 
-sub getDirection {
+sub getShadingAzimuthLeft {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Direction', 180 );
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+      ->{leftVal}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getShadingAzimuthRight;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+      ->{leftVal};
 }
 
-sub getShadingAngleLeft {
+sub getShadingAzimuthRight {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Left', 75 );
-}
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+      ->{rightVal}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+            ->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}->{LASTGETTIME}
+      = int( gettimeofday() );
+    my ( $left, $right ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_Shading_InOutAzimuth', '95:265' );
 
-sub getShadingAngleRight {
-    my $self = shift;
+    ### erwartetes Ergebnis
+    # MIN:MAX
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Angle_Right', 75 );
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}->{leftVal} =
+      $left;
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}->{rightVal} =
+      $right;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
+      ->{rightVal};
 }
 
 sub getShadingMinOutsideTemperature {
@@ -4827,15 +4876,54 @@ sub getShadingMaxElevation {
 sub getShadingStateChangeSunny {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Sunny',
-        35000 );
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_Shading_StateChange_SunnyCloudy}->{sunny}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_StateChange_SunnyCloudy}
+      ->{LASTGETTIME} = int( gettimeofday() );
+    my ( $sunny, $cloudy ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_Shading_StateChange_SunnyCloudy',
+        '35000:20000' );
+
+    ### erwartetes Ergebnis
+    # SUNNY:CLOUDY
+
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_StateChange_SunnyCloudy}
+      ->{sunny} = $sunny;
+    $self->{ $self->{shuttersDev} }->{ASC_Shading_StateChange_SunnyCloudy}
+      ->{cloudy} = $cloudy;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_Shading_StateChange_SunnyCloudy}->{sunny};
 }
 
 sub getShadingStateChangeCloudy {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_StateChange_Cloudy',
-        20000 );
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_Shading_StateChange_SunnyCloudy}->{cloudy}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getShadingStateChangeSunny;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_Shading_StateChange_SunnyCloudy}->{cloudy};
 }
 
 sub getShadingWaitingPeriod {
@@ -4898,10 +4986,12 @@ sub getOpenPos {
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
     }
 
-    return ( $val =~ /^\d+(\.\d+)?$/
+    return (
+          $val =~ /^\d+(\.\d+)?$/
         ? $val
         : $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+    );
 }
 
 sub getVentilatePos {
@@ -4916,10 +5006,12 @@ sub getVentilatePos {
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
     }
 
-    return ( $val =~ /^\d+(\.\d+)?$/
+    return (
+          $val =~ /^\d+(\.\d+)?$/
         ? $val
         : $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+    );
 }
 
 sub getVentilatePosAfterDayClosed {
@@ -4979,10 +5071,12 @@ sub getComfortOpenPos {
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
     }
 
-    return ( $val =~ /^\d+(\.\d+)?$/
+    return (
+          $val =~ /^\d+(\.\d+)?$/
         ? $val
         : $userAttrList{'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+    );
 }
 
 sub getPartyMode {
@@ -5158,9 +5252,11 @@ sub getTimeUpEarly {
         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '05:00' );
     }
 
-    return ( $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
+    return (
+          $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
         ? $val
-        : '05:00' );
+        : '05:00'
+    );
 }
 
 sub getTimeUpLate {
@@ -5171,9 +5267,11 @@ sub getTimeUpLate {
         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '08:30' );
     }
 
-    return ( $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
+    return (
+          $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
         ? $val
-        : '08:30' );
+        : '08:30'
+    );
 }
 
 sub getTimeDownEarly {
@@ -5184,9 +5282,11 @@ sub getTimeDownEarly {
         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '16:00' );
     }
 
-    return ( $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
+    return (
+          $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
         ? $val
-        : '16:00' );
+        : '16:00'
+    );
 }
 
 sub getTimeDownLate {
@@ -5197,9 +5297,11 @@ sub getTimeDownLate {
         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '22:00' );
     }
 
-    return ( $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
+    return (
+          $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
         ? $val
-        : '22:00' );
+        : '22:00'
+    );
 }
 
 sub getTimeUpWeHoliday {
@@ -5211,9 +5313,11 @@ sub getTimeUpWeHoliday {
         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '08:00' );
     }
 
-    return ( $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
+    return (
+          $val =~ /^(?:[01]\d|2[0-3]):(?:[0-5]\d)(:(?:[0-5]\d))?$/
         ? $val
-        : '08:00' );
+        : '08:00'
+    );
 }
 
 sub getBrightnessMinVal {
@@ -6378,19 +6482,8 @@ sub getblockAscDrivesAfterManual {
                     The following attributes are available:
                 </p>
                 <ul>
-                    <li><strong>ASC_Shading_Angle_Left</strong> - Minimal shading angle in relation to the window,
-                        from when shade is applied. For example: Window is 180 &deg; (perpendicular) &minus; 85 &deg; set
-                        for <em>ASC_Shading_Angle_Left</em> &rarr; shading starts if sun position is 95 &deg;.
-                        Defaults to 75.
-                    </li>
-                    <li><strong>ASC_Shading_Angle_Right</strong> - Complements <em>ASC_Shading_Angle_Left</em> and
-                        sets the maximum shading angle in relation to the window. For example: Window is 180 &deg;
-                        (perpendicular) &plus; 85 &deg; set from <em>ASC_Shading_Angle_Right</em> &rarr; shading until
-                        sun position of 265 &deg; is reached. Defaults to 75.
-                    </li>
-                    <li><strong>ASC_Shading_Direction</strong> - Compass point degrees for which the window resp. shutter
-                        points. East is 90 &deg;, South 180 &deg;, West is 270 &deg; and North is 0 &deg;.
-                        Defaults to South (180).
+                    <li><strong>ASC_Shading_InOutAzimuth</strong> - Azimuth value from which shading is to be used when shading is exceeded and shading when undershooting is required.
+                        Defaults to 95:265.
                     </li>
                     <li><strong>ASC_Shading_MinMax_Elevation</strong> - Shading starts as min point of sun elevation is
                         reached and end as max point of sun elevation is reached, depending also on other sensor values. Defaults to 25.0:100.0.
@@ -6405,8 +6498,8 @@ sub getblockAscDrivesAfterManual {
                     <li><strong>ASC_Shading_StateChange_Cloudy</strong> - Shading <strong>ends</strong> at this
                         outdoor brightness, depending also on other sensor values. Defaults to 20000.
                     </li>
-                    <li><strong>ASC_Shading_StateChange_Sunny</strong> - Shading <strong>starts</strong> at this
-                        outdoor brightness, depending also on other sensor values. Defaults to 35000.
+                    <li><strong>ASC_Shading_StateChange_SunnyCloudy</strong> - Shading <strong>starts/stops</strong> at this
+                        outdoor brightness, depending also on other sensor values. Defaults to 35000:20000.
                     </li>
                     <li><strong>ASC_Shading_WaitingPeriod</strong> - Waiting time in seconds before additional sensor values
                         to <em>ASC_Shading_StateChange_Sunny</em> or <em>ASC_Shading_StateChange_Cloudy</em>
@@ -6745,15 +6838,12 @@ sub getblockAscDrivesAfterManual {
                 </br><strong>Im ASC Device</strong> das Reading "controlShading" mit dem Wert on, sowie ein Astro/Twilight Device im Attribut "ASC_twilightDevice" und das Attribut "ASC_tempSensor".
                 </br><strong>In den Rollladendevices</strong> ben&ouml;tigt ihr ein Helligkeitssensor als Attribut "ASC_BrightnessSensor", sofern noch nicht vorhanden. Findet der Sensor nur f&uuml;r die Beschattung Verwendung ist der Wert DEVICENAME[:READING] ausreichend.
                 </br>Alle weiteren Attribute sind optional und wenn nicht gesetzt mit Default-Werten belegt. Ihr solltet sie dennoch einmal anschauen und entsprechend Euren Gegebenheiten setzen. Die Werte f&uumlr; die Fensterposition und den Vor- Nachlaufwinkel sowie die Grenzwerte f&uuml;r die StateChange_Cloudy und StateChange_Sunny solltet ihr besondere Beachtung dabei schenken.
-                <li><strong>ASC_Shading_Angle_Left</strong> - Vorlaufwinkel im Bezug zum Fenster, ab wann abgeschattet wird. Beispiel: Fenster 180° - 85° ==> ab Sonnenpos. 95° wird abgeschattet (default: 75)</li>
-                <li><strong>ASC_Shading_Angle_Right</strong> - Nachlaufwinkel im Bezug zum Fenster, bis wann abgeschattet wird. Beispiel: Fenster 180° + 85° ==> bis Sonnenpos. 265° wird abgeschattet (default: 75)</li>
-                <li><strong>ASC_Shading_Direction</strong> -  Position in Grad, auf der das Fenster liegt - genau Osten w&auml;re 90, S&uuml;den 180 und Westen 270 (default: 180)</li>
+                <li><strong>ASC_Shading_InOutAzimuth</strong> - Azimut Wert ab dem bei &Uuml;berschreiten Beschattet und bei Unterschreiten Endschattet werden soll. (default: 95:265)</li>
                 <li><strong>ASC_Shading_MinMax_Elevation</strong> - ab welcher min H&ouml;he des Sonnenstandes soll beschattet und ab welcher max H&ouml;he wieder beendet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 25.0:100.0)</li>
                 <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 18)</li>
                 <li><strong>ASC_Shading_Mode - absent,always,off,home</strong> / wann soll die Beschattung nur stattfinden. (default: off)</li>
                 <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 80/20) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-                <li><strong>ASC_Shading_StateChange_Cloudy</strong> - Brightness Wert ab welchen die Beschattung aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 20000)</li>
-                <li><strong>ASC_Shading_StateChange_Sunny</strong> - Brightness Wert ab welchen Beschattung stattfinden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 35000)</li>
+                <li><strong>ASC_Shading_StateChange_SunnyCloudy</strong> - Brightness Wert ab welchen die Beschattung stattfinden und aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 35000:20000)</li>
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
             </ul>
             <li><strong>ASC_ShuttersPlace - window/terrace</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen (default: window)</li>
@@ -6853,7 +6943,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.102",
+  "version": "v0.6.103",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
