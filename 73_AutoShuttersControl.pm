@@ -578,9 +578,13 @@ sub Set($$@) {
     my ( $hash, $name, @aa ) = @_;
     my ( $cmd, @args ) = @aa;
 
-    if ( lc $cmd eq 'renewsetsunrisesunsettimer' ) {
+    if ( lc $cmd eq 'renewalltimer' ) {
         return "usage: $cmd" if ( @args != 0 );
         RenewSunRiseSetShuttersTimer($hash);
+    }
+    elsif ( lc $cmd eq 'renewtimer' ) {
+        return "usage: $cmd" if ( @args > 1 );
+        CreateSunRiseSetShuttersTimer($hash,$args[0]);
     }
     elsif ( lc $cmd eq 'scanforshutters' ) {
         return "usage: $cmd" if ( @args != 0 );
@@ -637,16 +641,16 @@ sub Set($$@) {
     else {
         my $list = 'scanForShutters:noArg';
         $list .=
-' renewSetSunriseSunsetTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
+' renewAllTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
-          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
+          . ' shutterASCenableToggle:'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+          . ' renewTimer:'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+            if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= ' createNewNotifyDev:noArg'
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
             and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
-        $list .=
-          ' shutterASCenableToggle:'
-          . join( ',', @{ $hash->{helper}{shuttersList} } )
-          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
 
         return "Unknown argument $cmd,choose one of $list";
     }
@@ -6130,8 +6134,11 @@ sub getblockAscDrivesAfterManual {
             working command send to the device, i.e. by a event, created by a window or presence event, will be executed
             once the party mode is disabled.
         </li>
-        <li><strong>renewSetSunriseSunsetTimer</strong> - resets the sunrise and sunset timers for every associated
+        <li><strong>renewAllTimer</strong> - resets the sunrise and sunset timers for every associated
             shutter device and creates new internal FHEM timers.
+        </li>
+        <li><strong>renewTimer</strong> - resets the sunrise and sunset timers for selected shutter
+            device and creates new internal FHEM timers.
         </li>
         <li><strong>scanForShutters</strong> - scans the whole FHEM installation for (new) devices whose <em>ASC</em>
             attribute is set (to 1 or 2, see above).
@@ -6733,7 +6740,8 @@ sub getblockAscDrivesAfterManual {
         <li><strong>createNewNotifyDev</strong> - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an. Diese Funktion steht nur zur Verf&uuml;gung, wenn Attribut ASC_expert auf 1 gesetzt ist.</li>
         <li><strong>hardLockOut - on/off</strong> - Aktiviert den hardwareseitigen Aussperrschutz f&uuml;r die Rolll&auml;den, bei denen das Attributs <em>ASC_LockOut</em> entsprechend auf hard gesetzt ist. Mehr Informationen in der Beschreibung bei den Attributen f&uuml;r die Rollladenger&auml;ten.</li>
         <li><strong>partyMode - on/off</strong> - Aktiviert den globalen Partymodus. Alle Rollladen-Ger&auml;ten, in welchen das Attribut <em>ASC_Partymode</em> auf <em>on</em> gesetzt ist, werden durch ASC nicht mehr gesteuert. Der letzte Schaltbefehl, der bspw. durch ein Fensterevent oder Wechsel des Bewohnerstatus an die Rolll&auml;den gesendet wurde, wird beim Deaktivieren des Partymodus ausgef&uuml;hrt</li>
-        <li><strong>renewSetSunriseSunsetTimer</strong> - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sonnenauf- und -untergang und setzt die internen Timer neu.</li>
+        <li><strong>renewTimer</strong> - erneuert beim ausgew&auml;hlten Rollladen die Zeiten f&uuml;r Sonnenauf- und -untergang und setzt die internen Timer neu.</li>
+        <li><strong>renewAllTimer</strong> - erneuert bei allen Rolll&auml;den die Zeiten f&uuml;r Sonnenauf- und -untergang und setzt die internen Timer neu.</li>
         <li><strong>scanForShutters</strong> - Durchsucht das System nach Ger&auml;tenRo mit dem Attribut <em>ASC = 1</em> oder <em>ASC = 2</em></li>
         <li><strong>selfDefense - on/off</strong> - Aktiviert bzw. deaktiviert die Selbstschutzfunktion. Beispiel: Wenn das Residents-Ger&auml;t <em>absent</em> meldet, die Selbstschutzfunktion aktiviert wurde und ein Fenster im Haus noch ge&ouml;ffnet ist, so wird an diesem Fenster der Rollladen deaktivieren dann heruntergefahren.</li>
         <li><strong>shutterASCenableToggle - on/off</strong> - Aktivieren oder deaktivieren der ASC Kontrolle beim einzelnen Rollladens</li>
