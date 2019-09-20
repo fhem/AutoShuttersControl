@@ -3834,15 +3834,12 @@ sub _averageBrightness(@) {
     return int( sum(@input) / @input );
 }
 
-sub _perlCodeCheck($$) {
-    my ( $exec, $default ) = @_;
+sub _perlCodeCheck($) {
+    my $exec = shift;
     my $val = undef;
 
     if ( $exec =~ /^\{(.+)\}$/ ) {
-        $val = eval $1;
-        if ($@) {
-            $val = $default;
-        }
+        $val = main::AnalyzePerlCommand(undef, $1);
     }
 
     return $val;
@@ -4577,13 +4574,8 @@ sub getAntiFreezePos {
         }[ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
     );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck(
-            $val,
-            $userAttrList{
-'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
-            }[ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-        );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -4610,8 +4602,8 @@ sub getPrivacyDownPos {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50 );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, 50 );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return ( $val =~ /^\d+(\.\d+)?$/ ? $val : 50 );
@@ -4642,10 +4634,8 @@ sub getShadingPos {
         $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-            $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
-              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -4980,24 +4970,10 @@ sub getPosCmd {
 
 sub getOpenPos {
     my $self = shift;
-#     my $val = 
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos',
         $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-
-#     if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-#         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-#             $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-#               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-#     }
-# 
-#     return (
-#           $val =~ /^\d+(\.\d+)?$/
-#         ? $val
-#         : $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-#           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-#     );
 }
 
 sub getVentilatePos {
@@ -5006,10 +4982,8 @@ sub getVentilatePos {
         $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-            $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
-              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5029,32 +5003,18 @@ sub getVentilatePosAfterDayClosed {
 
 sub getClosedPos {
     my $self = shift;
-#     my $val = 
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos',
         $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-
-#     if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-#         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-#             $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-#               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-#     }
-# 
-#     return (
-#           $val =~ /^\d+(\.\d+)?$/
-#         ? $val
-#         : $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-#           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-#     );
 }
 
 sub getSleepPos {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Sleep_Pos', -1 );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, -1 );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return ( $val =~ /^\d+(\.\d+)?$/ ? $val : -1 );
@@ -5072,11 +5032,8 @@ sub getComfortOpenPos {
         $userAttrList{'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-            $userAttrList{
-                'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5256,8 +5213,8 @@ sub getTimeUpEarly {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Early', '05:00' );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '05:00' );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5271,8 +5228,8 @@ sub getTimeUpLate {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Late', '08:30' );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '08:30' );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5286,8 +5243,8 @@ sub getTimeDownEarly {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Early', '16:00' );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '16:00' );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5301,8 +5258,8 @@ sub getTimeDownLate {
     my $self = shift;
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Late', '22:00' );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '22:00' );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
@@ -5317,8 +5274,8 @@ sub getTimeUpWeHoliday {
     my $val =
       AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_WE_Holiday', '08:00' );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val, '08:00' );
+    if ( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) {
+        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
     }
 
     return (
