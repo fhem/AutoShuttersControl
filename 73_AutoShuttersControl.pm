@@ -2374,7 +2374,11 @@ sub ShuttersCommandSet($$$) {
     $shutters->setShuttersDev($shuttersDev);
 
     if (
-        $posValue != $shutters->getShadingPos
+           $posValue != $shutters->getShadingPos
+        or (  $posValue == $shutters->getShadingPos
+          and CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+          and $shutters->getShuttersPlace eq 'terrace'
+        )
         and (
             (
                     $shutters->getPartyMode eq 'on'
@@ -6656,7 +6660,7 @@ sub getblockAscDrivesAfterManual {
   "release_status": "under develop",
   "license": "GPL_2",
   "version": "v0.6.31",
-  "x_developmentversion": "v0.6.19.34",
+  "x_developmentversion": "v0.6.19.35",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
