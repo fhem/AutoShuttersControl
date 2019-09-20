@@ -1178,11 +1178,7 @@ sub EventProcessingRoommate($@) {
                 and $getRoommatesStatus eq 'home'
               )
             {
-                if (
-                    (
-                        not $shutters->getIsDay
-                        or $shutters->getDown eq 'roommate'
-                    )
+                if (    not $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeDown eq 'home'
                         or $getModeDown eq 'always' )
