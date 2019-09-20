@@ -4980,22 +4980,24 @@ sub getPosCmd {
 
 sub getOpenPos {
     my $self = shift;
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos',
+#     my $val = 
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos',
         $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-            $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-    }
-
-    return (
-          $val =~ /^\d+(\.\d+)?$/
-        ? $val
-        : $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+#     if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
+#         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
+#             $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
+#               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+#     }
+# 
+#     return (
+#           $val =~ /^\d+(\.\d+)?$/
+#         ? $val
+#         : $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
+#           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+#     );
 }
 
 sub getVentilatePos {
@@ -5027,22 +5029,24 @@ sub getVentilatePosAfterDayClosed {
 
 sub getClosedPos {
     my $self = shift;
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos',
+#     my $val = 
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos',
         $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
-            $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
-    }
-
-    return (
-          $val =~ /^\d+(\.\d+)?$/
-        ? $val
-        : $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+#     if ( FHEM::AutoShuttersControl::_perlCodeCheck( $val, 'none' ) ) {
+#         $val = FHEM::AutoShuttersControl::_perlCodeCheck( $val,
+#             $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
+#               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+#     }
+# 
+#     return (
+#           $val =~ /^\d+(\.\d+)?$/
+#         ? $val
+#         : $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
+#           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+#     );
 }
 
 sub getSleepPos {
@@ -6818,8 +6822,8 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
-            <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 0/100) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-            <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 100/0) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
+            <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 0/100)</li>
+            <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 100/0)</li>
             <li><strong>ASC_Sleep_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 75/25) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 20/80) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
@@ -6951,7 +6955,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.103",
+  "version": "v0.6.104",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
