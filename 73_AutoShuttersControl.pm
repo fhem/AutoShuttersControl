@@ -584,7 +584,7 @@ sub Set($$@) {
     }
     elsif ( lc $cmd eq 'renewtimer' ) {
         return "usage: $cmd" if ( @args > 1 );
-        CreateSunRiseSetShuttersTimer($hash,$args[0]);
+        CreateSunRiseSetShuttersTimer( $hash, $args[0] );
     }
     elsif ( lc $cmd eq 'scanforshutters' ) {
         return "usage: $cmd" if ( @args != 0 );
@@ -647,7 +647,7 @@ sub Set($$@) {
           . join( ',', @{ $hash->{helper}{shuttersList} } )
           . ' renewTimer:'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
-            if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
+          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
         $list .= ' createNewNotifyDev:noArg'
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
             and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
@@ -2413,10 +2413,13 @@ sub ShuttersCommandSet($$$) {
     $shutters->setShuttersDev($shuttersDev);
 
     if (
-           $posValue != $shutters->getShadingPos
-        or (  $posValue == $shutters->getShadingPos
-          and CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-          and $shutters->getShuttersPlace eq 'terrace'
+        $posValue != $shutters->getShadingPos
+        or (
+                $posValue == $shutters->getShadingPos
+            and CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+            and $shutters->getShuttersPlace eq 'terrace'
+            and (  $shutters->getLockOut eq 'soft'
+                or $shutters->getLockOut eq 'hard' )
         )
         and (
             (
@@ -3759,21 +3762,22 @@ sub IsWeTomorrow() {
 }
 
 sub _SetCmdFn($) {
-    my $h                   = shift;
-    my $shuttersDev         = $h->{shuttersDev};
-    my $posValue            = $h->{posValue};
-    my $idleDetectionValue  = $shutters->getIdleDetectionValue;
-    my $idleDetection       = $shutters->getIdleDetection;
+    my $h                  = shift;
+    my $shuttersDev        = $h->{shuttersDev};
+    my $posValue           = $h->{posValue};
+    my $idleDetectionValue = $shutters->getIdleDetectionValue;
+    my $idleDetection      = $shutters->getIdleDetection;
 
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setLastDrive( $h->{lastDrive} )
       if ( defined( $h->{lastDrive} ) );
 
     return
-      unless ( $shutters->getASCenable eq 'on'
+      unless (
+            $shutters->getASCenable eq 'on'
         and $ascDev->getASCenable eq 'on'
-        and ($idleDetection =~ /^$idleDetectionValue$/
-          or $idleDetection eq 'none')
+        and (  $idleDetection =~ /^$idleDetectionValue$/
+            or $idleDetection eq 'none' )
       );
 
     if ( $shutters->getStatus != $posValue ) {
@@ -3845,10 +3849,10 @@ sub _averageBrightness(@) {
 
 sub _perlCodeCheck($) {
     my $exec = shift;
-    my $val = undef;
+    my $val  = undef;
 
     if ( $exec =~ /^\{(.+)\}$/ ) {
-        $val = main::AnalyzePerlCommand(undef, $1);
+        $val = main::AnalyzePerlCommand( undef, $1 );
     }
 
     return $val;
@@ -4719,27 +4723,32 @@ sub getTempSensorReading {
 sub _getIdleDetectionReading {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading}
+    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+      ->{reading}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} )
-        < 2
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+            ->{LASTGETTIME} ) < 2
       );
-    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} =
-      int( gettimeofday() );
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME}
+      = int( gettimeofday() );
     my ( $reading, $value ) =
       FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
         'ASC_Shutter_IdleDetection', 'none' );
 
     ### erwartetes Ergebnis
     # READING:VALUE
-    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading} = $reading;
-    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} = $value;
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading} =
+      $reading;
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} =
+      $value;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading};
+    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+      ->{reading};
 }
 
 sub getIdleDetectionValue {
@@ -4748,16 +4757,20 @@ sub getIdleDetectionValue {
     return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} )
-        < 2
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->_getIdleDetectionReading;
 
     return (
-        defined( $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} )
+        defined(
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
+              ->{value}
+          )
         ? $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value}
         : 'none'
     );
