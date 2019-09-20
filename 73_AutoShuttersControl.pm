@@ -1184,7 +1184,7 @@ sub EventProcessingRoommate($@) {
                         or $getModeDown eq 'always' )
                   )
                 {
-                    $shutters->setLastDrive('roommate home');
+                    $shutters->setLastDrive('roommate come home');
 
                     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                         or $shutters->getVentilateOpen eq 'off' )
@@ -1236,7 +1236,7 @@ sub EventProcessingRoommate($@) {
                         $shutters->setLastDrive(
                             (
                                 $shutters->getStatus == $shutters->getClosedPos
-                                ? 'roommate home'
+                                ? 'roommate come home'
                                 : 'shading out'
                             )
                         );
@@ -1399,7 +1399,7 @@ sub EventProcessingResidents($@) {
                 and $shutters->getRoommatesStatus eq 'none'
               )
             {
-                $shutters->setLastDrive('residents home');
+                $shutters->setLastDrive('residents comin home');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
             elsif (
