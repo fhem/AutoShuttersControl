@@ -339,10 +339,8 @@ sub Define($$) {
     return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
 
     my $name = $a[0];
-
     $hash->{MID} = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
-
     $hash->{VERSION}   = version->parse($VERSION)->normal;
     $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
