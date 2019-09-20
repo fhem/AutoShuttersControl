@@ -342,12 +342,7 @@ sub Define($$) {
     $hash->{MID} = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
 
-    #   ### Versionierung ###
-    # Stable Version
     $hash->{VERSION} = version->parse($VERSION)->normal;
-
-  # Developer Version
-  #     $hash->{DEV_VERSION} = FHEM::Meta::Get( $hash, 'x_developmentversion' );
 
     $hash->{NOTIFYDEV} = 'global,'
       . $name;    # Liste aller Devices auf deren Events gehört werden sollen
@@ -6667,8 +6662,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.31",
-  "x_developmentversion": "v0.6.19.35",
+  "version": "v0.6.32",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
