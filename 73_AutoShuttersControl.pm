@@ -1178,7 +1178,8 @@ sub EventProcessingRoommate($@) {
                 and $getRoommatesStatus eq 'home'
               )
             {
-                if (    not $shutters->getIsDay
+                if (
+                        not $shutters->getIsDay
                     and IsAfterShuttersTimeBlocking($shuttersDev)
                     and (  $getModeDown eq 'home'
                         or $getModeDown eq 'always' )
@@ -2408,48 +2409,50 @@ sub ShuttersCommandSet($$$) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
-    if (
-        $posValue != $shutters->getShadingPos
-        or (
-                $posValue == $shutters->getShadingPos
-            and CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+    if (($posValue == $shutters->getShadingPos
+          and (
+            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
             and $shutters->getShuttersPlace eq 'terrace'
             and (  $shutters->getLockOut eq 'soft'
-                or $shutters->getLockOut eq 'hard' )
+              or $shutters->getLockOut eq 'hard' )
+            and not $shutters->getQueryShuttersPos($posValue)
+          )
         )
-        and (
-            (
-                    $shutters->getPartyMode eq 'on'
-                and $ascDev->getPartyMode eq 'on'
-            )
-            or (
+        or ($posValue != $shutters->getShadingPos
+            and (
+                (
+                        $shutters->getPartyMode eq 'on'
+                    and $ascDev->getPartyMode eq 'on'
+                )
+                or (
+                        CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getSubTyp eq 'threestate'
+                    and (  $ascDev->getAutoShuttersControlComfort eq 'off'
+                        or $shutters->getComfortOpenPos != $posValue )
+                    and $shutters->getVentilateOpen eq 'on'
+                    and $shutters->getShuttersPlace eq 'window'
+                    and $shutters->getLockOut ne 'off'
+                )
+                or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getSubTyp eq 'threestate'
+                    and $ascDev->getAutoShuttersControlComfort eq 'on'
+                    and $shutters->getVentilateOpen eq 'off'
+                    and $shutters->getShuttersPlace eq 'window'
+                    and $shutters->getLockOut ne 'off' )
+                or (
                     CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getSubTyp eq 'threestate'
-                and (  $ascDev->getAutoShuttersControlComfort eq 'off'
-                    or $shutters->getComfortOpenPos != $posValue )
-                and $shutters->getVentilateOpen eq 'on'
-                and $shutters->getShuttersPlace eq 'window'
-                and $shutters->getLockOut ne 'off'
+                    and (  $shutters->getLockOut eq 'soft'
+                        or $shutters->getLockOut eq 'hard' )
+                    and not $shutters->getQueryShuttersPos($posValue)
+                )
+                or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                    and $shutters->getShuttersPlace eq 'terrace'
+                    and not $shutters->getQueryShuttersPos($posValue) )
+                or (    $shutters->getRainProtectionStatus eq 'protected'
+                    and $shutters->getWindProtectionStatus eq 'protected' )
+                )
             )
-            or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getSubTyp eq 'threestate'
-                and $ascDev->getAutoShuttersControlComfort eq 'on'
-                and $shutters->getVentilateOpen eq 'off'
-                and $shutters->getShuttersPlace eq 'window'
-                and $shutters->getLockOut ne 'off' )
-            or (
-                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and (  $shutters->getLockOut eq 'soft'
-                    or $shutters->getLockOut eq 'hard' )
-                and not $shutters->getQueryShuttersPos($posValue)
-            )
-            or (    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                and $shutters->getShuttersPlace eq 'terrace'
-                and not $shutters->getQueryShuttersPos($posValue) )
-            or (    $shutters->getRainProtectionStatus eq 'protected'
-                and $shutters->getWindProtectionStatus eq 'protected' )
         )
-      )
     {
         $shutters->setDelayCmd($posValue);
         $ascDev->setDelayCmdReading;
