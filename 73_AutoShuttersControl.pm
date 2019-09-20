@@ -38,7 +38,6 @@
 ###############################################################################
 
 ### Notizen
-# - Feststellen ob ein Rolladen fährt oder nicht
 # !!!!! - Innerhalb einer Shutterschleife kein CommandAttr verwenden. Bring Fehler!!! Kommen Raumnamen in die Shutterliste !!!!!!
 #
 
@@ -228,6 +227,7 @@ my %userAttrList = (
     'ASC_Shading_WaitingPeriod'                            => '-',
     'ASC_Drive_Delay'                                      => '-',
     'ASC_Drive_DelayStart'                                 => '-',
+    'ASC_Shutter_IdleDetection'                            => '-',
     'ASC_WindowRec'                                        => '-',
     'ASC_WindowRec_subType:twostate,threestate'            => '-',
     'ASC_WindowRec_PosAfterDayClosed:open,lastManual'      => '-',
@@ -2413,7 +2413,11 @@ sub ShuttersCommandSet($$$) {
     $shutters->setShuttersDev($shuttersDev);
 
     if (
-        $posValue != $shutters->getShadingPos
+           $posValue != $shutters->getShadingPos
+        or (  $posValue == $shutters->getShadingPos
+          and CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+          and $shutters->getShuttersPlace eq 'terrace'
+        )
         and (
             (
                     $shutters->getPartyMode eq 'on'
@@ -3765,7 +3769,10 @@ sub _SetCmdFn($) {
 
     return
       unless ( $shutters->getASCenable eq 'on'
-        and $ascDev->getASCenable eq 'on' );
+        and $ascDev->getASCenable eq 'on'
+        and ($shutters->getIdleDetection =~ /^$shutters->getIdleDetectionValue$/
+          or $shutters->getIdleDetection eq 'none')
+      );
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
@@ -4372,6 +4379,13 @@ sub getOutTemp {
         $shutters->getTempSensorReading, -100 );
 }
 
+sub getIdleDetection {
+    my $self = shift;
+
+    return ReadingsVal( $self->{shuttersDev},
+        $shutters->_getIdleDetectionReading, 'none' );
+}
+
 ### Begin Beschattung Objekt mit Daten befüllen
 sub setShadingStatus {
     my ( $self, $value ) = @_;
@@ -4697,6 +4711,53 @@ sub getTempSensorReading {
         defined( $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading} )
         ? $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading}
         : 'temperature'
+    );
+}
+
+sub _getIdleDetectionReading {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} )
+        < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} =
+      int( gettimeofday() );
+    my ( $reading, $value ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_Shutter_IdleDetection', 'none' );
+
+    ### erwartetes Ergebnis
+    # READING:VALUE
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading} = $reading;
+    $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} = $value;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{reading};
+}
+
+sub getIdleDetectionValue {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} )
+        < 2
+      );
+    $shutters->_getRunStateReading;
+
+    return (
+        defined( $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} )
+        ? $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value}
+        : 'none'
     );
 }
 
