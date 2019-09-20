@@ -2409,16 +2409,19 @@ sub ShuttersCommandSet($$$) {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
-    if (($posValue == $shutters->getShadingPos
-          and (
-            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-            and $shutters->getShuttersPlace eq 'terrace'
-            and (  $shutters->getLockOut eq 'soft'
-              or $shutters->getLockOut eq 'hard' )
-            and not $shutters->getQueryShuttersPos($posValue)
-          )
+    if (
+        (
+            $posValue == $shutters->getShadingPos
+            and (
+                    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                and $shutters->getShuttersPlace eq 'terrace'
+                and (  $shutters->getLockOut eq 'soft'
+                    or $shutters->getLockOut eq 'hard' )
+                and not $shutters->getQueryShuttersPos($posValue)
+            )
         )
-        or ($posValue != $shutters->getShadingPos
+        or (
+            $posValue != $shutters->getShadingPos
             and (
                 (
                         $shutters->getPartyMode eq 'on'
@@ -2450,9 +2453,9 @@ sub ShuttersCommandSet($$$) {
                     and not $shutters->getQueryShuttersPos($posValue) )
                 or (    $shutters->getRainProtectionStatus eq 'protected'
                     and $shutters->getWindProtectionStatus eq 'protected' )
-                )
             )
         )
+      )
     {
         $shutters->setDelayCmd($posValue);
         $ascDev->setDelayCmdReading;
