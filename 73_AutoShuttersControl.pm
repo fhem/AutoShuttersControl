@@ -3759,9 +3759,11 @@ sub IsWeTomorrow() {
 }
 
 sub _SetCmdFn($) {
-    my $h           = shift;
-    my $shuttersDev = $h->{shuttersDev};
-    my $posValue    = $h->{posValue};
+    my $h                   = shift;
+    my $shuttersDev         = $h->{shuttersDev};
+    my $posValue            = $h->{posValue};
+    my $idleDetectionValue  = $shutters->getIdleDetectionValue;
+    my $idleDetection       = $shutters->getIdleDetection;
 
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setLastDrive( $h->{lastDrive} )
@@ -3770,8 +3772,8 @@ sub _SetCmdFn($) {
     return
       unless ( $shutters->getASCenable eq 'on'
         and $ascDev->getASCenable eq 'on'
-        and ($shutters->getIdleDetection =~ /^$shutters->getIdleDetectionValue$/
-          or $shutters->getIdleDetection eq 'none')
+        and ($idleDetection =~ /^$idleDetectionValue$/
+          or $idleDetection eq 'none')
       );
 
     if ( $shutters->getStatus != $posValue ) {
@@ -4752,7 +4754,7 @@ sub getIdleDetectionValue {
             $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{LASTGETTIME} )
         < 2
       );
-    $shutters->_getRunStateReading;
+    $shutters->_getIdleDetectionReading;
 
     return (
         defined( $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}->{value} )
