@@ -1398,7 +1398,7 @@ sub EventProcessingResidents($@) {
                 and $shutters->getRoommatesStatus eq 'none'
               )
             {
-                $shutters->setLastDrive('residents comin home');
+                $shutters->setLastDrive('residents come home');
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
             elsif (
@@ -3962,17 +3962,17 @@ sub setDriveCmd {
     my $offSet;
     my $offSetStart;
 
-
-    if ( $shutters->getPartyMode eq 'on'
-     and $ascDev->getPartyMode eq 'on' ) {
+    if (    $shutters->getPartyMode eq 'on'
+        and $ascDev->getPartyMode eq 'on' )
+    {
 
         $shutters->setDelayCmd($posValue);
         $ascDev->setDelayCmdReading;
         $shutters->setNoDelay(0);
 
         FHEM::AutoShuttersControl::ASC_Debug( 'setDriveCmd: '
-                . $shutters->getShuttersDev
-                . ' - Die Fahrt wird zurückgestellt. Grund kann ein geöffnetes Fenster sein oder ein aktivierter Party Modus'
+              . $shutters->getShuttersDev
+              . ' - Die Fahrt wird zurückgestellt. Grund kann ein geöffnetes Fenster sein oder ein aktivierter Party Modus'
         );
     }
     else {
@@ -4007,30 +4007,33 @@ sub setDriveCmd {
             and $shutters->getLastDrive eq 'selfDefense active'
             and $ascDev->getSelfDefense eq 'on' )
         {
-            InternalTimer( gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
+            InternalTimer(
+                gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
                 'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
             $shutters->setSelfDefenseAbsent( 1, 0, \%h );
         }
         elsif ( $offSetStart > 0 and not $shutters->getNoDelay ) {
             InternalTimer(
-                gettimeofday() + int( rand($offSet) + $shutters->getDelayStart ),
-                'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
+                gettimeofday() +
+                  int( rand($offSet) + $shutters->getDelayStart ),
+                'FHEM::AutoShuttersControl::_SetCmdFn', \%h
+            );
 
             FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-                . $shutters->getShuttersDev
-                . ' - versetztes fahren' );
+                  . $shutters->getShuttersDev
+                  . ' - versetztes fahren' );
         }
         elsif ( $offSetStart < 1 or $shutters->getNoDelay ) {
             FHEM::AutoShuttersControl::_SetCmdFn( \%h );
             FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-                . $shutters->getShuttersDev
-                . ' - NICHT versetztes fahren' );
+                  . $shutters->getShuttersDev
+                  . ' - NICHT versetztes fahren' );
         }
 
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-            . $shutters->getShuttersDev
-            . ' - NoDelay: '
-            . ( $shutters->getNoDelay ? 'JA' : 'NEIN' ) );
+              . $shutters->getShuttersDev
+              . ' - NoDelay: '
+              . ( $shutters->getNoDelay ? 'JA' : 'NEIN' ) );
         $shutters->setNoDelay(0);
         return 0;
     }
