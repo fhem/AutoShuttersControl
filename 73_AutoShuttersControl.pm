@@ -3766,13 +3766,13 @@ sub _SetCmdFn($) {
     my $h                  = shift;
     my $shuttersDev        = $h->{shuttersDev};
     my $posValue           = $h->{posValue};
-    my $idleDetectionValue = $shutters->getIdleDetectionValue;
-    my $idleDetection      = $shutters->getIdleDetection;
 
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setLastDrive( $h->{lastDrive} )
       if ( defined( $h->{lastDrive} ) );
 
+    my $idleDetectionValue = $shutters->getIdleDetectionValue;
+    my $idleDetection      = $shutters->getIdleDetection;
     return
       unless (
             $shutters->getASCenable eq 'on'
