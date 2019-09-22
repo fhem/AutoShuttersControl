@@ -2332,7 +2332,8 @@ sub EventProcessingPartyMode($) {
                 );
             }
         }
-        elsif ( $shutters->getIsDay
+        elsif ( $shutters->getDelayCmd ne 'none'
+            and $shutters->getIsDay
             and IsAfterShuttersManualBlocking($shuttersDev) )
         {
             $shutters->setLastDrive('drive after party mode');
@@ -3961,63 +3962,78 @@ sub setDriveCmd {
     my $offSet;
     my $offSetStart;
 
-    ### antifreeze Routine
-    if ( $shutters->getFreezeStatus > 0 ) {
-        if ( $shutters->getFreezeStatus != 1 ) {
 
-            $posValue = $shutters->getStatus;
-            $shutters->setLastDrive('no drive - antifreeze defense');
-            $shutters->setLastDriveReading;
-            $ascDev->setStateReading;
-        }
-        elsif ( $posValue == $shutters->getClosedPos ) {
-            $posValue = $shutters->getAntiFreezePos;
-            $shutters->setLastDrive(
-                $shutters->getLastDrive . ' - antifreeze mode' );
-        }
+    if ( $shutters->getPartyMode eq 'on'
+     and $ascDev->getPartyMode eq 'on' ) {
+
+        $shutters->setDelayCmd($posValue);
+        $ascDev->setDelayCmdReading;
+        $shutters->setNoDelay(0);
+
+        FHEM::AutoShuttersControl::ASC_Debug( 'setDriveCmd: '
+                . $shutters->getShuttersDev
+                . ' - Die Fahrt wird zurückgestellt. Grund kann ein geöffnetes Fenster sein oder ein aktivierter Party Modus'
+        );
     }
+    else {
+        ### antifreeze Routine
+        if ( $shutters->getFreezeStatus > 0 ) {
+            if ( $shutters->getFreezeStatus != 1 ) {
 
-    my %h = (
-        shuttersDev => $self->{shuttersDev},
-        posValue    => $posValue,
-    );
+                $posValue = $shutters->getStatus;
+                $shutters->setLastDrive('no drive - antifreeze defense');
+                $shutters->setLastDriveReading;
+                $ascDev->setStateReading;
+            }
+            elsif ( $posValue == $shutters->getClosedPos ) {
+                $posValue = $shutters->getAntiFreezePos;
+                $shutters->setLastDrive(
+                    $shutters->getLastDrive . ' - antifreeze mode' );
+            }
+        }
 
-    $offSet = $shutters->getDelay        if ( $shutters->getDelay > -1 );
-    $offSet = $ascDev->getShuttersOffset if ( $shutters->getDelay < 0 );
-    $offSetStart = $shutters->getDelayStart;
+        my %h = (
+            shuttersDev => $self->{shuttersDev},
+            posValue    => $posValue,
+        );
 
-    if (    $shutters->getSelfDefenseAbsent
-        and not $shutters->getSelfDefenseAbsentTimerrun
-        and $shutters->getSelfDefenseMode ne 'off'
-        and $shutters->getLastDrive eq 'selfDefense active'
-        and $ascDev->getSelfDefense eq 'on' )
-    {
-        InternalTimer( gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
-            'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
-        $shutters->setSelfDefenseAbsent( 1, 0, \%h );
-    }
-    elsif ( $offSetStart > 0 and not $shutters->getNoDelay ) {
-        InternalTimer(
-            gettimeofday() + int( rand($offSet) + $shutters->getDelayStart ),
-            'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
+        $offSet = $shutters->getDelay        if ( $shutters->getDelay > -1 );
+        $offSet = $ascDev->getShuttersOffset if ( $shutters->getDelay < 0 );
+        $offSetStart = $shutters->getDelayStart;
+
+        if (    $shutters->getSelfDefenseAbsent
+            and not $shutters->getSelfDefenseAbsentTimerrun
+            and $shutters->getSelfDefenseMode ne 'off'
+            and $shutters->getLastDrive eq 'selfDefense active'
+            and $ascDev->getSelfDefense eq 'on' )
+        {
+            InternalTimer( gettimeofday() + $shutters->getSelfDefenseAbsentDelay,
+                'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
+            $shutters->setSelfDefenseAbsent( 1, 0, \%h );
+        }
+        elsif ( $offSetStart > 0 and not $shutters->getNoDelay ) {
+            InternalTimer(
+                gettimeofday() + int( rand($offSet) + $shutters->getDelayStart ),
+                'FHEM::AutoShuttersControl::_SetCmdFn', \%h );
+
+            FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
+                . $shutters->getShuttersDev
+                . ' - versetztes fahren' );
+        }
+        elsif ( $offSetStart < 1 or $shutters->getNoDelay ) {
+            FHEM::AutoShuttersControl::_SetCmdFn( \%h );
+            FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
+                . $shutters->getShuttersDev
+                . ' - NICHT versetztes fahren' );
+        }
 
         FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-              . $shutters->getShuttersDev
-              . ' - versetztes fahren' );
+            . $shutters->getShuttersDev
+            . ' - NoDelay: '
+            . ( $shutters->getNoDelay ? 'JA' : 'NEIN' ) );
+        $shutters->setNoDelay(0);
+        return 0;
     }
-    elsif ( $offSetStart < 1 or $shutters->getNoDelay ) {
-        FHEM::AutoShuttersControl::_SetCmdFn( \%h );
-        FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-              . $shutters->getShuttersDev
-              . ' - NICHT versetztes fahren' );
-    }
-
-    FHEM::AutoShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
-          . $shutters->getShuttersDev
-          . ' - NoDelay: '
-          . ( $shutters->getNoDelay ? 'JA' : 'NEIN' ) );
-    $shutters->setNoDelay(0);
-    return 0;
 }
 
 sub setSunsetUnixTime {
@@ -6991,7 +7007,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.104",
+  "version": "v0.6.105",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
