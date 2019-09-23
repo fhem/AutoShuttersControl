@@ -1147,7 +1147,8 @@ sub EventProcessingRoommate($@) {
                 )
                 and (  $shutters->getIsDay
                     or $shutters->getUp eq 'roommate' )
-                and IsAfterShuttersTimeBlocking($shuttersDev)
+                and (  IsAfterShuttersTimeBlocking($shuttersDev)
+                    or $shutters->getUp eq 'roommate' )
               )
             {
                 Log3( $name, 4,
@@ -1248,7 +1249,9 @@ sub EventProcessingRoommate($@) {
         }
         elsif ( ( $1 eq 'gotosleep' or $1 eq 'asleep' )
             and $ascDev->getAutoShuttersControlEvening eq 'on'
-            and IsAfterShuttersManualBlocking($shuttersDev) )
+            and (IsAfterShuttersManualBlocking($shuttersDev)
+                or $shutters->getDown eq 'roommate' )
+          )
         {
             $shutters->setLastDrive('roommate asleep');
 
@@ -7010,7 +7013,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.105",
+  "version": "v0.6.106",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
