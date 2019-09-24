@@ -1133,7 +1133,8 @@ sub EventProcessingRoommate($@) {
             ( $1 eq 'home' or $1 eq 'awoken' )
             and (  $getRoommatesStatus eq 'home'
                 or $getRoommatesStatus eq 'awoken' )
-            and $ascDev->getAutoShuttersControlMorning eq 'on'
+            and (  $ascDev->getAutoShuttersControlMorning eq 'on'
+                or $shutters->getUp eq 'roommate' )
             and IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
@@ -1248,7 +1249,8 @@ sub EventProcessingRoommate($@) {
             }
         }
         elsif ( ( $1 eq 'gotosleep' or $1 eq 'asleep' )
-            and $ascDev->getAutoShuttersControlEvening eq 'on'
+            and (  $ascDev->getAutoShuttersControlEvening eq 'on'
+                or $shutters->getDown eq 'roommate' )
             and (IsAfterShuttersManualBlocking($shuttersDev)
                 or $shutters->getDown eq 'roommate' )
           )
@@ -1744,6 +1746,7 @@ sub EventProcessingBrightness($@) {
             and $1 > $brightnessMaxVal
             and $shutters->getUp eq 'brightness'
             and not $shutters->getSunrise
+            and $ascDev->getAutoShuttersControlMorning eq 'on'
           )
         {
             Log3( $name, 4,
@@ -1815,6 +1818,7 @@ sub EventProcessingBrightness($@) {
             and $shutters->getDown eq 'brightness'
             and not $shutters->getSunset
             and IsAfterShuttersManualBlocking($shuttersDev)
+            and $ascDev->getAutoShuttersControlEvening eq 'on'
           )
         {
             Log3( $name, 4,
@@ -7013,7 +7017,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.106",
+  "version": "v0.6.107",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
