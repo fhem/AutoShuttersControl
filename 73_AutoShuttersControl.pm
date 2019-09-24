@@ -1695,6 +1695,7 @@ sub EventProcessingBrightness($@) {
             and $1 > $brightnessMaxVal
             and $shutters->getUp eq 'brightness'
             and not $shutters->getSunrise
+            and $ascDev->getAutoShuttersControlMorning eq 'on'
           )
         {
             Log3( $name, 4,
@@ -1766,6 +1767,7 @@ sub EventProcessingBrightness($@) {
             and $shutters->getDown eq 'brightness'
             and not $shutters->getSunset
             and IsAfterShuttersManualBlocking($shuttersDev)
+            and $ascDev->getAutoShuttersControlEvening eq 'on'
           )
         {
             Log3( $name, 4,
@@ -6659,7 +6661,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.32",
+  "version": "v0.6.33",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
