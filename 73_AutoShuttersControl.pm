@@ -1511,40 +1511,46 @@ sub EventProcessingRain($@) {
         if    ( $1 eq 'rain' ) { $val = $triggerMax + 1 }
         elsif ( $1 eq 'dry' )  { $val = $triggerMin }
         else                   { $val = $1 }
+        
+        RainProtection($val,$triggerMax,$closedPos);
+    }
+}
 
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
-            $shutters->setShuttersDev($shuttersDev);
+sub RainProtection(@)
+    my ($val,$triggerMax,$closedPos) = @_;
 
-            next
-              if ( $shutters->getRainProtection eq 'off' );
+    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
 
-            if (    $val > $triggerMax
-                and $shutters->getStatus != $closedPos
-                and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'unprotected' )
-            {
-                $shutters->setLastDrive('rain protected');
-                $shutters->setDriveCmd($closedPos);
-                $shutters->setRainProtectionStatus('protected');
-            }
-            elsif ( ( $val == 0 or $val < $triggerMax )
-                and $shutters->getStatus == $closedPos
-                and IsAfterShuttersManualBlocking($shuttersDev)
-                and $shutters->getRainProtectionStatus eq 'protected' )
-            {
-                $shutters->setLastDrive('rain un-protected');
-                $shutters->setDriveCmd(
-                    (
-                        $shutters->getIsDay ? $shutters->getLastPos
-                        : (
-                              $shutters->getPrivacyDownStatus == 2
-                            ? $shutters->getPrivacyDownPos
-                            : $shutters->getClosedPos
-                        )
+        next
+            if ( $shutters->getRainProtection eq 'off' );
+
+        if (    $val > $triggerMax
+            and $shutters->getStatus != $closedPos
+            and IsAfterShuttersManualBlocking($shuttersDev)
+            and $shutters->getRainProtectionStatus eq 'unprotected' )
+        {
+            $shutters->setLastDrive('rain protected');
+            $shutters->setDriveCmd($closedPos);
+            $shutters->setRainProtectionStatus('protected');
+        }
+        elsif ( ( $val == 0 or $val < $triggerMax )
+            and $shutters->getStatus == $closedPos
+            and IsAfterShuttersManualBlocking($shuttersDev)
+            and $shutters->getRainProtectionStatus eq 'protected' )
+        {
+            $shutters->setLastDrive('rain un-protected');
+            $shutters->setDriveCmd(
+                (
+                    $shutters->getIsDay ? $shutters->getLastPos
+                    : (
+                            $shutters->getPrivacyDownStatus == 2
+                        ? $shutters->getPrivacyDownPos
+                        : $shutters->getClosedPos
                     )
-                );
-                $shutters->setRainProtectionStatus('unprotected');
-            }
+                )
+            );
+            $shutters->setRainProtectionStatus('unprotected');
         }
     }
 }
@@ -5978,7 +5984,7 @@ sub _getRainSensor {
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         and ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
     $self->{ASC_rainSensor}->{LASTGETTIME} = int( gettimeofday() );
-    my ( $device, $reading, $max, $hyst, $pos ) =
+    my ( $device, $reading, $max, $hyst, $pos, $wait ) =
       FHEM::AutoShuttersControl::GetAttrValues( $name, 'ASC_rainSensor',
         'none' );
 
@@ -5997,6 +6003,8 @@ sub _getRainSensor {
     );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
       ( $pos ne 'none' ? $pos : $shutters->getClosedPos );
+    $self->{ASC_rainSensor}->{waitingTime} =
+      ( $pos ne 'none' ? $wait : 900 );
 
     return $self->{ASC_rainSensor}->{device};
 }
@@ -6043,6 +6051,17 @@ sub getRainSensorShuttersClosedPos {
         and ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
     $ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{shuttersClosedPos};
+}
+
+sub getRainWaitingTime {
+    my $self = shift;
+    my $name = $self->{name};
+
+    return $self->{ASC_rainSensor}->{waitingTime}
+      if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
+        and ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
+    $ascDev->_getRainSensor;
+    return $self->{ASC_rainSensor}->{waitingTime};
 }
 
 sub _getWindSensor {
