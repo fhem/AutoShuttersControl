@@ -208,7 +208,7 @@ my %userAttrList = (
     'ASC_Time_Up_WE_Holiday'                     => '-',
     'ASC_Time_Down_Early'                        => '-',
     'ASC_Time_Down_Late'                         => '-',
-    'ASC_PrivacyDownValue_beforNightClose'       => '-',
+    'ASC_PrivacyDownValue_beforeNightClose'       => '-',
     'ASC_PrivacyDown_Pos'                        => '-',
     'ASC_TempSensor'                             => '-',
     'ASC_Ventilate_Window_Open:on,off'           => '-',
@@ -474,7 +474,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -553,7 +553,7 @@ m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rai
             DeleteNotifyDev( $hash, $1, $2 );
         }
         elsif ( $events =~
-m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownValue_beforNightClose|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)(.*)?#
+m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownValue_beforeNightClose|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)(.*)?#
           )
         {
             CreateSunRiseSetShuttersTimer( $hash, $2 )
@@ -2722,7 +2722,7 @@ sub RenewSunRiseSetShuttersTimer($) {
         delFromDevAttrList( $_, 'ASC_Shading_Angle_Left' );
         delFromDevAttrList( $_, 'ASC_Shading_Angle_Right' );
 
-        $attr{$_}{ASC_PrivacyDownValue_beforNightClose} =
+        $attr{$_}{ASC_PrivacyDownValue_beforeNightClose} =
             AttrVal( $_, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
           if ( AttrVal( $_, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
             'none' );
@@ -4695,7 +4695,7 @@ sub getPrivacyDownTime {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev},
-        'ASC_PrivacyDownValue_beforNightClose', -1 );
+        'ASC_PrivacyDownValue_beforeNightClose', -1 );
 }
 
 sub getPrivacyDownPos {
@@ -6518,7 +6518,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Pos_Reading</strong> - Points to the reading name, which contains the current
                 position for the shutter in percent. Will be used for <em>set</em> at devices of unknown kind.
             </li>
-            <li><strong>ASC_PrivacyDownValue_beforNightClose</strong> - How many seconds is the privacy mode activated
+            <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - How many seconds is the privacy mode activated
                 before the shutter is closed in the evening, or then brightness use brightness value. A value of <em>-1</em> disables this. -1 is the default
                 value.
             </li>
@@ -6970,7 +6970,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Mode_Up - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
             <li><strong>ASC_Partymode -  on/off</strong> - schaltet den Partymodus an oder aus. Wird am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Rolll&auml;den, welche das Attribut auf on haben, zwischengespeichert und sp&auml;ter erst ausgef&uuml;hrt (default: off)</li>
             <li><strong>ASC_Pos_Reading</strong> - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
-            <li><strong>ASC_PrivacyDownValue_beforNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
+            <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
             <li><strong>ASC_PrivacyDown_Pos</strong> - Position den Rollladens f&uuml;r den Sichtschutz (default: 50) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
