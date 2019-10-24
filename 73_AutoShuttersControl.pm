@@ -994,6 +994,8 @@ sub EventProcessingWindowRec($@) {
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
                 or $shutters->getStatus == $shutters->getOpenPos )
+            and (  $shutters->getVentilateOpen eq 'on'
+                or $ascDev->getAutoShuttersControlComfort eq 'on' )
           )
         {
             ASC_Debug( 'EventProcessingWindowRec: '
@@ -1149,7 +1151,7 @@ sub EventProcessingRoommate($@) {
                 )
                 and (  $shutters->getIsDay
                     or $shutters->getUp eq 'roommate' )
-                and (  IsAfterShuttersTimeBlocking($shuttersDev)
+                and ( IsAfterShuttersTimeBlocking($shuttersDev)
                     or $shutters->getUp eq 'roommate' )
               )
             {
@@ -1249,10 +1251,11 @@ sub EventProcessingRoommate($@) {
                 }
             }
         }
-        elsif ( ( $1 eq 'gotosleep' or $1 eq 'asleep' )
+        elsif (
+            ( $1 eq 'gotosleep' or $1 eq 'asleep' )
             and (  $ascDev->getAutoShuttersControlEvening eq 'on'
                 or $shutters->getDown eq 'roommate' )
-            and (IsAfterShuttersManualBlocking($shuttersDev)
+            and ( IsAfterShuttersManualBlocking($shuttersDev)
                 or $shutters->getDown eq 'roommate' )
           )
         {
@@ -1401,7 +1404,6 @@ sub EventProcessingResidents($@) {
                 and (  $getResidentsLastStatus ne 'asleep'
                     or $getResidentsLastStatus ne 'awoken' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
-                and $shutters->getRoommatesStatus eq 'none'
               )
             {
                 $shutters->setLastDrive('residents come home');
@@ -1482,7 +1484,6 @@ sub EventProcessingResidents($@) {
                 and (  $getModeUp eq 'home'
                     or $getModeUp eq 'always' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
-                and $shutters->getRoommatesStatus eq 'none'
                 and not $shutters->getIfInShading
               )
             {
@@ -1512,19 +1513,19 @@ sub EventProcessingRain($@) {
         if    ( $1 eq 'rain' ) { $val = $triggerMax + 1 }
         elsif ( $1 eq 'dry' )  { $val = $triggerMin }
         else                   { $val = $1 }
-        
-        RainProtection($val,$triggerMax,$closedPos);
+
+        RainProtection( $hash, $val, $triggerMax, $closedPos );
     }
 }
 
-sub RainProtection(@)
-    my ($val,$triggerMax,$closedPos) = @_;
+sub RainProtection(@) {
+    my ( $hash, $val, $triggerMax, $closedPos ) = @_;
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
 
         next
-            if ( $shutters->getRainProtection eq 'off' );
+          if ( $shutters->getRainProtection eq 'off' );
 
         if (    $val > $triggerMax
             and $shutters->getStatus != $closedPos
@@ -1545,7 +1546,7 @@ sub RainProtection(@)
                 (
                     $shutters->getIsDay ? $shutters->getLastPos
                     : (
-                            $shutters->getPrivacyDownStatus == 2
+                          $shutters->getPrivacyDownStatus == 2
                         ? $shutters->getPrivacyDownPos
                         : $shutters->getClosedPos
                     )
@@ -2774,8 +2775,12 @@ sub SunSetShuttersAfterTimerFn($) {
                $ascDev->getSelfDefense eq 'off'
             or $shutters->getSelfDefenseMode eq 'off'
             or (    $ascDev->getSelfDefense eq 'on'
-                and $ascDev->getResidentsStatus ne 'absent'
                 and $ascDev->getResidentsStatus ne 'gone' )
+        )
+        and (
+               $shutters->getDown ne 'brightness'
+            or (    $shutters->getDown eq 'brightness'
+                and not $shutters->getSunset )
         )
       )
     {
@@ -2836,8 +2841,12 @@ sub SunRiseShuttersAfterTimerFn($) {
                $ascDev->getSelfDefense eq 'off'
             or $shutters->getSelfDefenseMode eq 'off'
             or (    $ascDev->getSelfDefense eq 'on'
-                and $ascDev->getResidentsStatus ne 'absent'
                 and $ascDev->getResidentsStatus ne 'gone' )
+        )
+        and (
+               $shutters->getUp ne 'brightness'
+            or (    $shutters->getUp eq 'brightness'
+                and not $shutters->getSunrise )
         )
       )
     {
@@ -3777,9 +3786,9 @@ sub IsWeTomorrow() {
 }
 
 sub _SetCmdFn($) {
-    my $h                  = shift;
-    my $shuttersDev        = $h->{shuttersDev};
-    my $posValue           = $h->{posValue};
+    my $h           = shift;
+    my $shuttersDev = $h->{shuttersDev};
+    my $posValue    = $h->{posValue};
 
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setLastDrive( $h->{lastDrive} )
@@ -6124,6 +6133,9 @@ sub getblockAscDrivesAfterManual {
         AutoShuttersControl (<abbr>ASC</abbr>) provides a complete automation for shutters with comprehensive
         configuration options, <abbr>e.g.</abbr> open or close shutters depending on the sunrise or sunset,
         by outdoor brightness or randomly for simulate presence.
+        <br /><strong>
+        So that ASC can drive the blinds on the basis of the astronomical times, it is very important to
+        correctly set the location (latitude, longitude) in the device "global".</strong>
     </p>
     <p>
         After telling <abbr>ASC</abbr> which shutters should be controlled, several in-depth configuration options
@@ -6767,7 +6779,9 @@ sub getblockAscDrivesAfterManual {
 <a name="AutoShuttersControl"></a>
 <h3>AutoShuttersControl</h3>
 <ul>
-    <p>AutoShuttersControl (ASC) erm&ouml;glicht eine vollst&auml;ndige Automatisierung der vorhandenen Rolll&auml;den. Das Modul bietet umfangreiche Konfigurationsm&ouml;glichkeiten, um Rolll&auml;den bspw. nach Sonnenauf- und untergangszeiten, nach Helligkeitswerten oder rein zeitgesteuert zu steuern.</p>
+    <p>AutoShuttersControl (ASC) erm&ouml;glicht eine vollst&auml;ndige Automatisierung der vorhandenen Rolll&auml;den. Das Modul bietet umfangreiche Konfigurationsm&ouml;glichkeiten, um Rolll&auml;den bspw. nach Sonnenauf- und untergangszeiten, nach Helligkeitswerten oder rein zeitgesteuert zu steuern.
+    <br /><strong>Damit ASC auf Basis der astronomischen Zeiten die Rollos fahren kann, ist es ganz wichtig im Device "global" die Location (Latitude,Longitude) korrekt zu setzen.</strong>
+    </p>
     <p>
         Man kann festlegen, welche Rolll&auml;den von ASC in die Automatisierung mit aufgenommen werden sollen. Daraufhin stehen diverse Attribute zur Feinkonfiguration zur Verf&uuml;gung. So sind unter anderem komplexe L&ouml;sungen wie Fahrten in Abh&auml;ngigkeit des Bewohnerstatus einfach umsetzbar. Beispiel: Hochfahren von Rolll&auml;den, wenn der Bewohner erwacht ist und drau&szlig;en bereits die Sonne aufgegangen ist. Weiterhin ist es m&ouml;glich, dass der geschlossene Rollladen z.B. nach dem Ankippen eines Fensters in eine L&uuml;ftungsposition f&auml;hrt. Und vieles mehr.
     </p>
@@ -7037,7 +7051,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.108",
+  "version": "v0.6.114",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
