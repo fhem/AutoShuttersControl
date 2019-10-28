@@ -1815,8 +1815,8 @@ sub EventProcessingBrightness($@) {
                         $shutters->setLastDrive('privacy position');
                         ShuttersCommandSet( $hash, $shuttersDev,
                             $shutters->getPrivacyUpPos )
-                          if (
-                            $shutters->getQueryShuttersPos(
+                          unless (
+                            not $shutters->getQueryShuttersPos(
                                 $shutters->getPrivacyUpPos
                             )
                           );
@@ -2987,8 +2987,7 @@ sub SunRiseShuttersAfterTimerFn($) {
                     $shutters->setLastDrive('privacy position');
                     ShuttersCommandSet( $hash, $shuttersDev,
                         $shutters->getPrivacyUpPos )
-                      unless (
-                        $shutters->getQueryShuttersPos(
+                      unless ( not $shutters->getQueryShuttersPos(
                             $shutters->getPrivacyUpPos
                         )
                       );
@@ -7210,7 +7209,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.126",
+  "version": "v0.6.127",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
