@@ -1887,6 +1887,7 @@ sub EventProcessingBrightness($@) {
               )
             {
                 my $posValue;
+                my $lastDrive;
 
                 ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
                 ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
@@ -1898,14 +1899,8 @@ sub EventProcessingBrightness($@) {
                     and $1 > $brightnessMinVal
                     and $1 < $brightnessPrivacyDownVal )
                 {
-                    $shutters->setLastDrive('privacy position');
-                    ShuttersCommandSet( $hash, $shuttersDev,
-                        $shutters->getPrivacyDownPos )
-                      unless (
-                        $shutters->getQueryShuttersPos(
-                            $shutters->getPrivacyDownPos
-                        )
-                      );
+                    $lastDrive = 'privacy position';
+                    $posValue = ( (not $shutters->getQueryShuttersPos($shutters->getPrivacyDownPos)) ? $shutters->getPrivacyDownPos : $shutters->getStatus );
 
                     ASC_Debug( 'EventProcessingBrightness: '
                           . $shutters->getShuttersDev
@@ -1917,6 +1912,7 @@ sub EventProcessingBrightness($@) {
                     and $ascDev->getAutoShuttersControlComfort eq 'on' )
                 {
                     $posValue = $shutters->getComfortOpenPos;
+                    $lastDrive = 'minimum brightness threshold fell below';
                 }
                 elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                     or $shutters->getVentilateOpen eq 'off' )
@@ -1926,13 +1922,16 @@ sub EventProcessingBrightness($@) {
                         ? $shutters->getSleepPos
                         : $shutters->getClosedPos
                     );
+                    $lastDrive = 'minimum brightness threshold fell below';
                 }
-                else { $posValue = $shutters->getVentilatePos; }
+                else { $posValue = $shutters->getVentilatePos; $lastDrive = 'minimum brightness threshold fell below'; }
 
                 $shutters->setLastDrive(
-                    'minimum brightness threshold fell below');
+                    $lastDrive);
                 $shutters->setSunrise(0);
-                $shutters->setSunset(1);
+                $shutters->setSunset(1)
+                  unless ( $posValue == $shutters->getPrivacyDownPos
+                        or $posValue == $shutters->getStatus );
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
 
                 ASC_Debug( 'EventProcessingBrightness: '
@@ -7212,7 +7211,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.128",
+  "version": "v0.6.130",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
