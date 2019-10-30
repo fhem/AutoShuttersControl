@@ -1711,7 +1711,7 @@ sub EventProcessingBrightness($@) {
             $brightnessMaxVal = $ascDev->getBrightnessMaxVal;
         }
 
-        my $brightnessPrivacyUpVal   = $shutters->getPrivacyUpTime;
+        my $brightnessPrivacyUpVal   = $shutters->getPrivacyUpBrightnessVal;
         my $brightnessPrivacyDownVal = $shutters->getPrivacyDownTime;
 
         ASC_Debug( 'EventProcessingBrightness: '
@@ -1811,8 +1811,10 @@ sub EventProcessingBrightness($@) {
 
                     if (    $brightnessPrivacyUpVal > 0
                         and $1 < $brightnessMaxVal
-                        and $1 > $brightnessPrivacyUpVal )
+                        and $1 > $brightnessPrivacyUpVal
+                        and $shutters->getPrivacyUpStatus == 1 )
                     {
+                        $shutters->setPrivacyUpStatus(2);
                         $shutters->setLastDrive('privacy position');
                         ShuttersCommandSet( $hash, $shuttersDev,
                             $shutters->getPrivacyUpPos )
@@ -1826,12 +1828,16 @@ sub EventProcessingBrightness($@) {
                               . $shutters->getShuttersDev
                               . ' - Verarbeitung für Sunset Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnShuttersCommandSet gesendet. Grund des fahrens: '
                               . $shutters->getLastDrive );
+
+                        CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
                     }
                     else {
                         $shutters->setLastDrive(
                             'maximum brightness threshold exceeded');
                         $shutters->setSunrise(1);
                         $shutters->setSunset(0);
+                        $shutters->setPrivacyUpStatus(0)
+                          if ( $shutters->getPrivacyUpStatus == 2 );
                         ShuttersCommandSet( $hash, $shuttersDev,
                             $shutters->getOpenPos );
 
@@ -1900,7 +1906,13 @@ sub EventProcessingBrightness($@) {
                     and $1 < $brightnessPrivacyDownVal )
                 {
                     $lastDrive = 'privacy position';
-                    $posValue = ( (not $shutters->getQueryShuttersPos($shutters->getPrivacyDownPos)) ? $shutters->getPrivacyDownPos : $shutters->getStatus );
+                    $posValue  = (
+                        (
+                            not $shutters->getQueryShuttersPos(
+                                $shutters->getPrivacyDownPos
+                            )
+                        ) ? $shutters->getPrivacyDownPos : $shutters->getStatus
+                    );
 
                     ASC_Debug( 'EventProcessingBrightness: '
                           . $shutters->getShuttersDev
@@ -1911,7 +1923,7 @@ sub EventProcessingBrightness($@) {
                     and $shutters->getSubTyp eq 'threestate'
                     and $ascDev->getAutoShuttersControlComfort eq 'on' )
                 {
-                    $posValue = $shutters->getComfortOpenPos;
+                    $posValue  = $shutters->getComfortOpenPos;
                     $lastDrive = 'minimum brightness threshold fell below';
                 }
                 elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
@@ -1924,14 +1936,16 @@ sub EventProcessingBrightness($@) {
                     );
                     $lastDrive = 'minimum brightness threshold fell below';
                 }
-                else { $posValue = $shutters->getVentilatePos; $lastDrive = 'minimum brightness threshold fell below'; }
+                else {
+                    $posValue  = $shutters->getVentilatePos;
+                    $lastDrive = 'minimum brightness threshold fell below';
+                }
 
-                $shutters->setLastDrive(
-                    $lastDrive);
+                $shutters->setLastDrive($lastDrive);
                 $shutters->setSunrise(0);
                 $shutters->setSunset(1)
                   unless ( $posValue == $shutters->getPrivacyDownPos
-                        or $posValue == $shutters->getStatus );
+                    or $posValue == $shutters->getStatus );
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
 
                 ASC_Debug( 'EventProcessingBrightness: '
@@ -2645,9 +2659,7 @@ sub CreateSunRiseSetShuttersTimer($$) {
     $shutters->setInTimerFuncHash( \%funcHash );
 
     ## Abfrage für die Sichtschutzfahrt am Morgen vor dem eigentlichen kompletten öffnen
-    if (    $shutters->getPrivacyUpTime > 0
-        and $shutters->getUp ne 'brightness' )
-    {
+    if ( $shutters->getPrivacyUpTime > 0 ) {
         $shuttersSunriseUnixtime =
           PrivacyUpTime( $shuttersDevHash, $shuttersSunriseUnixtime );
     }
@@ -2676,48 +2688,6 @@ sub CreateSunRiseSetShuttersTimer($$) {
         'FHEM::AutoShuttersControl::SunRiseShuttersAfterTimerFn', \%funcHash );
 
     $ascDev->setStateReading('created new drive timer');
-}
-
-sub PrivacyUpTime($$) {
-    my ( $shuttersDevHash, $shuttersSunriseUnixtime ) = @_;
-
-    if ( ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime ) >
-        ( gettimeofday() + 1 ) )
-    {
-        $shuttersSunriseUnixtime =
-          $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime;
-        readingsSingleUpdate(
-            $shuttersDevHash,
-            'ASC_Time_PrivacyDriveUp',
-            strftime( "%e.%m.%Y - %H:%M", localtime($shuttersSunriseUnixtime) ),
-            0
-        );
-        ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
-        $shutters->setPrivacyUpStatus(1);
-    }
-
-    return $shuttersSunriseUnixtime;
-}
-
-sub PrivacyDownTime($$) {
-    my ( $shuttersDevHash, $shuttersSunsetUnixtime ) = @_;
-
-    if ( ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime ) >
-        ( gettimeofday() + 1 ) )
-    {
-        $shuttersSunsetUnixtime =
-          $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime;
-        readingsSingleUpdate(
-            $shuttersDevHash,
-            'ASC_Time_PrivacyDriveDown',
-            strftime( "%e.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime) ),
-            0
-        );
-        ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
-        $shutters->setPrivacyDownStatus(1);
-    }
-
-    return $shuttersSunsetUnixtime;
 }
 
 ## Funktion zum neu setzen der Timer und der Readings für Sunset/Rise
@@ -2932,9 +2902,6 @@ sub SunRiseShuttersAfterTimerFn($) {
     my $shuttersDev = $funcHash->{shuttersdevice};
     $shutters->setShuttersDev($shuttersDev);
 
-    $shutters->setSunset(0);
-    $shutters->setSunrise(1);
-
     my $homemode = $shutters->getRoommatesStatus;
     $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
 
@@ -2998,14 +2965,25 @@ sub SunRiseShuttersAfterTimerFn($) {
                     $shutters->setLastDrive('day open');
                     ShuttersCommandSet( $hash, $shuttersDev,
                         $shutters->getOpenPos );
+
+                    $shutters->setPrivacyUpStatus(0)
+                      if ( $shutters->getPrivacyUpStatus == 2 );
                 }
             }
             elsif ( $shutters->getIfInShading ) {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev,
                     $shutters->getShadingPos );
+
+                $shutters->setPrivacyUpStatus(0)
+                  if ( $shutters->getPrivacyUpStatus == 2 );
             }
         }
+    }
+
+    unless ( $shutters->getPrivacyUpStatus == 1 ) {
+        $shutters->setSunrise(1);
+        $shutters->setSunset(0);
     }
 
     CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
@@ -4005,6 +3983,53 @@ sub _perlCodeCheck($) {
     return $val;
 }
 
+sub PrivacyUpTime($$) {
+    my ( $shuttersDevHash, $shuttersSunriseUnixtime ) = @_;
+    my $privacyUpUnixtime;
+
+    if ( ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime ) >
+        ( gettimeofday() + 1 ) )
+    {
+        $privacyUpUnixtime =
+          $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime;
+
+        $privacyUpUnixtime += 86400
+          if ( $shutters->getPrivacyUpStatus == 2 );
+
+        readingsSingleUpdate( $shuttersDevHash, 'ASC_Time_PrivacyDriveUp',
+            strftime( "%e.%m.%Y - %H:%M", localtime($privacyUpUnixtime) ), 1 );
+        ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
+        ## und gibt die Unixtime für die nächste Fahrt korrekt zurück
+        unless ( $shutters->getPrivacyUpStatus == 2 ) {
+            $shutters->setPrivacyUpStatus(1);
+            $shuttersSunriseUnixtime = $privacyUpUnixtime;
+        }
+    }
+
+    return $shuttersSunriseUnixtime;
+}
+
+sub PrivacyDownTime($$) {
+    my ( $shuttersDevHash, $shuttersSunsetUnixtime ) = @_;
+
+    if ( ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime ) >
+        ( gettimeofday() + 1 ) )
+    {
+        $shuttersSunsetUnixtime =
+          $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime;
+        readingsSingleUpdate(
+            $shuttersDevHash,
+            'ASC_Time_PrivacyDriveDown',
+            strftime( "%e.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime) ),
+            0
+        );
+        ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
+        $shutters->setPrivacyDownStatus(1);
+    }
+
+    return $shuttersSunsetUnixtime;
+}
+
 ######################################
 ######################################
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -4796,15 +4821,78 @@ sub getShuttersPlace {
 sub getPrivacyUpTime {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev},
-        'ASC_PrivacyUpValue_beforeDayOpen', -1 );
+    return $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{uptime}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+            ->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{LASTGETTIME} = int( gettimeofday() );
+    my ( $upTime, $upBrightnessVal ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_PrivacyUpValue_beforeDayOpen', '-1:-1' );
+
+    ## Erwartetes Ergebnis
+    # upTime:upBrightnessVal
+
+    $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{uptime} = $upTime;
+    $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{upbrightnessval} =
+      ( $upBrightnessVal ne 'none' ? $upBrightnessVal : -1 );
+
+    $shutters->setPrivacyUpStatus(0)
+      if ( defined( $shutters->getPrivacyUpStatus )
+        and $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+        ->{uptime} == -1 );
+
+    return $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{uptime};
+}
+
+sub getPrivacyUpBrightnessVal {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+      ->{upbrightnessval}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+              ->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getPrivacyUpTime;
+
+    return (
+        defined(
+            $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+              ->{upbrightnessval}
+          )
+        ? $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
+          ->{upbrightnessval}
+        : -1
+    );
 }
 
 sub getPrivacyDownTime {
-    my $self = shift;
-
-    return AttrVal( $self->{shuttersDev},
+    my $self     = shift;
+    my $downTime = AttrVal( $self->{shuttersDev},
         'ASC_PrivacyDownValue_beforeNightClose', -1 );
+
+    $shutters->setPrivacyDownStatus(0)
+      if ( defined( $shutters->getPrivacyDownStatus )
+        and $downTime == -1 );
+
+    return $downTime;
 }
 
 sub getPrivacyUpPos {
@@ -7211,7 +7299,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.130",
+  "version": "v0.6.134",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
