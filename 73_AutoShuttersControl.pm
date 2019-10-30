@@ -2981,7 +2981,7 @@ sub SunRiseShuttersAfterTimerFn($) {
         }
     }
 
-    unless ( $shutters->getPrivacyUpStatus == 1 ) {
+    unless ( $shutters->getPrivacyUpStatus == 2 ) {
         $shutters->setSunrise(1);
         $shutters->setSunset(0);
     }
@@ -3988,7 +3988,8 @@ sub PrivacyUpTime($$) {
     my $privacyUpUnixtime;
 
     if ( ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime ) >
-        ( gettimeofday() + 1 ) )
+        ( gettimeofday() + 1 )
+        or $shutters->getPrivacyUpStatus == 2 )
     {
         $privacyUpUnixtime =
           $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime;
@@ -7299,7 +7300,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.134",
+  "version": "v0.6.135",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
