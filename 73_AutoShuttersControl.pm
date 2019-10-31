@@ -4009,6 +4009,20 @@ sub PrivacyUpTime($$) {
             $shuttersSunriseUnixtime = $privacyUpUnixtime;
         }
     }
+    else {
+        readingsSingleUpdate(
+            $shuttersDevHash,
+            'ASC_Time_PrivacyDriveUp',
+            strftime(
+                "%e.%m.%Y - %H:%M",
+                localtime(
+                    ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime )
+                    + 86400
+                )
+            ),
+            1
+        );
+    }
 
     return $shuttersSunriseUnixtime;
 }
@@ -4036,6 +4050,20 @@ sub PrivacyDownTime($$) {
             $shutters->setPrivacyDownStatus(1);
             $shuttersSunsetUnixtime = $privacyDownUnixtime;
         }
+    }
+    else {
+        readingsSingleUpdate(
+            $shuttersDevHash,
+            'ASC_Time_PrivacyDriveDown',
+            strftime(
+                "%e.%m.%Y - %H:%M",
+                localtime(
+                    ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime )
+                    + 86400
+                )
+            ),
+            1
+        );
     }
 
     return $shuttersSunsetUnixtime;
@@ -7363,7 +7391,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.136",
+  "version": "v0.6.137",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
