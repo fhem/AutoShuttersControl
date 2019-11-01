@@ -6819,10 +6819,21 @@ sub getblockAscDrivesAfterManual {
                 position for the shutter in percent. Will be used for <em>set</em> at devices of unknown kind.
             </li>
             <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - How many seconds is the privacy mode activated
-                before the shutter is closed in the evening, or then brightness use brightness value. A value of <em>-1</em> disables this. -1 is the default
+                before the shutter is closed in the evening. For Brightness, in addition to the time value,
+                the Brightness value must also be specified. 1800:300 means 30 min before night close or above a brightness
+                value of 300. -1 is the default
                 value.
             </li>
             <li><strong>ASC_PrivacyDown_Pos</strong> -
+                Position in percent for privacy mode, defaults to 50.
+            </li>
+            <li><strong>ASC_PrivacyUpValue_beforeDayOpen</strong> - How many seconds is the privacy mode activated
+                before the shutter is open in the morning. For Brightness, in addition to the time value,
+                the Brightness value must also be specified. 1800:600 means 30 min before day open or above a brightness
+                value of 600. -1 is the default
+                value.
+            </li>
+            <li><strong>ASC_PrivacyUp_Pos</strong> -
                 Position in percent for privacy mode, defaults to 50.
             </li>
             <li><strong>ASC_WindProtection on|off</strong> - Shutter is protected by the wind protection. Defaults
@@ -7270,8 +7281,8 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_Mode_Up - always/home/absent/off</strong> - Wann darf die Automatik steuern. immer, niemals, bei Abwesenheit des Roommate (ist kein Roommate und absent eingestellt, wird gar nicht gesteuert) (default: always)</li>
             <li><strong>ASC_Partymode -  on/off</strong> - schaltet den Partymodus an oder aus. Wird am ASC Device set ASC-DEVICE partyMode on geschalten, werden alle Fahrbefehle an den Rolll&auml;den, welche das Attribut auf on haben, zwischengespeichert und sp&auml;ter erst ausgef&uuml;hrt (default: off)</li>
             <li><strong>ASC_Pos_Reading</strong> - Name des Readings, welches die Position des Rollladen in Prozent an gibt; wird bei unbekannten Device Typen auch als set Befehl zum fahren verwendet</li>
-            <li><strong>ASC_PrivacyUpValue_beforeDayOpen</strong> - wie viele Sekunden vor dem morgendlichen &ouml;ffnen soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
-            <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren, -1 bedeutet das diese Funktion unbeachtet bleiben soll (default: -1)</li>
+            <li><strong>ASC_PrivacyUpValue_beforeDayOpen</strong> - wie viele Sekunden vor dem morgendlichen &ouml;ffnen soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren. Bei Brightness muss zusätzlich zum Zeitwert der Brightnesswert mit angegeben werden 1800:600 bedeutet 30 min vor day open oder bei über einem Brightnesswert von 600 (default: -1)</li>
+            <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren. Bei Brightness muss zusätzlich zum Zeitwert der Brightnesswert mit angegeben werden 1800:300 bedeutet 30 min vor night close oder bei unter einem Brightnesswert von 300 (default: -1)</li>
             <li><strong>ASC_PrivacyUp_Pos</strong> - Position den Rollladens f&uuml;r den morgendlichen Sichtschutz (default: 50) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_PrivacyDown_Pos</strong> - Position den Rollladens f&uuml;r den abendlichen Sichtschutz (default: 50) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
@@ -7391,7 +7402,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.137",
+  "version": "v0.6.138",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
