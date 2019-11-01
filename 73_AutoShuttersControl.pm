@@ -1022,15 +1022,24 @@ sub EventProcessingWindowRec($@) {
                 elsif ($shutters->getStatus != $shutters->getOpenPos
                     or $shutters->getStatus != $shutters->getLastManPos )
                 {
-                    $shutters->setLastDrive('window closed at day');
-                    $shutters->setNoDelay(1);
-                    $shutters->setDriveCmd(
-                        (
-                              $shutters->getVentilatePosAfterDayClosed eq 'open'
-                            ? $shutters->getOpenPos
-                            : $shutters->getLastManPos
-                        )
-                    );
+                    if ( $shutters->getPrivacyUpStatus == 2 ) {
+                        $shutters->setLastDrive(
+                            'window closed at privacy day open');
+                        $shutters->setNoDelay(1);
+                        $shutters->setDriveCmd( $shutters->getPrivacyUpPos );
+                    }
+                    else {
+                        $shutters->setLastDrive('window closed at day');
+                        $shutters->setNoDelay(1);
+                        $shutters->setDriveCmd(
+                            (
+                                $shutters->getVentilatePosAfterDayClosed eq
+                                  'open'
+                                ? $shutters->getOpenPos
+                                : $shutters->getLastManPos
+                            )
+                        );
+                    }
                 }
             }
             elsif (
@@ -1044,15 +1053,23 @@ sub EventProcessingWindowRec($@) {
                 and $ascDev->getAutoShuttersControlEvening eq 'on'
               )
             {
-                $shutters->setLastDrive('window closed at night');
-                $shutters->setNoDelay(1);
-                $shutters->setDriveCmd(
-                    (
-                          $shutters->getSleepPos > 0
-                        ? $shutters->getSleepPos
-                        : $shutters->getClosedPos
-                    )
-                );
+                if ( $shutters->getPrivacyDownStatus == 2 ) {
+                    $shutters->setLastDrive(
+                        'window closed at privacy night close');
+                    $shutters->setNoDelay(1);
+                    $shutters->setDriveCmd( $shutters->getPrivacyDownPos );
+                }
+                else {
+                    $shutters->setLastDrive('window closed at night');
+                    $shutters->setNoDelay(1);
+                    $shutters->setDriveCmd(
+                        (
+                              $shutters->getSleepPos > 0
+                            ? $shutters->getSleepPos
+                            : $shutters->getClosedPos
+                        )
+                    );
+                }
             }
         }
         elsif (
@@ -7402,7 +7419,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.138",
+  "version": "v0.6.139",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
