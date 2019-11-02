@@ -2712,80 +2712,91 @@ sub RenewSunRiseSetShuttersTimer($) {
     my $hash = shift;
 
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
-        $shutters->setShuttersDev($_);
+        my $name  = $_;
+        my $dhash = $defs{$name};
+
+        $shutters->setShuttersDev($name);
 
         RemoveInternalTimer( $shutters->getInTimerFuncHash );
         $shutters->setInTimerFuncHash(undef);
-        CreateSunRiseSetShuttersTimer( $hash, $_ );
+        CreateSunRiseSetShuttersTimer( $hash, $name );
 
         #### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
         #### 'AttrUpdateChanges' erweitert
-        if ( ( int( gettimeofday() ) - $::fhem_started ) < 60
+        if (
+            ( int( gettimeofday() ) - $::fhem_started ) < 60
             and
-            ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
-            == 0 )
+            ReadingsVal( $name, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+                0 ) == 0
+          )
         {
-            $attr{$_}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
+            $attr{$name}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
               if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
-            $attr{$_}{'ASC_Down'} = $shutters->getAttrUpdateChanges('ASC_Down')
+            $attr{$name}{'ASC_Down'} =
+              $shutters->getAttrUpdateChanges('ASC_Down')
               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
-            $attr{$_}{'ASC_Self_Defense_Mode'} =
+            $attr{$name}{'ASC_Self_Defense_Mode'} =
               $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode')
               if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne
                 'none' );
-            $attr{$_}{'ASC_Self_Defense_Mode'} = 'off'
+            $attr{$name}{'ASC_Self_Defense_Mode'} = 'off'
               if (
                 $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
                 'on' );
 
-            CommandDeleteReading( undef, $_ . ' .ASC_AttrUpdateChanges_.*' )
+            CommandDeleteReading( undef, $name . ' .ASC_AttrUpdateChanges_.*' )
               if (
-                ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
-                    'none' ) eq 'none'
+                ReadingsVal(
+                    $name, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+                    'none'
+                ) eq 'none'
               );
-            readingsSingleUpdate( $defs{$_},
+            readingsSingleUpdate( $dhash,
                 '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
                 1, 0 );
         }
 
-        $attr{$_}{ASC_Drive_Delay} = AttrVal( $_, 'ASC_Drive_Offset', 'none' )
-          if ( AttrVal( $_, 'ASC_Drive_Offset', 'none' ) ne 'none' );
-        delFromDevAttrList( $_, 'ASC_Drive_Offset' );
+        $attr{$name}{ASC_Drive_Delay} =
+          AttrVal( $name, 'ASC_Drive_Offset', 'none' )
+          if ( AttrVal( $name, 'ASC_Drive_Offset', 'none' ) ne 'none' );
+        delFromDevAttrList( $name, 'ASC_Drive_Offset' );
 
-        $attr{$_}{ASC_Drive_DelayStart} =
-          AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' )
-          if ( AttrVal( $_, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
-        delFromDevAttrList( $_, 'ASC_Drive_OffsetStart' );
+        $attr{$name}{ASC_Drive_DelayStart} =
+          AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' )
+          if ( AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
+        delFromDevAttrList( $name, 'ASC_Drive_OffsetStart' );
 
-        $attr{$_}{ASC_Shading_StateChange_SunnyCloudy} =
-            AttrVal( $_, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
-          . AttrVal( $_, 'ASC_Shading_StateChange_Cloudy', 'none' )
-          if (  AttrVal( $_, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
-            and AttrVal( $_, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
+        $attr{$name}{ASC_Shading_StateChange_SunnyCloudy} =
+            AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
+          . AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' )
+          if (
+            AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
+            and AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
             'none' );
-        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Sunny' );
-        delFromDevAttrList( $_, 'ASC_Shading_StateChange_Cloudy' );
+        delFromDevAttrList( $name, 'ASC_Shading_StateChange_Sunny' );
+        delFromDevAttrList( $name, 'ASC_Shading_StateChange_Cloudy' );
 
-        $attr{$_}{ASC_Shading_InOutAzimuth} =
-          ( AttrVal( $_, 'ASC_Shading_Direction', 180 ) -
-              AttrVal( $_, 'ASC_Shading_Angle_Left', 85 ) )
+        $attr{$name}{ASC_Shading_InOutAzimuth} =
+          ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) -
+              AttrVal( $name, 'ASC_Shading_Angle_Left', 85 ) )
           . ':'
-          . ( AttrVal( $_, 'ASC_Shading_Direction', 180 ) +
-              AttrVal( $_, 'ASC_Shading_Angle_Right', 85 ) )
-          if ( AttrVal( $_, 'ASC_Shading_Direction', 'none' ) ne 'none'
-            or AttrVal( $_, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
-            or AttrVal( $_, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
-        delFromDevAttrList( $_, 'ASC_Shading_Direction' );
-        delFromDevAttrList( $_, 'ASC_Shading_Angle_Left' );
-        delFromDevAttrList( $_, 'ASC_Shading_Angle_Right' );
+          . ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) +
+              AttrVal( $name, 'ASC_Shading_Angle_Right', 85 ) )
+          if ( AttrVal( $name, 'ASC_Shading_Direction', 'none' ) ne 'none'
+            or AttrVal( $name, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
+            or AttrVal( $name, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
+        delFromDevAttrList( $name, 'ASC_Shading_Direction' );
+        delFromDevAttrList( $name, 'ASC_Shading_Angle_Left' );
+        delFromDevAttrList( $name, 'ASC_Shading_Angle_Right' );
 
-        $attr{$_}{ASC_PrivacyDownValue_beforeNightClose} =
-          AttrVal( $_, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
-          if ( AttrVal( $_, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
+        $attr{$name}{ASC_PrivacyDownValue_beforeNightClose} =
+          AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
+          if (
+            AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
             'none' );
-        delFromDevAttrList( $_, 'ASC_PrivacyDownTime_beforNightClose' );
+        delFromDevAttrList( $name, 'ASC_PrivacyDownTime_beforNightClose' );
     }
 }
 
@@ -7419,7 +7430,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.139",
+  "version": "v0.6.140",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
