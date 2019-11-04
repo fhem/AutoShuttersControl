@@ -1976,8 +1976,9 @@ sub EventProcessingBrightness($@) {
                       . $shutters->getLastDrive );
             }
             else {
-                EventProcessingShadingBrightness( $hash, $shuttersDev,
-                    $events );
+                EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
+                  unless ( $getStatus == $shutters->getPrivacyDownPos );
+
                 ASC_Debug( 'EventProcessingBrightness: '
                       . $shutters->getShuttersDev
                       . ' - Verarbeitung für Sunset. Roommatestatus nicht zum runter fahren. Fahrbebehl bleibt aus!!! Es wird an die Event verarbeitende Beschattungsfunktion weiter gereicht'
@@ -1985,7 +1986,9 @@ sub EventProcessingBrightness($@) {
             }
         }
         else {
-            EventProcessingShadingBrightness( $hash, $shuttersDev, $events );
+            EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
+              unless ( $getStatus == $shutters->getPrivacyDownPos );
+
             ASC_Debug( 'EventProcessingBrightness: '
                   . $shutters->getShuttersDev
                   . ' - Brightness Event kam nicht innerhalb der Verarbeitungszeit für Sunset oder Sunris oder aber für beide wurden die entsprechendne Verarbeitungsschwellen nicht erreicht.'
@@ -2531,13 +2534,13 @@ sub EventProcessingExternalTriggerDevice($@) {
 
     if ( $events =~ m#$reading:\s($triggerValActive)# ) {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
-              . ' In der RegEx Schleife Trivver Val Aktiv'
+              . ' In der RegEx Schleife Trigger Val Aktiv'
               . ' - TriggerVal: '
               . $triggerValActive );
     }
     elsif ( $events =~ m#$reading:\s($triggerValInactive)# ) {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
-              . ' In der RegEx Schleife Trivver Val Inaktiv'
+              . ' In der RegEx Schleife Trigger Val Inaktiv'
               . ' - TriggerVal: '
               . $triggerValInactive );
     }
@@ -7607,7 +7610,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.145",
+  "version": "v0.6.146",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
