@@ -1977,7 +1977,7 @@ sub EventProcessingBrightness($@) {
             }
             else {
                 EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
-                  unless ( $getStatus == $shutters->getPrivacyDownPos );
+                  unless ( $shutters->getStatus == $shutters->getPrivacyDownPos );
 
                 ASC_Debug( 'EventProcessingBrightness: '
                       . $shutters->getShuttersDev
@@ -1987,7 +1987,7 @@ sub EventProcessingBrightness($@) {
         }
         else {
             EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
-              unless ( $getStatus == $shutters->getPrivacyDownPos );
+              unless ( $shutters->getStatus == $shutters->getPrivacyDownPos );
 
             ASC_Debug( 'EventProcessingBrightness: '
                   . $shutters->getShuttersDev
@@ -7610,7 +7610,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.146",
+  "version": "v0.6.147",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
