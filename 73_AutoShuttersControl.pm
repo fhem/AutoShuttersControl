@@ -249,7 +249,8 @@ my %userAttrList = (
     'ASC_WindParameters'                    => '-',
     'ASC_DriveUpMaxDuration'                => '-',
     'ASC_WindProtection:on,off'             => '-',
-    'ASC_RainProtection:on,off'             => '-'
+    'ASC_RainProtection:on,off'             => '-',
+    'ASC_ExternalTriggerDevice'             => '-'
 );
 
 my %posSetCmds = (
@@ -476,7 +477,7 @@ sub Notify($$) {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice)(\s.*|$)/,
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTriggerDevice)(\s.*|$)/,
             @{$events}
           )
         {
@@ -520,6 +521,8 @@ sub EventProcessingGeneral($$$) {
               if ( $deviceAttr eq 'ASC_windSensor' );
             EventProcessingTwilightDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_twilightDevice' );
+            EventProcessingExternalTriggerDevice( $hash, $device, $events )
+              if ( $deviceAttr eq 'ASC_ExternalTriggerDevice' );
 
             $shutters->setShuttersDev($device)
               if ( $deviceAttr eq 'ASC_BrightnessSensor' );
@@ -539,7 +542,7 @@ sub EventProcessingGeneral($$$) {
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
         if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_twilightDevice)\s(.*)$#
+m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTriggerDevice|ASC_twilightDevice)\s(.*)$#
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
@@ -547,7 +550,7 @@ m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSenso
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_twilightDevice)$#
+m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTriggerDevice|ASC_twilightDevice)$#
           )
         {     # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
@@ -2509,6 +2512,37 @@ sub EventProcessingShutters($@) {
           . ' Fn wurde durlaufen und es sollten Debugausgaben gekommen sein. '
           . ' !!!Wenn nicht!!! wurde der Event nicht korrekt als Nummerisch erkannt. '
     );
+}
+
+sub EventProcessingExternalTriggerDevice($@) {
+    my ( $hash, $shuttersDev, $events ) = @_;
+    my $name = $hash->{NAME};
+    
+    $shutters->setShuttersDev($shuttersDev);
+
+    ASC_Debug( 'EventProcessingExternalTriggerDevice: '
+          . ' Fn wurde durch Notify '
+          . ' - RECEIVED EVENT: '
+          . Dumper $events);
+
+    my $reading             = $shutters->getExternalTriggerReading;
+    my $triggerValActive    = $shutters->getExternalTriggerValueActive;
+    my $triggerValInactive  = $shutters->getExternalTriggerValueInactive;
+    my $triggerPosActive    = $shutters->getExternalTriggerPosActive;
+    my $triggerPosInactive  = $shutters->getExternalTriggerPosInactive;
+
+    if ( $events =~ m#$reading:\s($triggerValActive)# ) {
+        ASC_Debug( 'EventProcessingExternalTriggerDevice: '
+          . ' In der RegEx Schleife Trivver Val Aktiv'
+          . ' - TriggerVal: '
+          . $triggerValActive);
+    }
+    elsif ( $events =~ m#$reading:\s($triggerValInactive)# ) {
+        ASC_Debug( 'EventProcessingExternalTriggerDevice: '
+          . ' In der RegEx Schleife Trivver Val Inaktiv'
+          . ' - TriggerVal: '
+          . $triggerValInactive);
+    }
 }
 
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
@@ -5411,6 +5445,148 @@ sub getShadingWaitingPeriod {
 }
 ### Ende Beschattung
 
+sub getExternalTriggerDevice {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{device}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{LASTGETTIME} = int( gettimeofday() );
+    my ( $device, $reading, $valueActive, $valueInactive, $posActive, $posInactive ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_ExternalTriggerDevice',
+        'none' );
+
+    ### erwartetes Ergebnis
+    # DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE
+
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{device} = $device;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{reading} = $reading;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueactive} = $valueActive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueinactive} = $valueInactive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posactive} = $posActive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posinactive} = $posInactive;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{device};
+
+}
+
+sub getExternalTriggerReading {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{reading}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{reading};
+}
+
+sub getExternalTriggerValueActive {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{valueactive}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{valueactive};
+}
+
+sub getExternalTriggerValueInactive {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{valueinactive}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{valueinactive};
+}
+
+sub getExternalTriggerPosActive {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{posactive}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{posactive};
+}
+
+sub getExternalTriggerPosInactive {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{posinactive}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }
+              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }
+            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }
+      ->{ASC_ExternalTriggerDevice}->{posinactive};
+}
+
 sub getDelay {
     my $self = shift;
 
@@ -7430,7 +7606,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.140",
+  "version": "v0.6.145",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
