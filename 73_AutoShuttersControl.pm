@@ -1046,13 +1046,11 @@ sub EventProcessingWindowRec($@) {
                 }
             }
             elsif (
-                    $shutters->getModeUp ne 'absent'
-                and $shutters->getModeUp ne 'off'
+                    $shutters->getModeDown ne 'absent'
+                and $shutters->getModeDown ne 'off'
                 and (  not $shutters->getIsDay
                     or $homemode eq 'asleep'
                     or $homemode eq 'gotosleep' )
-                and $shutters->getModeDown ne 'absent'
-                and $shutters->getModeDown ne 'off'
                 and $ascDev->getAutoShuttersControlEvening eq 'on'
               )
             {
@@ -2517,7 +2515,7 @@ sub EventProcessingShutters($@) {
 sub EventProcessingExternalTriggerDevice($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
-    
+
     $shutters->setShuttersDev($shuttersDev);
 
     ASC_Debug( 'EventProcessingExternalTriggerDevice: '
@@ -2525,23 +2523,23 @@ sub EventProcessingExternalTriggerDevice($@) {
           . ' - RECEIVED EVENT: '
           . Dumper $events);
 
-    my $reading             = $shutters->getExternalTriggerReading;
-    my $triggerValActive    = $shutters->getExternalTriggerValueActive;
-    my $triggerValInactive  = $shutters->getExternalTriggerValueInactive;
-    my $triggerPosActive    = $shutters->getExternalTriggerPosActive;
-    my $triggerPosInactive  = $shutters->getExternalTriggerPosInactive;
+    my $reading            = $shutters->getExternalTriggerReading;
+    my $triggerValActive   = $shutters->getExternalTriggerValueActive;
+    my $triggerValInactive = $shutters->getExternalTriggerValueInactive;
+    my $triggerPosActive   = $shutters->getExternalTriggerPosActive;
+    my $triggerPosInactive = $shutters->getExternalTriggerPosInactive;
 
     if ( $events =~ m#$reading:\s($triggerValActive)# ) {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
-          . ' In der RegEx Schleife Trivver Val Aktiv'
-          . ' - TriggerVal: '
-          . $triggerValActive);
+              . ' In der RegEx Schleife Trivver Val Aktiv'
+              . ' - TriggerVal: '
+              . $triggerValActive );
     }
     elsif ( $events =~ m#$reading:\s($triggerValInactive)# ) {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
-          . ' In der RegEx Schleife Trivver Val Inaktiv'
-          . ' - TriggerVal: '
-          . $triggerValInactive);
+              . ' In der RegEx Schleife Trivver Val Inaktiv'
+              . ' - TriggerVal: '
+              . $triggerValInactive );
     }
 }
 
@@ -3073,6 +3071,9 @@ sub CreateNewNotifyDev($) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_BrightnessSensor', 'none' ),
             $_, 'ASC_BrightnessSensor' )
           if ( AttrVal( $_, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
+        AddNotifyDev( $hash, AttrVal( $_, 'ASC_ExternalTriggerDevice', 'none' ),
+            $_, 'ASC_BrightnessSensor' )
+          if ( AttrVal( $_, 'ASC_ExternalTriggerDevice', 'none' ) ne 'none' );
 
         $shuttersList = $shuttersList . ',' . $_;
     }
@@ -5448,143 +5449,143 @@ sub getShadingWaitingPeriod {
 sub getExternalTriggerDevice {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{device}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{device}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{LASTGETTIME} = int( gettimeofday() );
-    my ( $device, $reading, $valueActive, $valueInactive, $posActive, $posInactive ) =
-      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
-        'ASC_ExternalTriggerDevice',
-        'none' );
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+      = int( gettimeofday() );
+    my ( $device, $reading, $valueActive, $valueInactive, $posActive,
+        $posInactive )
+      = FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_ExternalTriggerDevice', 'none' );
 
     ### erwartetes Ergebnis
     # DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE
 
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{device} = $device;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{reading} = $reading;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{valueactive} = $valueActive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{device} =
+      $device;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{reading} =
+      $reading;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{valueactive}
+      = $valueActive;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
       ->{valueinactive} = $valueInactive;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{posactive} = $posActive;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
-      ->{posinactive} = $posInactive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{posactive} =
+      $posActive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{posinactive}
+      = $posInactive;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{device};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{device};
 
 }
 
 sub getExternalTriggerReading {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{reading}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{reading}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{reading};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{reading};
 }
 
 sub getExternalTriggerValueActive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{valueactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueactive}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{valueactive};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueactive};
 }
 
 sub getExternalTriggerValueInactive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{valueinactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueinactive}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{valueinactive};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{valueinactive};
 }
 
 sub getExternalTriggerPosActive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{posactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posactive}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{posactive};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posactive};
 }
 
 sub getExternalTriggerPosInactive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{posinactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posinactive}
       if (
         exists(
-            $self->{ $self->{shuttersDev} }
-              ->{ASC_ExternalTriggerDevice}->{LASTGETTIME}
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+              ->{LASTGETTIME}
         )
         and ( gettimeofday() -
-            $self->{ $self->{shuttersDev} }
-            ->{ASC_ExternalTriggerDevice}->{LASTGETTIME} ) < 2
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+            ->{LASTGETTIME} ) < 2
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }
-      ->{ASC_ExternalTriggerDevice}->{posinactive};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
+      ->{posinactive};
 }
 
 sub getDelay {
