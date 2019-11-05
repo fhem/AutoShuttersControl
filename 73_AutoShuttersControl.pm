@@ -1015,7 +1015,7 @@ sub EventProcessingWindowRec($@) {
                 and $shutters->getModeUp ne 'off'
               )
             {
-                if (    $shutters->getShadingStatus eq 'in'
+                if (    $shutters->getIfInShading
                     and $shutters->getShadingPos != $shutters->getStatus )
                 {
                     $shutters->setLastDrive('shading in');
@@ -1031,12 +1031,13 @@ sub EventProcessingWindowRec($@) {
                         $shutters->setNoDelay(1);
                         $shutters->setDriveCmd( $shutters->getPrivacyDownPos );
                     }
-                    elsif ( $shutters->getPrivacyUpStatus == 2 ) {
-                        $shutters->setLastDrive(
-                            'window closed at privacy day open');
-                        $shutters->setNoDelay(1);
-                        $shutters->setDriveCmd( $shutters->getPrivacyUpPos );
-                    }
+
+ #                     elsif ( $shutters->getPrivacyUpStatus == 2 ) {
+ #                         $shutters->setLastDrive(
+ #                             'window closed at privacy day open');
+ #                         $shutters->setNoDelay(1);
+ #                         $shutters->setDriveCmd( $shutters->getPrivacyUpPos );
+ #                     }
                     else {
                         $shutters->setLastDrive('window closed at day');
                         $shutters->setNoDelay(1);
@@ -1060,9 +1061,9 @@ sub EventProcessingWindowRec($@) {
                 and $ascDev->getAutoShuttersControlEvening eq 'on'
               )
             {
-                if ( $shutters->getPrivacyDownStatus == 2 ) {
+                if ( $shutters->getPrivacyUpStatus == 2 ) {
                     $shutters->setLastDrive(
-                        'window closed at privacy night close');
+                        'window closed at privacy day open');
                     $shutters->setNoDelay(1);
                     $shutters->setDriveCmd( $shutters->getPrivacyDownPos );
                 }
@@ -2539,18 +2540,37 @@ sub EventProcessingExternalTriggerDevice($@) {
     my $triggerPosActive   = $shutters->getExternalTriggerPosActive;
     my $triggerPosInactive = $shutters->getExternalTriggerPosInactive;
 
-    if ( $events =~ m#$reading:\s($triggerValActive)# ) {
+    if ( $events =~ m#$reading:\s($triggerValActive)#
+        and not $shutters->getQueryShuttersPos($triggerPosActive) )
+    {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
               . ' In der RegEx Schleife Trigger Val Aktiv'
               . ' - TriggerVal: '
               . $triggerValActive );
+
+        $shutters->setLastDrive('external trigger device active');
+        $shutters->setNoDelay(1);
+        ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive );
     }
-    elsif ( $events =~ m#$reading:\s($triggerValInactive)# ) {
+    elsif (
+        $events =~ m#$reading:\s($triggerValInactive)#
+        and (  $shutters->getPrivacyDownStatus != 2
+            or $shutters->getPrivacyUpStatus != 2 )
+        and not $shutters->getIfInShading
+      )
+    {
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
               . ' In der RegEx Schleife Trigger Val Inaktiv'
               . ' - TriggerVal: '
               . $triggerValInactive );
+
+        $shutters->setLastDrive('external trigger device inactive');
+        $shutters->setNoDelay(1);
+        ShuttersCommandSet( $hash, $shuttersDev, $triggerPosInactive );
     }
+
+    ASC_Debug(
+        'EventProcessingExternalTriggerDevice: ' . ' Funktion durchlaufen' );
 }
 
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
@@ -5491,7 +5511,7 @@ sub getExternalTriggerDevice {
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{posactive} =
       $posActive;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}->{posinactive}
-      = $posInactive;
+      = ( $posInactive ne 'none' ? $posInactive : $shutters->getLastPos );
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTriggerDevice}
       ->{device};
@@ -7617,7 +7637,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.148",
+  "version": "v0.6.150",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
