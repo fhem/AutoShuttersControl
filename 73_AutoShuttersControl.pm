@@ -1025,7 +1025,13 @@ sub EventProcessingWindowRec($@) {
                 elsif ($shutters->getStatus != $shutters->getOpenPos
                     or $shutters->getStatus != $shutters->getLastManPos )
                 {
-                    if ( $shutters->getPrivacyUpStatus == 2 ) {
+                    if ( $shutters->getPrivacyDownStatus == 2 ) {
+                        $shutters->setLastDrive(
+                            'window closed at privacy night close');
+                        $shutters->setNoDelay(1);
+                        $shutters->setDriveCmd( $shutters->getPrivacyDownPos );
+                    }
+                    elsif ( $shutters->getPrivacyUpStatus == 2 ) {
                         $shutters->setLastDrive(
                             'window closed at privacy day open');
                         $shutters->setNoDelay(1);
@@ -1931,6 +1937,7 @@ sub EventProcessingBrightness($@) {
                             )
                         ) ? $shutters->getPrivacyDownPos : $shutters->getStatus
                     );
+                    $shutters->setPrivacyDownStatus(2);
 
                     ASC_Debug( 'EventProcessingBrightness: '
                           . $shutters->getShuttersDev
@@ -1962,7 +1969,7 @@ sub EventProcessingBrightness($@) {
                 $shutters->setLastDrive($lastDrive);
                 $shutters->setSunrise(0);
                 $shutters->setSunset(1)
-                  unless ( $posValue == $shutters->getPrivacyDownPos
+                  unless ( $shutters->getPrivacyDownStatus == 2
                     or $posValue == $shutters->getStatus );
                 $shutters->setPrivacyDownStatus(0)
                   if ( $shutters->getPrivacyDownStatus == 2 );
@@ -1977,7 +1984,7 @@ sub EventProcessingBrightness($@) {
             }
             else {
                 EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
-                  unless ( $shutters->getStatus == $shutters->getPrivacyDownPos );
+                  unless ( $shutters->getPrivacyDownStatus == 2 );
 
                 ASC_Debug( 'EventProcessingBrightness: '
                       . $shutters->getShuttersDev
@@ -1987,7 +1994,7 @@ sub EventProcessingBrightness($@) {
         }
         else {
             EventProcessingShadingBrightness( $hash, $shuttersDev, $events )
-              unless ( $shutters->getStatus == $shutters->getPrivacyDownPos );
+              unless ( $shutters->getPrivacyDownStatus == 2 );
 
             ASC_Debug( 'EventProcessingBrightness: '
                   . $shutters->getShuttersDev
@@ -7610,7 +7617,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.147",
+  "version": "v0.6.148",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
