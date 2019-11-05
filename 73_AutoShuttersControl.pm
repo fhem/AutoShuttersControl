@@ -1737,7 +1737,7 @@ sub EventProcessingBrightness($@) {
         }
 
         my $brightnessPrivacyUpVal   = $shutters->getPrivacyUpBrightnessVal;
-        my $brightnessPrivacyDownVal = $shutters->getPrivacyDownTime;
+        my $brightnessPrivacyDownVal = $shutters->getPrivacyDownBrightnessVal;
 
         ASC_Debug( 'EventProcessingBrightness: '
               . $shutters->getShuttersDev
@@ -7640,7 +7640,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.150",
+  "version": "v0.6.151",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
