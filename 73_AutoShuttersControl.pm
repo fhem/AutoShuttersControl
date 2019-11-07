@@ -2860,7 +2860,7 @@ sub RenewSunRiseSetShuttersTimer($) {
             AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
             'none' );
         delFromDevAttrList( $name, 'ASC_PrivacyDownTime_beforNightClose' );
-        
+
         delFromDevAttrList( $name, 'ASC_ExternalTriggerDevice' );
     }
 }
@@ -5482,8 +5482,7 @@ sub getShadingWaitingPeriod {
 sub getExternalTriggerDevice {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{device}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{device}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
@@ -5493,8 +5492,8 @@ sub getExternalTriggerDevice {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{LASTGETTIME}
-      = int( gettimeofday() );
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{LASTGETTIME} =
+      int( gettimeofday() );
     my ( $device, $reading, $valueActive, $valueInactive, $posActive,
         $posInactive )
       = FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
@@ -5507,25 +5506,23 @@ sub getExternalTriggerDevice {
       $device;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{reading} =
       $reading;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueactive}
-      = $valueActive;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{valueinactive} = $valueInactive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueactive} =
+      $valueActive;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueinactive} =
+      $valueInactive;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive} =
       $posActive;
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posinactive}
-      = ( $posInactive ne 'none' ? $posInactive : $shutters->getLastPos );
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posinactive} =
+      ( $posInactive ne 'none' ? $posInactive : $shutters->getLastPos );
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{device};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{device};
 
 }
 
 sub getExternalTriggerReading {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{reading}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{reading}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
@@ -5537,15 +5534,13 @@ sub getExternalTriggerReading {
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{reading};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{reading};
 }
 
 sub getExternalTriggerValueActive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{valueactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueactive}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
@@ -5584,8 +5579,7 @@ sub getExternalTriggerValueInactive {
 sub getExternalTriggerPosActive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{posactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
@@ -5597,15 +5591,13 @@ sub getExternalTriggerPosActive {
       );
     $shutters->getExternalTriggerDevice;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{posactive};
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive};
 }
 
 sub getExternalTriggerPosInactive {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
-      ->{posinactive}
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posinactive}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
