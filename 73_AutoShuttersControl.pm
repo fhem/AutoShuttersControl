@@ -957,7 +957,8 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
-    if ( $events =~ m#.*state:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?)#
+    if ( $events =~
+        m#.*state:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)#
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         my $match = $1;
@@ -994,7 +995,7 @@ sub EventProcessingWindowRec($@) {
         );
 
         if (
-                $match =~ /[Cc]lose/
+                $match =~ /[Cc]lose|true/
             and IsAfterShuttersTimeBlocking($shuttersDev)
             and (  $shutters->getStatus == $shutters->getVentilatePos
                 or $shutters->getStatus == $shutters->getComfortOpenPos
@@ -1083,7 +1084,7 @@ sub EventProcessingWindowRec($@) {
         elsif (
             (
                 $match =~ /tilt/
-                or (    $match =~ /[Oo]pen/
+                or (    $match =~ /[Oo]pen|false/
                     and $shutters->getSubTyp eq 'twostate' )
             )
             and $shutters->getVentilateOpen eq 'on'
@@ -1101,7 +1102,7 @@ sub EventProcessingWindowRec($@) {
                 )
             );
         }
-        elsif ( $match =~ /[Oo]pen/
+        elsif ( $match =~ /[Oo]pen|false/
             and $shutters->getSubTyp eq 'threestate' )
         {
             my $posValue;
@@ -7640,7 +7641,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.151",
+  "version": "v0.6.152",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
