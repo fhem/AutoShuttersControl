@@ -957,8 +957,10 @@ sub EventProcessingWindowRec($@) {
     my ( $hash, $shuttersDev, $events ) = @_;
     my $name = $hash->{NAME};
 
+    my $reading = $shutters->getWinDevReading;
+
     if ( $events =~
-        m#.*state:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)#
+        m#.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)#
         and IsAfterShuttersManualBlocking($shuttersDev) )
     {
         my $match = $1;
@@ -3934,30 +3936,30 @@ sub CheckIfShuttersWindowRecOpen($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if ( $shutters->getWinStatus =~ /[Oo]pen|false/ )    # CK: covers: open|opened
+    if ( $shutters->getWinStatus =~ /[Oo]pen|false/ )  # CK: covers: open|opened
     {
         return 2;
     }
     elsif ( $shutters->getWinStatus =~ /tilt/
-        and $shutters->getSubTyp eq 'threestate' )    # CK: covers: tilt|tilted
+        and $shutters->getSubTyp eq 'threestate' )     # CK: covers: tilt|tilted
     {
         return 1;
     }
     elsif ( $shutters->getWinStatus =~ /[Cc]lose|true/ ) {
         return 0;
-    }                                                 # CK: covers: close|closed
+    }    # CK: covers: close|closed
 }
 
 sub makeReadingName($) {
     my ($rname) = @_;
     my %charHash = (
-        chr(0xe4) => "ae",                            # ä
-        chr(0xc4) => "Ae",                            # Ä
-        chr(0xfc) => "ue",                            # ü
-        chr(0xdc) => "Ue",                            # Ü
-        chr(0xf6) => "oe",                            # ö
-        chr(0xd6) => "Oe",                            # Ö
-        chr(0xdf) => "ss"                             # ß
+        chr(0xe4) => "ae",    # ä
+        chr(0xc4) => "Ae",    # Ä
+        chr(0xfc) => "ue",    # ü
+        chr(0xdc) => "Ue",    # Ü
+        chr(0xf6) => "oe",    # ö
+        chr(0xd6) => "Oe",    # Ö
+        chr(0xdf) => "ss"     # ß
     );
     my $charHashkeys = join( "", keys(%charHash) );
 
@@ -6080,7 +6082,8 @@ use GPUtils qw(GP_Import);
 BEGIN {
     GP_Import(
         qw(
-          AttrVal)
+          AttrVal
+          gettimeofday)
     );
 }
 
@@ -6093,7 +6096,47 @@ sub getSubTyp {
 sub _getWinDev {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_WindowRec', 'none' );
+    return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{device}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME} ) <
+        2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME} =
+      int( gettimeofday() );
+    my ( $device, $reading ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_WindowRec', 'none' );
+
+    ### erwartetes Ergebnis
+    # DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE
+
+    $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{device} =
+      $device;
+    $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{reading} =
+      ( $reading ne 'none' ? $reading : 'state' );
+
+    return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{device};
+}
+
+sub getWinDevReading {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{reading}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME}
+        )
+        and ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME} ) <
+        2
+      );
+    $shutters->_getWinDev;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{reading};
 }
 
 ## Subklasse Readings von Klasse ASC_Window ##
@@ -6115,7 +6158,8 @@ BEGIN {
 sub getWinStatus {
     my $self = shift;
 
-    return ReadingsVal( $shutters->_getWinDev, 'state', 'closed' );
+    return ReadingsVal( $shutters->_getWinDev, $shutters->getWinDevReading,
+        'closed' );
 }
 
 ## Klasse ASC_Roommate ##
@@ -7128,8 +7172,8 @@ sub getblockAscDrivesAfterManual {
                 <em>THRESHOLD-OFF</em> sets the complementary value when the wind protection is disabled. Disabled
                 if <em>THRESHOLD-ON</em> is set to -1. Defaults to <q>50:20 <em>ASC_Closed_Pos</em></q>.
             </li>
-            <li><strong>ASC_WindowRec</strong> - Points to the window contact device, associated with the shutter.
-                Defaults to none.
+            <li><strong>ASC_WindowRec</strong> - WINDOWREC:[READING], Points to the window contact device, associated with the shutter.
+                Defaults to none. Reading is optional
             </li>
             <li><strong>ASC_WindowRec_subType</strong> - Model type of the used <em>ASC_WindowRec</em>:
                 <ul>
@@ -7548,7 +7592,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
             <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem f&uuml;r Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
             <li><strong>ASC_WindowRec_PosAfterDayClosed</strong> - open,lastManual / auf welche Position soll das Rollo nach dem schlie&szlig;en am Tag fahren. Open Position oder letzte gespeicherte manuelle Position (default: open)</li>
-            <li><strong>ASC_WindowRec</strong> - Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist (default: none)</li>
+            <li><strong>ASC_WindowRec</strong> - WINDOWREC:[READING], Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist (default: none). Reading ist optional</li>
             <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
         </ul>
     </ul>
@@ -7633,7 +7677,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.152",
+  "version": "v0.6.153",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
