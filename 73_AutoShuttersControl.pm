@@ -1787,8 +1787,11 @@ sub EventProcessingBrightness($@) {
                       86400
                 )
             )
-            and (  $1 > $brightnessMaxVal
-                or $1 > $brightnessPrivacyUpVal )
+            and (
+                $1 > $brightnessMaxVal
+                or (    $1 > $brightnessPrivacyUpVal
+                    and $shutters->getPrivacyUpStatus == 1 )
+            )
             and $shutters->getUp eq 'brightness'
             and not $shutters->getSunrise
             and $ascDev->getAutoShuttersControlMorning eq 'on'
@@ -1817,8 +1820,8 @@ sub EventProcessingBrightness($@) {
                 ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
                 ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
                 ##  also das Rollo in privacyDown Position steht und VOR der endgültigen Nachfahrt
-                $shutters->setPrivacyUpStatus(0)
-                  if ( not defined( $shutters->getPrivacyUpStatus ) );
+        #                 $shutters->setPrivacyUpStatus(0)
+        #                   if ( not defined( $shutters->getPrivacyUpStatus ) );
 
                 if (
                     (
@@ -1839,8 +1842,9 @@ sub EventProcessingBrightness($@) {
 
                     if (    $brightnessPrivacyUpVal > 0
                         and $1 < $brightnessMaxVal
-                        and $1 > $brightnessPrivacyUpVal
-                        and $shutters->getPrivacyUpStatus == 1 )
+                        and $1 > $brightnessPrivacyUpVal )
+
+              #                         and $shutters->getPrivacyUpStatus == 1 )
                     {
                         $shutters->setPrivacyUpStatus(2);
                         $shutters->setLastDrive('brightness privacy day open');
@@ -1892,8 +1896,11 @@ sub EventProcessingBrightness($@) {
             and int( gettimeofday() / 86400 ) == int(
                 computeAlignTime( '24:00', $shutters->getTimeDownLate ) / 86400
             )
-            and (  $1 < $brightnessMinVal
-                or $1 < $brightnessPrivacyDownVal )
+            and (
+                $1 < $brightnessMinVal
+                or (    $1 < $brightnessPrivacyDownVal
+                    and $shutters->getPrivacyDownStatus == 1 )
+            )
             and $shutters->getDown eq 'brightness'
             and not $shutters->getSunset
             and IsAfterShuttersManualBlocking($shuttersDev)
@@ -1926,8 +1933,8 @@ sub EventProcessingBrightness($@) {
                 ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
                 ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
                 ##  also das Rollo in privacyDown Position steht und VOR der endgültigen Nachfahrt
-                $shutters->setPrivacyDownStatus(0)
-                  if ( not defined( $shutters->getPrivacyDownStatus ) );
+      #                 $shutters->setPrivacyDownStatus(0)
+      #                   if ( not defined( $shutters->getPrivacyDownStatus ) );
 
                 if (    $brightnessPrivacyDownVal > 0
                     and $1 > $brightnessMinVal
@@ -7677,7 +7684,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.153",
+  "version": "v0.6.154",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
