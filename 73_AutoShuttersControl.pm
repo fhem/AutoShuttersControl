@@ -250,7 +250,8 @@ my %userAttrList = (
     'ASC_DriveUpMaxDuration'                => '-',
     'ASC_WindProtection:on,off'             => '-',
     'ASC_RainProtection:on,off'             => '-',
-    'ASC_ExternalTrigger'                   => '-'
+    'ASC_ExternalTrigger'                   => '-',
+    'ASC_Adv:on,off'                        => '-'
 );
 
 my %posSetCmds = (
@@ -623,6 +624,10 @@ sub Set($$@) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
     }
+    elsif ( lc $cmd eq 'advdrivedown' ) {
+        return "usage: $cmd" if ( @args != 0 );
+        EventProcessingAdvShuttersClose($hash);
+    }
     elsif ( lc $cmd eq 'shutterascenabletoggle' ) {
         return "usage: $cmd" if ( @args > 1 );
         readingsSingleUpdate(
@@ -644,7 +649,7 @@ sub Set($$@) {
     else {
         my $list = 'scanForShutters:noArg';
         $list .=
-' renewAllTimer:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
+' renewAllTimer:noArg advDriveDown:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
           . ' shutterASCenableToggle:'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
@@ -2433,7 +2438,7 @@ sub ShadingProcessingDriveCommand($$) {
 }
 
 sub EventProcessingPartyMode($) {
-    my ($hash) = @_;
+    my $hash = shift;
     my $name = $hash->{NAME};
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -2479,6 +2484,30 @@ sub EventProcessingPartyMode($) {
             $shutters->setLastDrive('drive after party mode');
             ShuttersCommandSet( $hash, $shuttersDev, $shutters->getDelayCmd );
         }
+    }
+}
+
+sub EventProcessingAdvShuttersClose($) {
+    my $hash = shift;
+    my $name = $hash->{NAME};
+
+    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
+        next
+          if (  not $shutters->getAdv
+            and not $shutters->getAdvDelay );
+
+        $shutters->setLastDrive('adv delay close');
+        $shutters->setAdvDelay(1);
+        ShuttersCommandSet(
+            $hash,
+            $shuttersDev,
+            (
+                  $shutters->getDelayCmd ne 'none'
+                ? $shutters->getDelayCmd
+                : $shutters->getClosedPos
+            )
+        );
     }
 }
 
@@ -2659,9 +2688,6 @@ sub ShuttersCommandSet($$$) {
     }
     else {
         $shutters->setDriveCmd($posValue);
-        $shutters->setDelayCmd('none')
-          if ( $shutters->getDelayCmd ne 'none' )
-          ; # setzt den Wert auf none da der Rolladen nun gesteuert werden kann.
         $ascDev->setLastPosReading;
         Log3( $name, 4,
 "AutoShuttersControl ($name) - ShuttersCommandSet setDriveCmd wird aufgerufen"
@@ -4183,6 +4209,28 @@ sub PrivacyDownTime($$) {
     return $shuttersSunsetUnixtime;
 }
 
+sub _IsAdv {
+    my ( undef, undef, undef, $monthday, $month, $year, undef, undef, undef ) =
+      localtime( gettimeofday() );
+    my $adv = 0;
+    $year += 1900;
+
+    if ( $month < 1 ) {
+        if ( $monthday < 7 ) {
+            $adv = 1;
+        }
+    }
+    else {
+        my $time = HTTP::Date::str2time( $year . '-12-25' );
+        my $wday = ( localtime($time) )[6];
+        $wday = $wday ? $wday : 7;
+        $time -= ( $wday + 21 ) * 86400;
+        $adv = 1 if ( $time < time );
+    }
+
+    return $adv;
+}
+
 ######################################
 ######################################
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -4286,20 +4334,29 @@ sub setDriveCmd {
     my $offSet;
     my $offSetStart;
 
-    if (    $shutters->getPartyMode eq 'on'
-        and $ascDev->getPartyMode eq 'on' )
+    if (
+        ( $shutters->getPartyMode eq 'on' and $ascDev->getPartyMode eq 'on' )
+        or (    $shutters->getAdv
+            and not $shutters->getQueryShuttersPos($posValue)
+            and not $shutters->getAdvDelay )
+      )
     {
-
         $shutters->setDelayCmd($posValue);
         $ascDev->setDelayCmdReading;
         $shutters->setNoDelay(0);
 
         FHEM::AutoShuttersControl::ASC_Debug( 'setDriveCmd: '
               . $shutters->getShuttersDev
-              . ' - Die Fahrt wird zurückgestellt. Grund kann ein geöffnetes Fenster sein oder ein aktivierter Party Modus'
+              . ' - Die Fahrt wird zurückgestellt. Grund kann ein geöffnetes Fenster sein oder ein aktivierter Party Modus oder Weihnachtszeit'
         );
     }
     else {
+        $shutters->setAdvDelay(0)
+          if ( $shutters->getAdvDelay );
+        $shutters->setDelayCmd('none')
+          if ( $shutters->getDelayCmd ne 'none' )
+          ; # setzt den Wert auf none da der Rolladen nun gesteuert werden kann.
+
         ### antifreeze Routine
         if ( $shutters->getFreezeStatus > 0 ) {
             if ( $shutters->getFreezeStatus != 1 ) {
@@ -4486,6 +4543,23 @@ sub setPrivacyUpStatus {
 
     $self->{ $self->{shuttersDev} }->{privacyUpStatus} = $statusValue;
     return 0;
+}
+
+sub setAdvDelay {
+    my ( $self, $advDelay ) = @_;
+
+    $self->{ $self->{shuttersDev} }->{AdvDelay} = $advDelay;
+    return 0;
+}
+
+sub getAdvDelay {
+    my $self = shift;
+
+    return (
+        defined( $self->{ $self->{shuttersDev} }->{AdvDelay} )
+        ? $self->{ $self->{shuttersDev} }->{AdvDelay}
+        : 0
+    );
 }
 
 sub getPrivacyDownStatus {
@@ -5139,6 +5213,16 @@ sub getWiggleValue {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_WiggleValue', 5 );
+}
+
+sub getAdv {
+    my $self = shift;
+
+    return (
+        AttrVal( $self->{shuttersDev}, 'ASC_Adv', 'off' ) eq 'on'
+        ? ( FHEM::AutoShuttersControl::_IsAdv ? 1 : 0 )
+        : 0
+    );
 }
 
 ### Begin Beschattung
@@ -7473,6 +7557,7 @@ sub getblockAscDrivesAfterManual {
     <a name="AutoShuttersControlSet"></a>
     <strong>Set</strong>
     <ul>
+        <li><strong>advDriveDown</strong> - holt alle ADV ausgesetzen Fahrten nach.</li>
         <li><strong>ascEnable - on/off</strong> - Aktivieren oder deaktivieren der globalen ASC Steuerung</li>
         <li><strong>controlShading - on/off</strong> - Aktiviert oder deaktiviert die globale Beschattungssteuerung</li>
         <li><strong>createNewNotifyDev</strong> - Legt die interne Struktur f&uuml;r NOTIFYDEV neu an. Diese Funktion steht nur zur Verf&uuml;gung, wenn Attribut ASC_expert auf 1 gesetzt ist.</li>
@@ -7578,6 +7663,7 @@ sub getblockAscDrivesAfterManual {
             <li><strong>ASC_ExternalTrigger</strong> - DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE, Beispiel: "WohnzimmerTV:state on:off 66:100" bedeutet das wenn ein "state:on" Event kommt soll das Rollo in Position 66 fahren, kommt ein "state:off" Event soll es in Position 100 fahren. Es ist m&ouml;glich die POSINACTIVE weg zu lassen dann f&auml;hrt das Rollo in LastStatus Position.
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN.</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
+            <li><strong>ASC_Adv - on/off</strong> bei on wird das runterfahren des Rollos w&auml;hrend der Weihnachtszeit (1. Advent bis 6. Januar) ausgesetzt! Durch set advDriveDown wird die ausgesetzte Fahrt nachgeholt.
             <li><strong>ASC_Roommate_Reading</strong> - das Reading zum Roommate Device, welches den Status wieder gibt (default: state)</li>
             <li><strong>ASC_Self_Defense_Mode - absent/gone/off</strong> - ab welchen Residents Status soll Selfdefense aktiv werden ohne das Fenster auf sind. (default: gone)</li>
             <li><strong>ASC_Self_Defense_AbsentDelay</strong> - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 300)</li>
@@ -7693,7 +7779,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.155",
+  "version": "v0.6.157",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
