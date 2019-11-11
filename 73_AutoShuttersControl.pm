@@ -752,6 +752,15 @@ sub ShuttersDeviceScan($) {
         $shutters->setPushBrightnessInArray( $shutters->getBrightness );
         readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
+
+        if ( $shutters->getIsDay ) {
+            $shutters->setSunrise(1);
+            $shutters->setSunset(0);
+        }
+        else {
+            $shutters->setSunrise(0);
+            $shutters->setSunset(1);
+        }
     }
 
     ####
@@ -7684,7 +7693,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.6.154",
+  "version": "v0.6.155",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
