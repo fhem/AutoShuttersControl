@@ -7441,7 +7441,7 @@ sub getblockAscDrivesAfterManual {
             <td>outTemp</td>
             <td>Current temperature of a configured temperature device, return -100 is no device configured</td>
         </tr>
-    <table/>
+    </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe</u>
     <ul>
@@ -7454,7 +7454,7 @@ sub getblockAscDrivesAfterManual {
         <tr>
             <td>QueryShuttersPos</td><td>R&uuml;ckgabewert 1 bedeutet das die aktuelle Position des Rollos unterhalb der Valueposition ist. 0 oder nichts bedeutet oberhalb der Valueposition.</td>
         </tr>
-    <table/>
+    </table>
     </p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
         <p>
@@ -7489,7 +7489,7 @@ sub getblockAscDrivesAfterManual {
                 <td>ASCenable</td>
                 <td>Is <abbr>ASC</abbr> globally activated?</td>
             </tr>
-        <table/>
+        </table>
 </ul>
 
 =end html
@@ -7729,7 +7729,7 @@ sub getblockAscDrivesAfterManual {
         <tr><td>IsDay</td><td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td></tr>
         <tr><td>PrivacyDownStatus</td><td>Abfrage ob das Rollo aktuell im PrivacyDown Status steht</td></tr>
         <tr><td>OutTemp</td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
-    <table/>
+    </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe</u>
     <ul>
@@ -7738,21 +7738,21 @@ sub getblockAscDrivesAfterManual {
     <table border="1">
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
         <tr><td>QueryShuttersPos</td><td>R&uuml;ckgabewert 1 bedeutet das die aktuelle Position des Rollos unterhalb der Valueposition ist. 0 oder nichts bedeutet oberhalb der Valueposition.</td></tr>
-    <table/>
-        </p>
-        <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
-        <ul>
-            <code>{ ascAPIget('Getter') }</code><br>
-        </ul>
-        <table border="1">
-            <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
-            <tr><td>OutTemp </td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
-            <tr><td>ResidentsStatus</td><td>aktueller Status des Residents Devices</td></tr>
-            <tr><td>ResidentsLastStatus</td><td>letzter Status des Residents Devices</td></tr>
-            <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
-            <tr><td>Elevation</td><td>Elevation Wert</td></tr>
-            <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
-        <table/>
+    </table>
+    </p>
+    <u>&Uuml;bersicht f&uuml;r das ASC Device</u>
+    <ul>
+        <code>{ ascAPIget('Getter') }</code><br>
+    </ul>
+    <table border="1">
+        <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
+        <tr><td>OutTemp </td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
+        <tr><td>ResidentsStatus</td><td>aktueller Status des Residents Devices</td></tr>
+        <tr><td>ResidentsLastStatus</td><td>letzter Status des Residents Devices</td></tr>
+        <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
+        <tr><td>Elevation</td><td>Elevation Wert</td></tr>
+        <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
+    </table>
 </ul>
 
 =end html_DE
