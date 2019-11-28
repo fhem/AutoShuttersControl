@@ -1809,6 +1809,12 @@ sub EventProcessingBrightness($@) {
             and $shutters->getUp eq 'brightness'
             and not $shutters->getSunrise
             and $ascDev->getAutoShuttersControlMorning eq 'on'
+            and (
+                   $ascDev->getSelfDefense eq 'off'
+                or $shutters->getSelfDefenseMode eq 'off'
+                or (    $ascDev->getSelfDefense eq 'on'
+                    and $ascDev->getResidentsStatus ne 'gone' )
+            )
           )
         {
             Log3( $name, 4,
@@ -1992,7 +1998,7 @@ sub EventProcessingBrightness($@) {
                 $shutters->setSunrise(0);
                 $shutters->setSunset(1)
                   unless ( $shutters->getPrivacyDownStatus == 2
-                    or $posValue == $shutters->getStatus );
+                    and $posValue == $shutters->getStatus );
                 $shutters->setPrivacyDownStatus(0)
                   if ( $shutters->getPrivacyDownStatus == 2 );
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
@@ -7776,7 +7782,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.8.4",
+  "version": "v0.8.5",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
