@@ -1392,9 +1392,10 @@ sub EventProcessingResidents($@) {
                     )
                   )
                 {
-                    $shutters->setLastDrive('selfDefense active');
+                    $shutters->setLastDrive('selfDefense absent active');
                     $shutters->setSelfDefenseAbsent( 0, 1 )
                       ; # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
+                    $shutters->setSelfDefenseState(1);
                     $shutters->setDriveCmd( $shutters->getClosedPos );
                 }
                 elsif (
@@ -1421,7 +1422,8 @@ sub EventProcessingResidents($@) {
             $shutters->setHardLockOut('off');
             if ( $shutters->getSelfDefenseMode ne 'off' ) {
 
-                $shutters->setLastDrive('selfDefense');
+                $shutters->setLastDrive('selfDefense gone active');
+                $shutters->setSelfDefenseState(1);
                 $shutters->setDriveCmd( $shutters->getClosedPos );
             }
         }
@@ -1448,6 +1450,7 @@ sub EventProcessingResidents($@) {
                 and (  $getResidentsLastStatus ne 'asleep'
                     or $getResidentsLastStatus ne 'awoken' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
+                and not $shutters->getSelfDefenseState
               )
             {
                 $shutters->setLastDrive('residents come home');
@@ -1465,6 +1468,7 @@ sub EventProcessingResidents($@) {
                 and not $shutters->getShadingManualDriveStatus
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
+                and not $shutters->getSelfDefenseState
               )
             {
                 $shutters->setLastDrive('shading in');
@@ -1479,6 +1483,7 @@ sub EventProcessingResidents($@) {
                 and not $shutters->getShadingManualDriveStatus
                 and not( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                     and $shutters->getShuttersPlace eq 'terrace' )
+                and not $shutters->getSelfDefenseState
               )
             {
                 $shutters->setLastDrive('shading out');
@@ -1490,7 +1495,7 @@ sub EventProcessingResidents($@) {
                 and not $shutters->getIfInShading
                 and (  $getResidentsLastStatus eq 'gone'
                     or $getResidentsLastStatus eq 'absent' )
-                and $shutters->getLastDrive eq 'selfDefense active'
+                and $shutters->getSelfDefenseState
               )
             {
                 RemoveInternalTimer( $shutters->getSelfDefenseAbsentTimerhash )
@@ -1511,6 +1516,7 @@ sub EventProcessingResidents($@) {
                             or $getModeUp eq 'off' )
                       );
 
+                    $shutters->setSelfDefenseState(0);
                     $shutters->setLastDrive('selfDefense inactive');
                     $shutters->setDriveCmd(
                         (
@@ -1529,6 +1535,7 @@ sub EventProcessingResidents($@) {
                     or $getModeUp eq 'always' )
                 and IsAfterShuttersTimeBlocking($shuttersDev)
                 and not $shutters->getIfInShading
+                and not $shutters->getSelfDefenseState
               )
             {
                 if (   $getResidentsLastStatus eq 'asleep'
@@ -1997,7 +2004,8 @@ sub EventProcessingBrightness($@) {
                 $shutters->setLastDrive($lastDrive);
 
                 if (    $shutters->getPrivacyDownStatus != 2
-                    and $posValue != $shutters->getStatus )
+#                     and $posValue != $shutters->getStatus
+                  )
                 {
                     print(  'ASC_DEBUG!!! PrivacyStatus_2: '
                           . $shutters->getPrivacyDownStatus
@@ -4352,7 +4360,8 @@ sub setDriveCmd {
         or (    $shutters->getAdv
             and not $shutters->getQueryShuttersPos($posValue)
             and not $shutters->getAdvDelay
-            and not $shutters->getExternalTriggerState)
+            and not $shutters->getExternalTriggerState
+            and not $shutters->getSelfDefenseState)
       )
     {
         $shutters->setDelayCmd($posValue);
@@ -4403,7 +4412,7 @@ sub setDriveCmd {
         if (    $shutters->getSelfDefenseAbsent
             and not $shutters->getSelfDefenseAbsentTimerrun
             and $shutters->getSelfDefenseMode ne 'off'
-            and $shutters->getLastDrive eq 'selfDefense active'
+            and $shutters->getSelfDefenseState
             and $ascDev->getSelfDefense eq 'on' )
         {
             InternalTimer(
@@ -4563,6 +4572,13 @@ sub setPrivacyUpStatus {
     return 0;
 }
 
+sub setSelfDefenseState {
+    my ( $self, $value ) = @_;
+
+    $self->{ $self->{shuttersDev} }{selfDefenseState} = $value;
+    return 0;
+}
+
 sub setAdvDelay {
     my ( $self, $advDelay ) = @_;
 
@@ -4671,6 +4687,18 @@ sub getNoDelay {
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{noDelay};
+}
+
+sub getSelfDefenseState {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }{selfDefenseState}
+      if (
+        defined(
+            $self->{ $self->{shuttersDev} }{selfDefenseState}
+        )
+      );
+
 }
 
 sub getSelfDefenseAbsent {
@@ -7812,7 +7840,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.8.6",
+  "version": "v0.8.7",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
