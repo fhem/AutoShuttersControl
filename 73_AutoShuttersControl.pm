@@ -2004,7 +2004,8 @@ sub EventProcessingBrightness($@) {
                 $shutters->setLastDrive($lastDrive);
 
                 if (    $shutters->getPrivacyDownStatus != 2
-#                     and $posValue != $shutters->getStatus
+                    and ($posValue != $shutters->getStatus
+                      or $shutters->getSelfDefenseState)
                   )
                 {
                     print(  'ASC_DEBUG!!! PrivacyStatus_2: '
@@ -2016,7 +2017,8 @@ sub EventProcessingBrightness($@) {
                 }
 
                 $shutters->setPrivacyDownStatus(0)
-                  if ( $shutters->getPrivacyDownStatus == 2 );
+                  if (  $shutters->getPrivacyDownStatus == 2
+                    and $shutters->getSunset );
                 ShuttersCommandSet( $hash, $shuttersDev, $posValue );
 
                 ASC_Debug( 'EventProcessingBrightness: '
