@@ -184,6 +184,7 @@ GP_Export(
     qw(
       Initialize
       ascAPIget
+      DevStateIcon
       )
 );
 
@@ -363,11 +364,9 @@ sub Define($$) {
       if ( AttrVal( $name, 'room', 'none' ) eq 'none' );
     CommandAttr( undef, $name . ' icon fts_shutter_automatic' )
       if ( AttrVal( $name, 'icon', 'none' ) eq 'none' );
-
     CommandAttr( undef,
-        $name
-          . ' devStateIcon selfDefense.terrace:fts_door_tilt created.new.drive.timer:clock .*asleep:scene_sleeping roommate.(awoken|home):user_available residents.(home|awoken):status_available manual:fts_shutter_manual selfDefense.active:status_locked selfDefense.inactive:status_open day.open:scene_day night.close:scene_night shading.in:weather_sun shading.out:weather_cloudy'
-    ) if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
+        $name . ' devStateIcon { AutoShuttersControl_DevStateIcon($name) }' )
+      if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');
 
@@ -2003,15 +2002,12 @@ sub EventProcessingBrightness($@) {
 
                 $shutters->setLastDrive($lastDrive);
 
-                if (    $shutters->getPrivacyDownStatus != 2
-                    and ($posValue != $shutters->getStatus
-                      or $shutters->getSelfDefenseState)
+                if (
+                    $shutters->getPrivacyDownStatus != 2
+                    and (  $posValue != $shutters->getStatus
+                        or $shutters->getSelfDefenseState )
                   )
                 {
-                    print(  'ASC_DEBUG!!! PrivacyStatus_2: '
-                          . $shutters->getPrivacyDownStatus
-                          . ' Innerhalb der unless Abfrage'
-                          . "\n" );
                     $shutters->setSunrise(0);
                     $shutters->setSunset(1);
                 }
@@ -4254,6 +4250,62 @@ sub _IsAdv {
     return $adv;
 }
 
+sub DevStateIcon($) {
+    my ($hash) = @_;
+    $hash = $defs{$hash} if ( ref($hash) ne 'HASH' );
+
+    return undef if ( !$hash );
+    my $name = $hash->{NAME};
+
+    if ( ReadingsVal( $name, 'state', undef ) eq 'created new drive timer' ) {
+        return '.*:clock';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'selfDefense terrace' ) {
+        return '.*:fts_door_tilt';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) =~ /.*asleep$/ ) {
+        return '.*:scene_sleeping';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) =~ /^roommate.(awoken|home)$/ )
+    {
+        return '.*:user_available';
+    }
+    elsif (
+        ReadingsVal( $name, 'state', undef ) =~ /^residents.(home|awoken)$/ )
+    {
+        return '.*:status_available';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'manual' ) {
+        return '.*:fts_shutter_manual';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'selfDefense inactive' ) {
+        return '.*:status_open';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) =~ /^selfDefense.*.active$/ ) {
+        return '.*:status_locked';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'day open' ) {
+        return '.*:scene_day';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'night close' ) {
+        return '.*:scene_night';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'shading in' ) {
+        return '.*:fts_shutter_shadding_run';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'shading out' ) {
+        return '.*:fts_shutter_shadding_stop';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'active' ) {
+        return '.*:hourglass';
+    }
+    elsif ( ReadingsVal( $name, 'state', undef ) =~ /.*privacy.*/ ) {
+        return '.*:fts_shutter_50';
+    }
+
+    return undef;
+}
+
 ######################################
 ######################################
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -4363,7 +4415,7 @@ sub setDriveCmd {
             and not $shutters->getQueryShuttersPos($posValue)
             and not $shutters->getAdvDelay
             and not $shutters->getExternalTriggerState
-            and not $shutters->getSelfDefenseState)
+            and not $shutters->getSelfDefenseState )
       )
     {
         $shutters->setDelayCmd($posValue);
@@ -4695,11 +4747,7 @@ sub getSelfDefenseState {
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }{selfDefenseState}
-      if (
-        defined(
-            $self->{ $self->{shuttersDev} }{selfDefenseState}
-        )
-      );
+      if ( defined( $self->{ $self->{shuttersDev} }{selfDefenseState} ) );
 
 }
 
@@ -4927,7 +4975,7 @@ sub setRainProtectionStatus {    # Werte protected, unprotected
 
 sub setExternalTriggerState {
     my ( $self, $value ) = @_;
-    
+
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event} = $value
       if ( defined($value) );
     return 0;
@@ -5773,9 +5821,16 @@ sub getExternalTriggerPosInactive {
 
 sub getExternalTriggerState {
     my $self = shift;
-    
-    return ( (defined($self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event})
-      and $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event}) ? 1 : 0 );
+
+    return (
+        (
+            defined(
+                $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event}
+              )
+              and
+              $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event}
+        ) ? 1 : 0
+    );
 }
 
 sub getDelay {
