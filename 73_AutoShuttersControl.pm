@@ -4272,7 +4272,7 @@ sub DevStateIcon($) {
     elsif ( ReadingsVal( $name, 'state', undef ) =~ /.*asleep$/ ) {
         return '.*:scene_sleeping';
     }
-    elsif ( ReadingsVal( $name, 'state', undef ) =~ /^roommate.(come)?.(awoken|home)$/ )
+    elsif ( ReadingsVal( $name, 'state', undef ) =~ /^roommate(.come)?.(awoken|home)$/ )
     {
         return '.*:user_available';
     }
