@@ -4308,6 +4308,9 @@ sub DevStateIcon($) {
     elsif ( ReadingsVal( $name, 'state', undef ) =~ /.*privacy.*/ ) {
         return '.*:fts_shutter_50';
     }
+    elsif ( ReadingsVal( $name, 'state', undef ) eq 'adv delay close' ) {
+        return '.*:christmas_tree';
+    }
 
     return undef;
 }
@@ -7903,7 +7906,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "under develop",
   "license": "GPL_2",
-  "version": "v0.8.9",
+  "version": "v0.8.10",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
