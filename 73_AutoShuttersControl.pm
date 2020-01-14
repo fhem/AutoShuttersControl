@@ -3196,7 +3196,7 @@ sub ShuttersInformation($@) {
     my ($FW_wname, $d, $room, $pageHash) = @_;
     my $hash = $defs{$d};
 
-    my $ret  = '<html><table><tr><h3>ASC Configuration Summary</h3><td>';
+    my $ret  = '<html><table><tr><h3>ASC Configuration and Information Summary</h3><td>';
     $ret .= '<table class="block wide">';
     $ret .= '<tr class="even">';
     $ret .= "<td><b>Shutters</b></td>";
