@@ -7893,7 +7893,7 @@ sub getblockAscDrivesAfterManual {
     "Rollo",
     "Control"
   ],
-  "release_status": "under develop",
+  "release_status": "testing",
   "license": "GPL_2",
   "version": "v0.8.14",
   "author": [
