@@ -728,18 +728,18 @@ sub ShuttersDeviceScan($) {
         if ( ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
             == 0 )
         {
-            $shutters->setAttrUpdateChanges( 'ASC_Up',
-                AttrVal( $_, 'ASC_Up', 'none' ) );
-            delFromDevAttrList( $_, 'ASC_Up' );
-            $shutters->setAttrUpdateChanges( 'ASC_Down',
-                AttrVal( $_, 'ASC_Down', 'none' ) );
-            delFromDevAttrList( $_, 'ASC_Down' );
-            $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
-                AttrVal( $_, 'ASC_Self_Defense_Mode', 'none' ) );
-            delFromDevAttrList( $_, 'ASC_Self_Defense_Mode' );
-            $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
-                AttrVal( $_, 'ASC_Self_Defense_Exclude', 'none' ) );
-            delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Up',
+#                 AttrVal( $_, 'ASC_Up', 'none' ) );
+#             delFromDevAttrList( $_, 'ASC_Up' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Down',
+#                 AttrVal( $_, 'ASC_Down', 'none' ) );
+#             delFromDevAttrList( $_, 'ASC_Down' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
+#                 AttrVal( $_, 'ASC_Self_Defense_Mode', 'none' ) );
+#             delFromDevAttrList( $_, 'ASC_Self_Defense_Mode' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
+#                 AttrVal( $_, 'ASC_Self_Defense_Exclude', 'none' ) );
+#             delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
         }
 
         ####
@@ -1041,13 +1041,6 @@ sub EventProcessingWindowRec($@) {
                         $shutters->setNoDelay(1);
                         $shutters->setDriveCmd( $shutters->getPrivacyDownPos );
                     }
-
- #                     elsif ( $shutters->getPrivacyUpStatus == 2 ) {
- #                         $shutters->setLastDrive(
- #                             'window closed at privacy day open');
- #                         $shutters->setNoDelay(1);
- #                         $shutters->setDriveCmd( $shutters->getPrivacyUpPos );
- #                     }
                     else {
                         $shutters->setLastDrive('window closed at day');
                         $shutters->setNoDelay(1);
@@ -1872,8 +1865,6 @@ sub EventProcessingBrightness($@) {
                     if (    $brightnessPrivacyUpVal > 0
                         and $1 < $brightnessMaxVal
                         and $1 > $brightnessPrivacyUpVal )
-
-              #                         and $shutters->getPrivacyUpStatus == 1 )
                     {
                         $shutters->setPrivacyUpStatus(2);
                         $shutters->setLastDrive('brightness privacy day open');
@@ -1962,8 +1953,6 @@ sub EventProcessingBrightness($@) {
                 ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
                 ##  1 bedeutet das PrivacyDown Timer aktiviert wurde, 2 beudet das er im privacyDown ist
                 ##  also das Rollo in privacyDown Position steht und VOR der endgültigen Nachfahrt
-      #                 $shutters->setPrivacyDownStatus(0)
-      #                   if ( not defined( $shutters->getPrivacyDownStatus ) );
 
                 if (    $brightnessPrivacyDownVal > 0
                     and $1 > $brightnessMinVal
@@ -2864,19 +2853,19 @@ sub RenewSunRiseSetShuttersTimer($) {
                 0 ) == 0
           )
         {
-            $attr{$name}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
-              if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
-            $attr{$name}{'ASC_Down'} =
-              $shutters->getAttrUpdateChanges('ASC_Down')
-              if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
-            $attr{$name}{'ASC_Self_Defense_Mode'} =
-              $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode')
-              if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne
-                'none' );
-            $attr{$name}{'ASC_Self_Defense_Mode'} = 'off'
-              if (
-                $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
-                'on' );
+#             $attr{$name}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
+#               if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
+#             $attr{$name}{'ASC_Down'} =
+#               $shutters->getAttrUpdateChanges('ASC_Down')
+#               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
+#             $attr{$name}{'ASC_Self_Defense_Mode'} =
+#               $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode')
+#               if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne
+#                 'none' );
+#             $attr{$name}{'ASC_Self_Defense_Mode'} = 'off'
+#               if (
+#                 $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
+#                 'on' );
 
             CommandDeleteReading( undef, $name . ' .ASC_AttrUpdateChanges_.*' )
               if (
@@ -2890,47 +2879,47 @@ sub RenewSunRiseSetShuttersTimer($) {
                 1, 0 );
         }
 
-        $attr{$name}{ASC_Drive_Delay} =
-          AttrVal( $name, 'ASC_Drive_Offset', 'none' )
-          if ( AttrVal( $name, 'ASC_Drive_Offset', 'none' ) ne 'none' );
-        delFromDevAttrList( $name, 'ASC_Drive_Offset' );
-
-        $attr{$name}{ASC_Drive_DelayStart} =
-          AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' )
-          if ( AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
-        delFromDevAttrList( $name, 'ASC_Drive_OffsetStart' );
-
-        $attr{$name}{ASC_Shading_StateChange_SunnyCloudy} =
-            AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
-          . AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' )
-          if (
-            AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
-            and AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
-            'none' );
-        delFromDevAttrList( $name, 'ASC_Shading_StateChange_Sunny' );
-        delFromDevAttrList( $name, 'ASC_Shading_StateChange_Cloudy' );
-
-        $attr{$name}{ASC_Shading_InOutAzimuth} =
-          ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) -
-              AttrVal( $name, 'ASC_Shading_Angle_Left', 85 ) )
-          . ':'
-          . ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) +
-              AttrVal( $name, 'ASC_Shading_Angle_Right', 85 ) )
-          if ( AttrVal( $name, 'ASC_Shading_Direction', 'none' ) ne 'none'
-            or AttrVal( $name, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
-            or AttrVal( $name, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
-        delFromDevAttrList( $name, 'ASC_Shading_Direction' );
-        delFromDevAttrList( $name, 'ASC_Shading_Angle_Left' );
-        delFromDevAttrList( $name, 'ASC_Shading_Angle_Right' );
-
-        $attr{$name}{ASC_PrivacyDownValue_beforeNightClose} =
-          AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
-          if (
-            AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
-            'none' );
-        delFromDevAttrList( $name, 'ASC_PrivacyDownTime_beforNightClose' );
-
-        delFromDevAttrList( $name, 'ASC_ExternalTriggerDevice' );
+#         $attr{$name}{ASC_Drive_Delay} =
+#           AttrVal( $name, 'ASC_Drive_Offset', 'none' )
+#           if ( AttrVal( $name, 'ASC_Drive_Offset', 'none' ) ne 'none' );
+#         delFromDevAttrList( $name, 'ASC_Drive_Offset' );
+# 
+#         $attr{$name}{ASC_Drive_DelayStart} =
+#           AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' )
+#           if ( AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
+#         delFromDevAttrList( $name, 'ASC_Drive_OffsetStart' );
+# 
+#         $attr{$name}{ASC_Shading_StateChange_SunnyCloudy} =
+#             AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
+#           . AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' )
+#           if (
+#             AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
+#             and AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
+#             'none' );
+#         delFromDevAttrList( $name, 'ASC_Shading_StateChange_Sunny' );
+#         delFromDevAttrList( $name, 'ASC_Shading_StateChange_Cloudy' );
+# 
+#         $attr{$name}{ASC_Shading_InOutAzimuth} =
+#           ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) -
+#               AttrVal( $name, 'ASC_Shading_Angle_Left', 85 ) )
+#           . ':'
+#           . ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) +
+#               AttrVal( $name, 'ASC_Shading_Angle_Right', 85 ) )
+#           if ( AttrVal( $name, 'ASC_Shading_Direction', 'none' ) ne 'none'
+#             or AttrVal( $name, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
+#             or AttrVal( $name, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
+#         delFromDevAttrList( $name, 'ASC_Shading_Direction' );
+#         delFromDevAttrList( $name, 'ASC_Shading_Angle_Left' );
+#         delFromDevAttrList( $name, 'ASC_Shading_Angle_Right' );
+# 
+#         $attr{$name}{ASC_PrivacyDownValue_beforeNightClose} =
+#           AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
+#           if (
+#             AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
+#             'none' );
+#         delFromDevAttrList( $name, 'ASC_PrivacyDownTime_beforNightClose' );
+# 
+#         delFromDevAttrList( $name, 'ASC_ExternalTriggerDevice' );
     }
 }
 
@@ -3930,7 +3919,7 @@ sub IsAfterShuttersManualBlocking($) {
     my $shuttersDev = shift;
     $shutters->setShuttersDev($shuttersDev);
 
-    if (    $ascDev->getblockAscDrivesAfterManual
+    if (    $ascDev->getBlockAscDrivesAfterManual
         and $shutters->getStatus != $shutters->getOpenPos
         and $shutters->getStatus != $shutters->getClosedPos
         and $shutters->getStatus != $shutters->getWindPos
@@ -6970,7 +6959,7 @@ sub getWindSensorReading {
     );
 }
 
-sub getblockAscDrivesAfterManual {
+sub getBlockAscDrivesAfterManual {
     my $self = shift;
     my $name = $self->{name};
 
@@ -7913,7 +7902,7 @@ sub getblockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.19",
+  "version": "v0.8.20",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
