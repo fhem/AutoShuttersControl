@@ -1998,7 +1998,7 @@ sub EventProcessingBrightness($@) {
                     $posValue  = $shutters->getComfortOpenPos;
                     $lastDrive = 'minimum brightness threshold fell below';
                     $shutters->setPrivacyDownStatus(0)
-                      if (  $shutters->getPrivacyDownStatus == 2 );
+                      if ( $shutters->getPrivacyDownStatus == 2 );
                 }
                 elsif ( CheckIfShuttersWindowRecOpen($shuttersDev) == 0
                     or $shutters->getVentilateOpen eq 'off' )
@@ -2010,13 +2010,13 @@ sub EventProcessingBrightness($@) {
                     );
                     $lastDrive = 'minimum brightness threshold fell below';
                     $shutters->setPrivacyDownStatus(0)
-                      if (  $shutters->getPrivacyDownStatus == 2 );
+                      if ( $shutters->getPrivacyDownStatus == 2 );
                 }
                 else {
                     $posValue  = $shutters->getVentilatePos;
                     $lastDrive = 'minimum brightness threshold fell below';
                     $shutters->setPrivacyDownStatus(0)
-                      if (  $shutters->getPrivacyDownStatus == 2 );
+                      if ( $shutters->getPrivacyDownStatus == 2 );
                 }
 
                 $shutters->setLastDrive($lastDrive);
@@ -5694,11 +5694,12 @@ sub getShadingStateChangeSunny {
       ->{sunny} = $sunny;
     $self->{ $self->{shuttersDev} }->{ASC_Shading_StateChange_SunnyCloudy}
       ->{cloudy} = $cloudy;
-    $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{MAXOBJECT} =
-      ( defined($maxBrightnessAverageArrayObjects)
+    $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{MAXOBJECT} = (
+        defined($maxBrightnessAverageArrayObjects)
           and $maxBrightnessAverageArrayObjects ne 'none'
         ? $maxBrightnessAverageArrayObjects
-        : 3 );
+        : 3
+    );
 
     return $self->{ $self->{shuttersDev} }
       ->{ASC_Shading_StateChange_SunnyCloudy}->{sunny};
