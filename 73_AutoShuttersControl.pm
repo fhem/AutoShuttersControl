@@ -57,7 +57,7 @@ package FHEM::AutoShuttersControl;
 
 use strict;
 use warnings;
-use POSIX;
+use POSIX qw(strftime);
 use utf8;
 use Encode;
 use FHEM::Meta;
@@ -3590,11 +3590,11 @@ sub ShuttersSunrise($$) {
 
     if ( $tm eq 'unix' ) {
         if ( $shutters->getUp eq 'astro' ) {
-            if (    ( IsWe() or IsWeTomorrow() )
+            if (    ( IsWe() or IsWe('tomorrow') )
                 and $ascDev->getSunriseTimeWeHoliday eq 'on'
                 and $shutters->getTimeUpWeHoliday ne '01:25' )
             {
-                if ( not IsWeTomorrow() ) {
+                if ( not IsWe('tomorrow') ) {
                     if (
                         IsWe()
                         and int( gettimeofday() / 86400 ) == int(
@@ -3781,11 +3781,11 @@ sub ShuttersSunrise($$) {
             }
             if (    defined($oldFuncHash)
                 and ref($oldFuncHash) eq 'HASH'
-                and ( IsWe() or IsWeTomorrow() )
+                and ( IsWe() or IsWe('tomorrow') )
                 and $ascDev->getSunriseTimeWeHoliday eq 'on'
                 and $shutters->getTimeUpWeHoliday ne '01:25' )
             {
-                if ( not IsWeTomorrow() ) {
+                if ( not IsWe('tomorrow') ) {
                     if (
                         int( gettimeofday() / 86400 ) == int(
                             (
@@ -3818,11 +3818,11 @@ sub ShuttersSunrise($$) {
             }
         }
         elsif ( $shutters->getUp eq 'time' ) {
-            if (    ( IsWe() or IsWeTomorrow() )
+            if (    ( IsWe() or IsWe('tomorrow') )
                 and $ascDev->getSunriseTimeWeHoliday eq 'on'
                 and $shutters->getTimeUpWeHoliday ne '01:25' )
             {
-                if ( not IsWeTomorrow() ) {
+                if ( not IsWe('tomorrow') ) {
                     if (
                         int( gettimeofday() / 86400 ) == int(
                             computeAlignTime( '24:00',
@@ -3900,11 +3900,11 @@ sub ShuttersSunrise($$) {
             }
         }
         elsif ( $shutters->getUp eq 'brightness' ) {
-            if (    ( IsWe() or IsWeTomorrow() )
+            if (    ( IsWe() or IsWe('tomorrow') )
                 and $ascDev->getSunriseTimeWeHoliday eq 'on'
                 and $shutters->getTimeUpWeHoliday ne '01:25' )
             {
-                if ( not IsWeTomorrow() ) {
+                if ( not IsWe('tomorrow') ) {
                     if (
                         IsWe()
                         and int( gettimeofday() / 86400 ) == int(
@@ -4133,7 +4133,7 @@ sub CheckIfShuttersWindowRecOpen($) {
 }
 
 sub makeReadingName($) {
-    my ($rname) = @_;
+    my ($rname) = shift;
     my %charHash = (
         chr(0xe4) => "ae",    # ä
         chr(0xc4) => "Ae",    # Ä
@@ -4159,14 +4159,8 @@ sub TimeMin2Sec($) {
     return $sec;
 }
 
-sub IsWe() {
-    my $we = main::IsWe();
-    return $we;
-}
-
-sub IsWeTomorrow() {
-    my $we = main::IsWe('tomorrow');
-    return $we;
+sub IsWe {
+    return main::IsWe(shift);
 }
 
 sub _SetCmdFn($) {
@@ -8038,7 +8032,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.20",
+  "version": "v0.8.21",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
