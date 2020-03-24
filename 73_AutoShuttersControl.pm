@@ -2440,7 +2440,7 @@ sub ShadingProcessingDriveCommand {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
 
-                ASC_Debug( 'ShadingProcessing: '
+                ASC_Debug( 'ShadingProcessingDriveCommand: '
                       . $shutters->getShuttersDev
                       . ' - Der aktuelle Beschattungsstatus ist: '
                       . $shutters->getShadingStatus
@@ -2468,7 +2468,7 @@ sub ShadingProcessingDriveCommand {
                 )
             );
 
-            ASC_Debug( 'ShadingProcessing: '
+            ASC_Debug( 'ShadingProcessingDriveCommand: '
                   . $shutters->getShuttersDev
                   . ' - Der aktuelle Beschattungsstatus ist: '
                   . $shutters->getShadingStatus
@@ -2482,7 +2482,7 @@ sub ShadingProcessingDriveCommand {
               . $shutters->getShadingStatus );
 
         ASC_Debug(
-                'ShadingProcessing: '
+                'ShadingProcessingDriveCommand: '
               . $shutters->getShuttersDev
               . ' - Der aktuelle Beschattungsstatus ist: '
               . $shutters->getShadingStatus
