@@ -1752,6 +1752,7 @@ sub EventProcessingBrightness {
                         )
                         and IsWe()
                         and $ascDev->getSunriseTimeWeHoliday eq 'on'
+                        and $shutters->getTimeUpWeHoliday eq '01:25'
                     )
                 )
                 and int( gettimeofday() / 86400 ) == int(
@@ -1836,6 +1837,7 @@ sub EventProcessingBrightness {
                         )
                         and IsWe()
                         and $ascDev->getSunriseTimeWeHoliday eq 'on'
+                        and $shutters->getTimeUpWeHoliday ne '01:25'
                     )
                 )
                 and int( gettimeofday() / 86400 ) == int(
