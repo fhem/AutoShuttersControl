@@ -1827,7 +1827,10 @@ sub EventProcessingBrightness {
                         and (
                             not IsWe()
                             or ( IsWe()
-                                and $ascDev->getSunriseTimeWeHoliday eq 'off' )
+                                and $ascDev->getSunriseTimeWeHoliday eq 'off'
+                                  or (  $ascDev->getSunriseTimeWeHoliday eq 'on'
+                                    and $shutters->getTimeUpWeHoliday eq '01:25' )
+                            )
                         )
                     )
                     or (
