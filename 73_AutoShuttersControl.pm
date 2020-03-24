@@ -553,24 +553,40 @@ sub EventProcessingGeneral {
         }
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
-        if ( $events =~
-m#^ATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTrigger|ASC_twilightDevice)\s(.*)$#
+        if (
+            $events =~ m{^ATTR\s(.*)
+             \s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor
+                |ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTrigger
+                |ASC_twilightDevice)
+             \s(.*)$}xms
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
             Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
-        elsif ( $events =~
-m#^DELETEATTR\s(.*)\s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor|ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTrigger|ASC_twilightDevice)$#
+        elsif (
+            $events =~ m{^DELETEATTR
+                \s(.*)\s(ASC_Roommate_Device
+                    |ASC_WindowRec|ASC_residentsDev|ASC_rainSensor
+                    |ASC_windSensor|ASC_BrightnessSensor|ASC_ExternalTrigger
+                    |ASC_twilightDevice)
+                $}xms
           )
-        {     # wurde das Attribut unserer Rolläden gelöscht ?
+        {    # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: DELETEATTR" );
             DeleteNotifyDev( $hash, $1, $2 );
         }
-        elsif ( $events =~
-m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon|ASC_PrivacyDownValue_beforeNightClose|ASC_PrivacyUpValue_beforeDayOpen|ASC_AutoAstroModeEvening|ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early|ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)(.*)?#
+        elsif (
+            $events =~ m{^(DELETEATTR|ATTR)
+                \s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down
+                    |ASC_AutoAstroModeMorning|ASC_AutoAstroModeMorningHorizon
+                    |ASC_PrivacyDownValue_beforeNightClose
+                    |ASC_PrivacyUpValue_beforeDayOpen|ASC_AutoAstroModeEvening
+                    |ASC_AutoAstroModeEveningHorizon|ASC_Time_Up_Early
+                    |ASC_Time_Up_Late|ASC_Time_Down_Early|ASC_Time_Down_Late)
+                (.*)?}xms
           )
         {
             CreateSunRiseSetShuttersTimer( $hash, $2 )
@@ -580,8 +596,11 @@ m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_Time_Up_WE_Holiday|ASC_Up|ASC_Down|ASC_AutoAstr
                     and $ascDev->getSunriseTimeWeHoliday eq 'on' )
               );
         }
-        elsif ( $events =~
-m#^(DELETEATTR|ATTR)\s(.*)\s(ASC_autoAstroModeMorning|ASC_autoAstroModeMorningHorizon|ASC_autoAstroModeEvening|ASC_autoAstroModeEveningHorizon)(.*)?#
+        elsif (
+            $events =~ m{^(DELETEATTR|ATTR)
+                \s(.*)\s(ASC_autoAstroModeMorning|ASC_autoAstroModeMorningHorizon
+                    |ASC_autoAstroModeEvening|ASC_autoAstroModeEveningHorizon)
+                (.*)?}xms
           )
         {
             RenewSunRiseSetShuttersTimer($hash);
@@ -3909,28 +3928,34 @@ sub ShuttersSunrise {
                         IsWe()
                         and int( gettimeofday() / 86400 ) == int(
                             (
-                                computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday )
+                                computeAlignTime(
+                                    '24:00', $shutters->getTimeUpWeHoliday
+                                )
                             ) / 86400
                         )
                       )
                     {
                         $shuttersSunriseUnixtime =
-                            computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday );
+                          computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
                     }
                     elsif (
                         int( gettimeofday() / 86400 ) == int(
                             (
-                                computeAlignTime( '24:00', $shutters->getTimeUpLate )
+                                computeAlignTime(
+                                    '24:00', $shutters->getTimeUpLate
+                                )
                             ) / 86400
                         )
                       )
                     {
                         $shuttersSunriseUnixtime =
-                            computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday );
+                          computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
                     }
                     else {
                         $shuttersSunriseUnixtime =
-                            computeAlignTime( '24:00', $shutters->getTimeUpLate );
+                          computeAlignTime( '24:00', $shutters->getTimeUpLate );
                     }
                 }
                 else {
@@ -3939,53 +3964,62 @@ sub ShuttersSunrise {
                         and (
                             int( gettimeofday() / 86400 ) == int(
                                 (
-                                    computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday )
+                                    computeAlignTime(
+                                        '24:00', $shutters->getTimeUpWeHoliday
+                                    )
                                 ) / 86400
                             )
                             or int( gettimeofday() / 86400 ) != int(
                                 (
-                                    computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday )
+                                    computeAlignTime(
+                                        '24:00', $shutters->getTimeUpWeHoliday
+                                    )
                                 ) / 86400
                             )
                         )
                       )
                     {
-                        $shuttersSunriseUnixtime = 
-                            computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday );
+                        $shuttersSunriseUnixtime =
+                          computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday );
                     }
                     elsif (
                         int( gettimeofday() / 86400 ) == int(
                             (
-                                computeAlignTime( '24:00', $shutters->getTimeUpLate )
+                                computeAlignTime(
+                                    '24:00', $shutters->getTimeUpLate
+                                )
                             ) / 86400
                         )
                       )
                     {
-                        $shuttersSunriseUnixtime = 
-                            computeAlignTime( '24:00', $shutters->getTimeUpLate );
+                        $shuttersSunriseUnixtime =
+                          computeAlignTime( '24:00', $shutters->getTimeUpLate );
                     }
                     else {
                         if (
                             int( gettimeofday() / 86400 ) == int(
                                 (
-                                    computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday )
+                                    computeAlignTime(
+                                        '24:00', $shutters->getTimeUpWeHoliday
+                                    )
                                 ) / 86400
                             )
                           )
                         {
                             $shuttersSunriseUnixtime =
-                                computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday );
+                              computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday );
                         }
                         else {
                             $shuttersSunriseUnixtime =
-                                computeAlignTime( '24:00', $shutters->getTimeUpWeHoliday );
+                              computeAlignTime( '24:00',
+                                $shutters->getTimeUpWeHoliday );
                         }
                     }
                 }
             }
             else {
-        
-        
 
                 $shuttersSunriseUnixtime =
                   computeAlignTime( '24:00', $shutters->getTimeUpLate );
@@ -4160,7 +4194,7 @@ sub TimeMin2Sec {
 }
 
 sub IsWe {
-    return main::IsWe(shift, shift);
+    return main::IsWe( shift, shift );
 }
 
 sub _SetCmdFn {
