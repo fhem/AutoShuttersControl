@@ -391,11 +391,11 @@ sub Undef {
 sub Notify {
     my $hash    = shift;
     my $dev     = shift;
-    
+
     my $name    = $hash->{NAME};
     my $devname = $dev->{NAME};
     my $devtype = $dev->{TYPE};
-    my $events  = deviceEvents( shift, 1 );
+    my $events  = deviceEvents( $dev, 1 );
     return if ( !$events );
 
     Log3( $name, 4,
@@ -802,6 +802,7 @@ sub ShuttersDeviceScan {
         }
         $hash->{NOTIFYDEV} = $notifyDevString;
     }
+
     readingsSingleUpdate( $hash, 'userAttrList', 'rolled out', 1 );
 }
 
@@ -2780,7 +2781,7 @@ sub ShuttersCommandSet {
 sub CreateSunRiseSetShuttersTimer {
     my $hash        = shift;
     my $shuttersDev = shift;
-    
+
     my $name            = $hash->{NAME};
     my $shuttersDevHash = $defs{$shuttersDev};
     my %funcHash;
@@ -3264,12 +3265,17 @@ sub CreateNewNotifyDev {
 }
 
 sub ShuttersInformation {
-    return
-      if ( !defined($shutters->getSunriseUnixTime)
-        or !defined($shutters->getSunsetUnixTime) );
-
     my ( $FW_wname, $d, $room, $pageHash ) = @_;
+
     my $hash = $defs{$d};
+
+    return
+      if ( !exists($hash->{helper})
+        or !defined($hash->{helper}->{shuttersList})
+        or ref($hash->{helper}->{shuttersList}) ne 'ARRAY'
+        or scalar( @{$hash->{helper}->{shuttersList}} ) == 0
+        or !defined($shutters->getSunriseUnixTime)
+        or !defined($shutters->getSunsetUnixTime) );
 
     my $ret =
       '<html><table><tr><h3>ASC Configuration and Information Summary</h3><td>';
@@ -5057,37 +5063,33 @@ sub getInTimerFuncHash {
 sub getSunsetUnixTime {
     my $self = shift;
 
-    return ( exists( $self->{ $self } )
-          && exists( $self->{ $self->{shuttersDev} }{sunsettime} )
-            ? $self->{ $self->{shuttersDev} }{sunrisetime}
-            : 0 );
+    return $self->{ $self->{shuttersDev} }{sunsettime};
 }
 
 sub getSunset {
     my $self = shift;
 
-    return ( exists( $self->{ $self } )
-          && exists( $self->{ $self->{shuttersDev} }{sunset} )
-            ? $self->{ $self->{shuttersDev} }{sunset}
-            : 0 );
+    return (
+        defined( $self->{ $self->{shuttersDev} }{sunset} )
+        ? $self->{ $self->{shuttersDev} }{sunset}
+        : 0
+    );
 }
 
 sub getSunriseUnixTime {
     my $self = shift;
 
-    return ( exists( $self->{ $self } )
-          && exists( $self->{ $self->{shuttersDev} }{sunrisetime} )
-            ? $self->{ $self->{shuttersDev} }{sunrisetime}
-            : 0 );
+    return $self->{ $self->{shuttersDev} }{sunrisetime};
 }
 
 sub getSunrise {
     my $self = shift;
 
-    return ( exists( $self->{ $self } )
-          && exists( $self->{ $self->{shuttersDev} }{sunrise} )
-            ? $self->{ $self->{shuttersDev} }{sunrise}
-            : 0 );
+    return (
+        defined( $self->{ $self->{shuttersDev} }{sunrise} )
+        ? $self->{ $self->{shuttersDev} }{sunrise}
+        : 0
+    );
 }
 
 sub getRoommatesStatus {
