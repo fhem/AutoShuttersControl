@@ -292,7 +292,7 @@ sub ascAPIget {
 }
 
 sub Initialize {
-    my ($hash) = @_;
+    my $hash    = shift;
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
@@ -301,7 +301,6 @@ sub Initialize {
     $hash->{DefFn}    = 'FHEM::AutoShuttersControl::Define';
     $hash->{NotifyFn} = 'FHEM::AutoShuttersControl::Notify';
     $hash->{UndefFn}  = 'FHEM::AutoShuttersControl::Undef';
-    $hash->{AttrFn}   = 'FHEM::AutoShuttersControl::Attr';
     $hash->{AttrList} =
         'ASC_tempSensor '
       . 'ASC_brightnessDriveUpDown '
@@ -330,7 +329,8 @@ sub Initialize {
 }
 
 sub Define {
-    my ($hash,$a,undef) = @_;
+    my $hash    = shift;
+    my $a       = shift;
 
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
     use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
@@ -371,13 +371,12 @@ sub Define {
 
     $modules{AutoShuttersControl}{defptr}{ $hash->{MID} } = $hash;
 
-    return undef;
+    return;
 }
 
 sub Undef {
-    my ( $hash, $arg ) = @_;
-
-    my $name = $hash->{NAME};
+    my $hash    = shift;
+    my $name    = shift;
 
     UserAttributs_Readings_ForShutters( $hash, 'del' )
       ; # es sollen alle Attribute und Readings in den Rolläden Devices gelöscht werden welche vom Modul angelegt wurden
@@ -389,21 +388,14 @@ sub Undef {
     return undef;
 }
 
-sub Attr {
-    my ( $cmd, $name, $attrName, $attrVal ) = @_;
-
-    #     my $hash = $defs{$name};
-
-    return undef;
-}
-
 sub Notify {
-    my ( $hash, $dev ) = @_;
-    my $name = $hash->{NAME};
-
+    my $hash    = shift;
+    my $dev     = shift;
+    
+    my $name    = $hash->{NAME};
     my $devname = $dev->{NAME};
     my $devtype = $dev->{TYPE};
-    my $events  = deviceEvents( $dev, 1 );
+    my $events  = deviceEvents( shift, 1 );
     return if ( !$events );
 
     Log3( $name, 4,
@@ -609,9 +601,11 @@ sub EventProcessingGeneral {
 }
 
 sub Set {
-    my ($hash,$a,undef) = @_;
+    my $hash    = shift;
+    my $a       = shift;
+    
     my $name    = shift @$a;
-    my $cmd     = shift @$a;
+    my $cmd     = shift @$a // return qq{"set $name" needs at least one argument};
 
     if ( lc $cmd eq 'renewalltimer' ) {
         return "usage: $cmd" if ( scalar(@{$a}) != 0 );
@@ -686,20 +680,24 @@ sub Set {
           . join( ',', @{ $hash->{helper}{shuttersList} } )
           . ' renewTimer:'
           . join( ',', @{ $hash->{helper}{shuttersList} } )
-          if ( ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out' );
+          if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
+            and defined($hash->{helper}{shuttersList})
+            and scalar(@{$hash->{helper}{shuttersList}}) > 0 );
         $list .= ' createNewNotifyDev:noArg'
           if (  ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
             and AttrVal( $name, 'ASC_expert', 0 ) == 1 );
 
         return "Unknown argument $cmd,choose one of $list";
     }
-    return undef;
+    return;
 }
 
 sub Get {
-    my ($hash,$a,undef) = @_;
+    my $hash    = shift;
+    my $a       = shift;
+
     my $name    = shift @$a;
-    my $cmd     = shift @$a;
+    my $cmd     = shift @$a // return qq{"set $name" needs at least one argument};
 
     if ( lc $cmd eq 'shownotifydevsinformations' ) {
         return "usage: $cmd" if ( scalar(@{$a}) != 0 );
@@ -718,6 +716,7 @@ sub Get {
 
 sub ShuttersDeviceScan {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     delete $hash->{helper}{shuttersList};
@@ -809,6 +808,7 @@ sub ShuttersDeviceScan {
 ## Die Funktion schreibt in das Moduldevice Readings welche Rolläden in welchen Räumen erfasst wurden.
 sub WriteReadingsShuttersList {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     CommandDeleteReading( undef, $name . ' room_.*' );
@@ -849,7 +849,9 @@ sub WriteReadingsShuttersList {
 }
 
 sub UserAttributs_Readings_ForShutters {
-    my ( $hash, $cmd ) = @_;
+    my $hash    = shift;
+    my $cmd     = shift;
+
     my $name = $hash->{NAME};
 
     while ( my ( $attrib, $attribValue ) = each %{userAttrList} ) {
@@ -952,6 +954,7 @@ sub AddNotifyDev {
 ## entfernt aus dem NOTIFYDEV Hash Devices welche als Wert in Attributen steckten
 sub DeleteNotifyDev {
     my ( $hash, $shuttersDev, $shuttersAttr ) = @_;
+
     my $name = $hash->{NAME};
 
     my $notifyDevs =
@@ -982,6 +985,7 @@ sub DeleteNotifyDev {
 ## Sub zum steuern der Rolläden bei einem Fenster Event
 sub EventProcessingWindowRec {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
 
     my $reading = $shutters->getWinDevReading;
@@ -1163,6 +1167,7 @@ sub EventProcessingWindowRec {
 ## Sub zum steuern der Rolladen bei einem Bewohner/Roommate Event
 sub EventProcessingRoommate {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
 
     $shutters->setShuttersDev($shuttersDev);
@@ -1587,6 +1592,7 @@ sub EventProcessingRain {
     #### Ist noch nicht fertig, es fehlt noch das verzögerte Prüfen auf erhalten bleiben des getriggerten Wertes.
 
     my ( $hash, $device, $events ) = @_;
+
     my $name    = $device;
     my $reading = $ascDev->getRainSensorReading;
 
@@ -1645,6 +1651,7 @@ sub RainProtection {
 
 sub EventProcessingWind {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
@@ -1718,6 +1725,7 @@ sub EventProcessingWind {
 
 sub EventProcessingBrightness {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
@@ -2095,6 +2103,7 @@ sub EventProcessingBrightness {
 
 sub EventProcessingShadingBrightness {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
@@ -2231,6 +2240,7 @@ sub ShadingProcessing {
     my ( $hash, $shuttersDev, $azimuth, $elevation, $outTemp,
         $azimuthLeft, $azimuthRight )
       = @_;
+
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $brightness = $shutters->getBrightnessAverage;
@@ -2410,7 +2420,8 @@ sub ShadingProcessing {
 }
 
 sub ShadingProcessingDriveCommand {
-    my ( $hash, $shuttersDev ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
 
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
@@ -2497,6 +2508,7 @@ sub ShadingProcessingDriveCommand {
 
 sub EventProcessingPartyMode {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -2547,6 +2559,7 @@ sub EventProcessingPartyMode {
 
 sub EventProcessingAdvShuttersClose {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
@@ -2571,6 +2584,7 @@ sub EventProcessingAdvShuttersClose {
 
 sub EventProcessingShutters {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
 
     ASC_Debug( 'EventProcessingShutters: '
@@ -2631,6 +2645,7 @@ sub EventProcessingShutters {
 
 sub EventProcessingExternalTriggerDevice {
     my ( $hash, $shuttersDev, $events ) = @_;
+
     my $name = $hash->{NAME};
 
     $shutters->setShuttersDev($shuttersDev);
@@ -2684,6 +2699,7 @@ sub EventProcessingExternalTriggerDevice {
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
 sub ShuttersCommandSet {
     my ( $hash, $shuttersDev, $posValue ) = @_;
+
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
 
@@ -2762,7 +2778,9 @@ sub ShuttersCommandSet {
 
 ## Sub welche die InternalTimer nach entsprechenden Sunset oder Sunrise zusammen stellt
 sub CreateSunRiseSetShuttersTimer {
-    my ( $hash, $shuttersDev ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    
     my $name            = $hash->{NAME};
     my $shuttersDevHash = $defs{$shuttersDev};
     my %funcHash;
@@ -2971,7 +2989,9 @@ sub RenewSunRiseSetShuttersTimer {
 
 ## Funktion zum hardwareseitigen setzen des lock-out oder blocking beim Rolladen selbst
 sub HardewareBlockForShutters {
-    my ( $hash, $cmd ) = @_;
+    my $hash    = shift;
+    my $cmd     = shift;
+
     foreach ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($_);
         $shutters->setHardLockOut($cmd);
@@ -2988,7 +3008,9 @@ sub wiggleAll {
 }
 
 sub wiggle {
-    my ( $hash, $shuttersDev ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    
     $shutters->setShuttersDev($shuttersDev);
     $shutters->setNoDelay(1);
     $shutters->setLastDrive('wiggle begin drive');
@@ -3028,6 +3050,7 @@ sub wiggle {
 ## Funktion welche beim Ablaufen des Timers für Sunset aufgerufen werden soll
 sub SunSetShuttersAfterTimerFn {
     my $funcHash    = shift;
+
     my $hash        = $funcHash->{hash};
     my $shuttersDev = $funcHash->{shuttersdevice};
     $shutters->setShuttersDev($shuttersDev);
@@ -3098,6 +3121,7 @@ sub SunSetShuttersAfterTimerFn {
 ## Funktion welche beim Ablaufen des Timers für Sunrise aufgerufen werden soll
 sub SunRiseShuttersAfterTimerFn {
     my $funcHash    = shift;
+
     my $hash        = $funcHash->{hash};
     my $shuttersDev = $funcHash->{shuttersdevice};
     $shutters->setShuttersDev($shuttersDev);
@@ -3198,6 +3222,7 @@ sub SunRiseShuttersAfterTimerFn {
 
 sub CreateNewNotifyDev {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     $hash->{NOTIFYDEV} = "global," . $name;
@@ -3330,6 +3355,7 @@ sub ShuttersInformation {
 
 sub GetMonitoredDevs {
     my $hash       = shift;
+
     my $notifydevs = eval {
         decode_json( ReadingsVal( $hash->{NAME}, '.monitoredDevs', 'none' ) );
     };
@@ -3377,7 +3403,8 @@ sub GetMonitoredDevs {
 #################################
 
 sub PositionValueWindowRec {
-    my ( $shuttersDev, $posValue ) = @_;
+    my $shuttersDev = shift;
+    my $posValue    = shift;
 
     if ( CheckIfShuttersWindowRecOpen($shuttersDev) == 1
         and $shutters->getVentilateOpen eq 'on' )
@@ -3409,6 +3436,7 @@ sub PositionValueWindowRec {
 
 sub AutoSearchTwilightDev {
     my $hash = shift;
+
     my $name = $hash->{NAME};
 
     if ( devspec2array('TYPE=(Astro|Twilight)') > 0 ) {
@@ -3448,6 +3476,7 @@ sub GetAttrValues {
 # Hilfsfunktion welche meinen ReadingString zum finden der getriggerten Devices und der Zurdnung was das Device überhaupt ist und zu welchen Rolladen es gehört aus liest und das Device extraiert
 sub ExtractNotifyDevFromEvent {
     my ( $hash, $shuttersDev, $shuttersAttr ) = @_;
+
     my %notifyDevs;
     while ( my $notifyDev = each %{ $hash->{monitoredDevs} } ) {
         Log3( $hash->{NAME}, 4,
@@ -3475,7 +3504,8 @@ sub ExtractNotifyDevFromEvent {
 
 ## Ist Tag oder Nacht für den entsprechende Rolladen
 sub _IsDay {
-    my ($shuttersDev) = @_;
+    my $shuttersDev = shift;
+
     $shutters->setShuttersDev($shuttersDev);
 
     my $isday = ( ShuttersSunrise( $shuttersDev, 'unix' ) >
@@ -3595,8 +3625,9 @@ sub _IsDay {
 }
 
 sub ShuttersSunrise {
-    my ( $shuttersDev, $tm ) =
-      @_;    # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
+    my $shuttersDev = shift;
+    my $tm          = shift; # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
+
     my $autoAstroMode;
     $shutters->setShuttersDev($shuttersDev);
 
@@ -4046,7 +4077,8 @@ sub ShuttersSunrise {
 }
 
 sub IsAfterShuttersTimeBlocking {
-    my ($shuttersDev) = @_;
+    my $shuttersDev = shift;
+
     $shutters->setShuttersDev($shuttersDev);
 
     if (
@@ -4094,8 +4126,9 @@ sub IsAfterShuttersManualBlocking {
 }
 
 sub ShuttersSunset {
-    my ( $shuttersDev, $tm ) =
-      @_;    # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
+    my $shuttersDev = shift;
+    my $tm          = shift; # Tm steht für Timemode und bedeutet Realzeit oder Unixzeit
+ 
     my $autoAstroMode;
     $shutters->setShuttersDev($shuttersDev);
 
@@ -4208,6 +4241,7 @@ sub IsWe {
 
 sub _SetCmdFn {
     my $h           = shift;
+
     my $shuttersDev = $h->{shuttersDev};
     my $posValue    = $h->{posValue};
 
@@ -4286,7 +4320,7 @@ sub ASC_Debug {
 }
 
 sub _averageBrightness {
-    my @input = @_;
+    my @input = shift;
     use List::Util qw(sum);
 
     return int( sum(@input) / @input );
@@ -4304,7 +4338,9 @@ sub _perlCodeCheck {
 }
 
 sub PrivacyUpTime {
-    my ( $shuttersDevHash, $shuttersSunriseUnixtime ) = @_;
+    my $shuttersDevHash         = shift;
+    my $shuttersSunriseUnixtime = shift;
+
     my $privacyUpUnixtime;
 
     if ( ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime ) >
@@ -4345,7 +4381,9 @@ sub PrivacyUpTime {
 }
 
 sub PrivacyDownTime {
-    my ( $shuttersDevHash, $shuttersSunsetUnixtime ) = @_;
+    my $shuttersDevHash         = shift;
+    my $shuttersSunsetUnixtime  = shift;
+    
     my $privacyDownUnixtime;
 
     if ( ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime ) >
@@ -4409,10 +4447,11 @@ sub _IsAdv {
 }
 
 sub DevStateIcon {
-    my ($hash) = @_;
+    my $hash    = shift;
+
     $hash = $defs{$hash} if ( ref($hash) ne 'HASH' );
 
-    return undef if ( !$hash );
+    return if ( !$hash );
     my $name = $hash->{NAME};
 
     if ( ReadingsVal( $name, 'state', undef ) eq 'created new drive timer' ) {
@@ -4465,7 +4504,7 @@ sub DevStateIcon {
         return '.*:christmas_tree';
     }
 
-    return undef;
+    return;
 }
 
 ######################################
@@ -4510,7 +4549,8 @@ sub new {
 }
 
 sub setShuttersDev {
-    my ( $self, $shuttersDev ) = @_;
+    my $self        = shift;
+    my $shuttersDev = shift;
 
     $self->{shuttersDev} = $shuttersDev if ( defined($shuttersDev) );
     return $self->{shuttersDev};
@@ -4530,7 +4570,8 @@ sub setAttrUpdateChanges {
 }
 
 sub setHardLockOut {
-    my ( $self, $cmd ) = @_;
+    my $self    = shift;
+    my $cmd     = shift;
 
     if (    $shutters->getLockOut eq 'hard'
         and $shutters->getLockOutCmd ne 'none' )
@@ -4550,7 +4591,8 @@ sub setHardLockOut {
 }
 
 sub setNoDelay {
-    my ( $self, $noDelay ) = @_;
+    my $self    = shift;
+    my $noDelay = shift;
 
     $self->{ $self->{shuttersDev} }{noDelay} = $noDelay;
     return 0;
@@ -4567,7 +4609,9 @@ sub setSelfDefenseAbsent {
 }
 
 sub setDriveCmd {
-    my ( $self, $posValue ) = @_;
+    my $self        = shift;
+    my $posValue    = shift;
+
     my $offSet;
     my $offSetStart;
 
@@ -4664,49 +4708,56 @@ sub setDriveCmd {
 }
 
 sub setSunsetUnixTime {
-    my ( $self, $unixtime ) = @_;
+    my $self        = shift;
+    my $unixtime    = shift;
 
     $self->{ $self->{shuttersDev} }{sunsettime} = $unixtime;
     return 0;
 }
 
 sub setSunset {
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }{sunset} = $value;
     return 0;
 }
 
 sub setSunriseUnixTime {
-    my ( $self, $unixtime ) = @_;
+    my $self        = shift;
+    my $unixtime    = shift;
 
     $self->{ $self->{shuttersDev} }{sunrisetime} = $unixtime;
     return 0;
 }
 
 sub setSunrise {
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }{sunrise} = $value;
     return 0;
 }
 
 sub setDelayCmd {
-    my ( $self, $posValue ) = @_;
+    my $self        = shift;
+    my $posValue    = shift;
 
     $self->{ $self->{shuttersDev} }{delayCmd} = $posValue;
     return 0;
 }
 
 sub setLastDrive {
-    my ( $self, $lastDrive ) = @_;
+    my $self        = shift;
+    my $lastDrive   = shift;
 
     $self->{ $self->{shuttersDev} }{lastDrive} = $lastDrive;
     return 0;
 }
 
 sub setPosSetCmd {
-    my ( $self, $posSetCmd ) = @_;
+    my $self        = shift;
+    my $posSetCmd   = shift;
 
     $self->{ $self->{shuttersDev} }{posSetCmd} = $posSetCmd;
     return 0;
@@ -4726,9 +4777,10 @@ sub setLastDriveReading {
     return 0;
 }
 
-sub setLastPos
-{ # letzte ermittelte Position bevor die Position des Rolladen über ASC geändert wurde
-    my ( $self, $position ) = @_;
+sub setLastPos {
+            # letzte ermittelte Position bevor die Position des Rolladen über ASC geändert wurde
+    my $self        = shift;
+    my $position    = shift;
 
     $self->{ $self->{shuttersDev} }{lastPos}{VAL} = $position
       if ( defined($position) );
@@ -4738,7 +4790,8 @@ sub setLastPos
 }
 
 sub setLastManPos {
-    my ( $self, $position ) = @_;
+    my $self        = shift;
+    my $position    = shift;
 
     $self->{ $self->{shuttersDev} }{lastManPos}{VAL} = $position
       if ( defined($position) );
@@ -4753,21 +4806,24 @@ sub setLastManPos {
 }
 
 sub setDefault {
-    my ( $self, $defaultarg ) = @_;
+    my $self        = shift;
+    my $defaultarg  = shift;
 
     $self->{defaultarg} = $defaultarg if ( defined($defaultarg) );
     return $self->{defaultarg};
 }
 
 sub setRoommate {
-    my ( $self, $roommate ) = @_;
+    my $self        = shift;
+    my $roommate    = shift;
 
     $self->{roommate} = $roommate if ( defined($roommate) );
     return $self->{roommate};
 }
 
 sub setInTimerFuncHash {
-    my ( $self, $inTimerFuncHash ) = @_;
+    my $self            = shift;
+    my $inTimerFuncHash = shift;
 
     $self->{ $self->{shuttersDev} }{inTimerFuncHash} = $inTimerFuncHash
       if ( defined($inTimerFuncHash) );
@@ -4775,28 +4831,32 @@ sub setInTimerFuncHash {
 }
 
 sub setPrivacyDownStatus {
-    my ( $self, $statusValue ) = @_;
+    my $self        = shift;
+    my $statusValue = shift;
 
     $self->{ $self->{shuttersDev} }->{privacyDownStatus} = $statusValue;
     return 0;
 }
 
 sub setPrivacyUpStatus {
-    my ( $self, $statusValue ) = @_;
+    my $self        = shift;
+    my $statusValue = shift;
 
     $self->{ $self->{shuttersDev} }->{privacyUpStatus} = $statusValue;
     return 0;
 }
 
 sub setSelfDefenseState {
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }{selfDefenseState} = $value;
     return 0;
 }
 
 sub setAdvDelay {
-    my ( $self, $advDelay ) = @_;
+    my $self        = shift;
+    my $advDelay    = shift;
 
     $self->{ $self->{shuttersDev} }->{AdvDelay} = $advDelay;
     return 0;
@@ -4833,7 +4893,8 @@ sub getPrivacyUpStatus {
 }
 
 sub getAttrUpdateChanges {
-    my ( $self, $attr ) = @_;
+    my $self    = shift;
+    my $attr    = shift;
 
     return $self->{ $self->{shuttersDev} }{AttrUpdateChanges}{$attr}
       if (  defined( $self->{ $self->{shuttersDev} }{AttrUpdateChanges} )
@@ -4884,8 +4945,8 @@ sub getShuttersPosCmdValueNegate {
 
 sub getQueryShuttersPos
 { # Es wird geschaut ob die aktuelle Position des Rollos unterhalb der Zielposition ist
-    my ( $self, $posValue ) =
-      @_;    #   wenn dem so ist wird 1 zurück gegeben ansonsten 0
+    my $self        = shift;
+    my $posValue    = shift;    #   wenn dem so ist wird 1 zurück gegeben ansonsten 0
 
     return (
           $shutters->getShuttersPosCmdValueNegate
@@ -4996,37 +5057,42 @@ sub getInTimerFuncHash {
 sub getSunsetUnixTime {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }{sunsettime};
+    return ( exists( $self->{ $self } )
+          && exists( $self->{ $self->{shuttersDev} }{sunsettime} )
+            ? $self->{ $self->{shuttersDev} }{sunrisetime}
+            : 0 );
 }
 
 sub getSunset {
     my $self = shift;
 
-    return (
-        defined( $self->{ $self->{shuttersDev} }{sunset} )
-        ? $self->{ $self->{shuttersDev} }{sunset}
-        : 0
-    );
+    return ( exists( $self->{ $self } )
+          && exists( $self->{ $self->{shuttersDev} }{sunset} )
+            ? $self->{ $self->{shuttersDev} }{sunset}
+            : 0 );
 }
 
 sub getSunriseUnixTime {
     my $self = shift;
 
-    return $self->{ $self->{shuttersDev} }{sunrisetime};
+    return ( exists( $self->{ $self } )
+          && exists( $self->{ $self->{shuttersDev} }{sunrisetime} )
+            ? $self->{ $self->{shuttersDev} }{sunrisetime}
+            : 0 );
 }
 
 sub getSunrise {
     my $self = shift;
 
-    return (
-        defined( $self->{ $self->{shuttersDev} }{sunrise} )
-        ? $self->{ $self->{shuttersDev} }{sunrise}
-        : 0
-    );
+    return ( exists( $self->{ $self } )
+          && exists( $self->{ $self->{shuttersDev} }{sunrise} )
+            ? $self->{ $self->{shuttersDev} }{sunrise}
+            : 0 );
 }
 
 sub getRoommatesStatus {
     my $self = shift;
+
     my $loop = 0;
     my @roState;
     my %statePrio = (
@@ -5052,6 +5118,7 @@ sub getRoommatesStatus {
 
 sub getRoommatesLastStatus {
     my $self = shift;
+
     my $loop = 0;
     my @roState;
     my %statePrio = (
@@ -5091,8 +5158,8 @@ sub getIdleDetection {
 
 ### Begin Beschattung Objekt mit Daten befüllen
 sub setShadingStatus {
-    my ( $self, $value ) = @_;
-    ### Werte für value = in, out, in reserved, out reserved
+    my $self    = shift;
+    my $value   = shift;    ### Werte für value = in, out, in reserved, out reserved
 
     $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} = $value
       if ( defined($value) );
@@ -5102,8 +5169,8 @@ sub setShadingStatus {
 }
 
 sub setShadingLastStatus {
-    my ( $self, $value ) = @_;
-    ### Werte für value = in, out
+    my $self    = shift;
+    my $value   = shift;    ### Werte für value = in, out
 
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} = $value
       if ( defined($value) );
@@ -5116,8 +5183,8 @@ sub setShadingLastStatus {
 }
 
 sub setShadingManualDriveStatus {
-    my ( $self, $value ) = @_;
-    ### Werte für value = in, out
+    my $self    = shift;
+    my $value   = shift;    ### Werte für value = in, out
 
     $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = $value
       if ( defined($value) );
@@ -5125,7 +5192,8 @@ sub setShadingManualDriveStatus {
 }
 
 sub setWindProtectionStatus {    # Werte protected, unprotected
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
       if ( defined($value) );
@@ -5133,7 +5201,8 @@ sub setWindProtectionStatus {    # Werte protected, unprotected
 }
 
 sub setRainProtectionStatus {    # Werte protected, unprotected
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
       if ( defined($value) );
@@ -5141,7 +5210,8 @@ sub setRainProtectionStatus {    # Werte protected, unprotected
 }
 
 sub setExternalTriggerState {
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event} = $value
       if ( defined($value) );
@@ -5149,7 +5219,8 @@ sub setExternalTriggerState {
 }
 
 sub setPushBrightnessInArray {
-    my ( $self, $value ) = @_;
+    my $self    = shift;
+    my $value   = shift;
 
     unshift(
         @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} },
@@ -5291,6 +5362,7 @@ BEGIN {
 
 sub getAntiFreezePos {
     my $self = shift;
+
     my $val  = AttrVal(
         $self->{shuttersDev},
         'ASC_Antifreeze_Pos',
@@ -5448,6 +5520,7 @@ sub getPrivacyDownBrightnessVal {
 
 sub getPrivacyUpPos {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_PrivacyUp_Pos', 50 );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -5459,6 +5532,7 @@ sub getPrivacyUpPos {
 
 sub getPrivacyDownPos {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50 );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -5499,6 +5573,7 @@ sub getAdv {
 ### Begin Beschattung
 sub getShadingPos {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Shading_Pos',
         $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
@@ -6077,6 +6152,7 @@ sub getOpenPos {
 
 sub getVentilatePos {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Pos',
         $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
@@ -6110,6 +6186,7 @@ sub getClosedPos {
 
 sub getSleepPos {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Sleep_Pos', -1 );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -6163,6 +6240,7 @@ sub getRoommatesReading {
 
 sub getWindPos {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos}
@@ -6181,6 +6259,7 @@ sub getWindPos {
 
 sub getWindMax {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax}
@@ -6212,6 +6291,7 @@ sub getWindMax {
 
 sub getWindMin {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst}
@@ -6310,6 +6390,7 @@ sub getDown {
 
 sub getTimeUpEarly {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Early', '05:00' );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -6325,6 +6406,7 @@ sub getTimeUpEarly {
 
 sub getTimeUpLate {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_Late', '08:30' );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -6340,6 +6422,7 @@ sub getTimeUpLate {
 
 sub getTimeDownEarly {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Early', '16:00' );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -6355,6 +6438,7 @@ sub getTimeDownEarly {
 
 sub getTimeDownLate {
     my $self = shift;
+
     my $val = AttrVal( $self->{shuttersDev}, 'ASC_Time_Down_Late', '22:00' );
 
     if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
@@ -6370,6 +6454,7 @@ sub getTimeDownLate {
 
 sub getTimeUpWeHoliday {
     my $self = shift;
+
     my $val =
       AttrVal( $self->{shuttersDev}, 'ASC_Time_Up_WE_Holiday', '01:25' );
 
@@ -6591,6 +6676,7 @@ BEGIN {
 
 sub _getRoommateStatus {
     my $self     = shift;
+
     my $roommate = $self->{roommate};
 
     return ReadingsVal( $roommate, $shutters->getRoommatesReading, 'none' );
@@ -6598,6 +6684,7 @@ sub _getRoommateStatus {
 
 sub _getRoommateLastStatus {
     my $self     = shift;
+
     my $roommate = $self->{roommate};
     my $default  = $self->{defaultarg};
 
@@ -6614,6 +6701,7 @@ use warnings;
 
 sub new {
     my $class = shift;
+
     my $self = { name => undef, };
 
     bless $self, $class;
@@ -6621,14 +6709,16 @@ sub new {
 }
 
 sub setName {
-    my ( $self, $name ) = @_;
+    my $self    = shift;
+    my $name    = shift;
 
     $self->{name} = $name if ( defined($name) );
     return $self->{name};
 }
 
 sub setDefault {
-    my ( $self, $defaultarg ) = @_;
+    my $self        = shift;
+    my $defaultarg  = shift;
 
     $self->{defaultarg} = $defaultarg if ( defined($defaultarg) );
     return $self->{defaultarg};
@@ -6659,6 +6749,7 @@ BEGIN {
 
 sub setDelayCmdReading {
     my $self = shift;
+
     my $name = $self->{name};
     my $hash = $defs{$name};
 
@@ -6671,6 +6762,7 @@ sub setDelayCmdReading {
 sub setStateReading {
     my $self  = shift;
     my $value = shift;
+
     my $name  = $self->{name};
     my $hash  = $defs{$name};
 
@@ -6681,6 +6773,7 @@ sub setStateReading {
 
 sub setPosReading {
     my $self = shift;
+
     my $name = $self->{name};
     my $hash = $defs{$name};
 
@@ -6691,6 +6784,7 @@ sub setPosReading {
 
 sub setLastPosReading {
     my $self = shift;
+
     my $name = $self->{name};
     my $hash = $defs{$name};
 
@@ -6701,6 +6795,7 @@ sub setLastPosReading {
 
 sub getPartyMode {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'partyMode', 'off' );
@@ -6708,6 +6803,7 @@ sub getPartyMode {
 
 sub getHardLockOut {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'hardLockOut', 'none' );
@@ -6715,6 +6811,7 @@ sub getHardLockOut {
 
 sub getSunriseTimeWeHoliday {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'sunriseTimeWeHoliday', 'none' );
@@ -6722,6 +6819,7 @@ sub getSunriseTimeWeHoliday {
 
 sub getMonitoredDevs {
     my $self = shift;
+
     my $name = $self->{name};
 
     $self->{monitoredDevs} = ReadingsVal( $name, '.monitoredDevs', 'none' );
@@ -6737,6 +6835,7 @@ sub getOutTemp {
 
 sub getResidentsStatus {
     my $self = shift;
+
     my $val =
       ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
         'none' );
@@ -6760,6 +6859,7 @@ sub getResidentsStatus {
 
 sub getResidentsLastStatus {
     my $self = shift;
+
     my $val = ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
 
     if ( $val =~ m/^(?:(.+)_)?(.+)$/ ) {
@@ -6781,6 +6881,7 @@ sub getResidentsLastStatus {
 
 sub getAutoShuttersControlShading {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'controlShading', 'none' );
@@ -6788,6 +6889,7 @@ sub getAutoShuttersControlShading {
 
 sub getSelfDefense {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'selfDefense', 'none' );
@@ -6795,6 +6897,7 @@ sub getSelfDefense {
 
 sub getAzimuth {
     my $self = shift;
+
     my $azimuth;
 
     $azimuth = ReadingsVal( $ascDev->_getTwilightDevice, 'azimuth', -1 )
@@ -6807,6 +6910,7 @@ sub getAzimuth {
 
 sub getElevation {
     my $self = shift;
+
     my $elevation;
 
     $elevation = ReadingsVal( $ascDev->_getTwilightDevice, 'elevation', -1 )
@@ -6819,6 +6923,7 @@ sub getElevation {
 
 sub getASCenable {
     my $self = shift;
+
     my $name = $self->{name};
 
     return ReadingsVal( $name, 'ascEnable', 'none' );
@@ -6843,6 +6948,7 @@ BEGIN {
 
 sub getShuttersOffset {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_shuttersDriveDelay', -1 );
@@ -6850,6 +6956,7 @@ sub getShuttersOffset {
 
 sub getBrightnessMinVal {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_brightness}->{triggermin}
@@ -6862,6 +6969,7 @@ sub getBrightnessMinVal {
 
 sub getBrightnessMaxVal {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_brightness}->{triggermax}
@@ -6884,6 +6992,7 @@ sub getBrightnessMaxVal {
 
 sub _getTwilightDevice {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_twilightDevice', 'none' );
@@ -6891,6 +7000,7 @@ sub _getTwilightDevice {
 
 sub getAutoAstroModeEvening {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoAstroModeEvening', 'REAL' );
@@ -6898,6 +7008,7 @@ sub getAutoAstroModeEvening {
 
 sub getAutoAstroModeEveningHorizon {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoAstroModeEveningHorizon', 0 );
@@ -6905,6 +7016,7 @@ sub getAutoAstroModeEveningHorizon {
 
 sub getAutoAstroModeMorning {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoAstroModeMorning', 'REAL' );
@@ -6912,6 +7024,7 @@ sub getAutoAstroModeMorning {
 
 sub getAutoAstroModeMorningHorizon {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoAstroModeMorningHorizon', 0 );
@@ -6919,6 +7032,7 @@ sub getAutoAstroModeMorningHorizon {
 
 sub getAutoShuttersControlMorning {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoShuttersControlMorning', 'on' );
@@ -6926,6 +7040,7 @@ sub getAutoShuttersControlMorning {
 
 sub getAutoShuttersControlEvening {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoShuttersControlEvening', 'on' );
@@ -6933,6 +7048,7 @@ sub getAutoShuttersControlEvening {
 
 sub getAutoShuttersControlComfort {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_autoShuttersControlComfort', 'off' );
@@ -6940,6 +7056,7 @@ sub getAutoShuttersControlComfort {
 
 sub getFreezeTemp {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_freezeTemp', 3 );
@@ -6947,6 +7064,7 @@ sub getFreezeTemp {
 
 sub _getTempSensor {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_tempSensor}->{device}
@@ -6970,6 +7088,7 @@ sub _getTempSensor {
 
 sub getTempSensorReading {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_tempSensor}->{reading}
@@ -6981,6 +7100,7 @@ sub getTempSensorReading {
 
 sub _getResidentsDev {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_residentsDev}->{device}
@@ -7000,6 +7120,7 @@ sub _getResidentsDev {
 
 sub getResidentsReading {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_residentsDev}->{reading}
@@ -7011,6 +7132,7 @@ sub getResidentsReading {
 
 sub _getRainSensor {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{device}
@@ -7044,6 +7166,7 @@ sub _getRainSensor {
 
 sub getRainSensorReading {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{reading}
@@ -7055,6 +7178,7 @@ sub getRainSensorReading {
 
 sub getRainTriggerMax {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{triggermax}
@@ -7066,6 +7190,7 @@ sub getRainTriggerMax {
 
 sub getRainTriggerMin {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{triggerhyst}
@@ -7077,6 +7202,7 @@ sub getRainTriggerMin {
 
 sub getRainSensorShuttersClosedPos {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{shuttersClosedPos}
@@ -7088,6 +7214,7 @@ sub getRainSensorShuttersClosedPos {
 
 sub getRainWaitingTime {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_rainSensor}->{waitingTime}
@@ -7099,6 +7226,7 @@ sub getRainWaitingTime {
 
 sub _getWindSensor {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_windSensor}->{device}
@@ -7119,6 +7247,7 @@ sub _getWindSensor {
 
 sub getWindSensorReading {
     my $self = shift;
+
     my $name = $self->{name};
 
     return $self->{ASC_windSensor}->{reading}
@@ -7134,6 +7263,7 @@ sub getWindSensorReading {
 
 sub getBlockAscDrivesAfterManual {
     my $self = shift;
+
     my $name = $self->{name};
 
     return AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
