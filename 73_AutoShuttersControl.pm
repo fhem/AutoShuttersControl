@@ -324,13 +324,13 @@ sub Initialize {
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{FW_detailFn} = 'FHEM::AutoShuttersControl::ShuttersInformation';
+    $hash->{parseParams} = 1;
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
 }
 
 sub Define {
-    my ( $hash, $def ) = @_;
-    my @a = split( '[ \t][ \t]*', $def );
+    my ($hash,$a,undef) = @_;
 
     return $@ unless ( FHEM::Meta::SetInternals($hash) );
     use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
@@ -338,9 +338,9 @@ sub Define {
     return 'only one AutoShuttersControl instance allowed'
       if ( devspec2array('TYPE=AutoShuttersControl') > 1 )
       ; # es wird geprüft ob bereits eine Instanz unseres Modules existiert,wenn ja wird abgebrochen
-    return 'too few parameters: define <name> ShuttersControl' if ( @a != 2 );
+    return 'too few parameters: define <name> ShuttersControl' if ( scalar( @{$a}) != 2 );
 
-    my $name = $a[0];
+    my $name = shift @$a;
     $hash->{MID} = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
       ; # eine Ein Eindeutige ID für interne FHEM Belange / nicht weiter wichtig
     $hash->{VERSION}   = version->parse($VERSION)->normal;
@@ -609,62 +609,63 @@ sub EventProcessingGeneral {
 }
 
 sub Set {
-    my ( $hash, $name, @aa ) = @_;
-    my ( $cmd, @args ) = @aa;
+    my ($hash,$a,undef) = @_;
+    my $name    = shift @$a;
+    my $cmd     = shift @$a;
 
     if ( lc $cmd eq 'renewalltimer' ) {
-        return "usage: $cmd" if ( @args != 0 );
+        return "usage: $cmd" if ( scalar(@{$a}) != 0 );
         RenewSunRiseSetShuttersTimer($hash);
     }
     elsif ( lc $cmd eq 'renewtimer' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        CreateSunRiseSetShuttersTimer( $hash, $args[0] );
+        return "usage: $cmd" if ( scalar(@{$a}) > 0 );
+        CreateSunRiseSetShuttersTimer( $hash, $a->[0] );
     }
     elsif ( lc $cmd eq 'scanforshutters' ) {
-        return "usage: $cmd" if ( @args != 0 );
+        return "usage: $cmd" if ( scalar(@{$a}) != 0 );
         ShuttersDeviceScan($hash);
     }
     elsif ( lc $cmd eq 'createnewnotifydev' ) {
-        return "usage: $cmd" if ( @args != 0 );
+        return "usage: $cmd" if ( scalar(@{$a}) != 0 );
         CreateNewNotifyDev($hash);
     }
     elsif ( lc $cmd eq 'partymode' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 )
-          if ( join( ' ', @args ) ne ReadingsVal( $name, 'partyMode', 0 ) );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 )
+          if ( $a->[0] ne ReadingsVal( $name, 'partyMode', 0 ) );
     }
     elsif ( lc $cmd eq 'hardlockout' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
-        HardewareBlockForShutters( $hash, join( ' ', @args ) );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
+        HardewareBlockForShutters( $hash, $a->[0] );
     }
     elsif ( lc $cmd eq 'sunrisetimeweholiday' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
     }
     elsif ( lc $cmd eq 'controlshading' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
     }
     elsif ( lc $cmd eq 'selfdefense' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
     }
     elsif ( lc $cmd eq 'ascenable' ) {
-        return "usage: $cmd" if ( @args > 1 );
-        readingsSingleUpdate( $hash, $cmd, join( ' ', @args ), 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
+        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
     }
     elsif ( lc $cmd eq 'advdrivedown' ) {
-        return "usage: $cmd" if ( @args != 0 );
+        return "usage: $cmd" if ( scalar(@{$a}) != 0 );
         EventProcessingAdvShuttersClose($hash);
     }
     elsif ( lc $cmd eq 'shutterascenabletoggle' ) {
-        return "usage: $cmd" if ( @args > 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
         readingsSingleUpdate(
-            $defs{ $args[0] },
+            $defs{ $a->[0] },
             'ASC_Enable',
             (
-                ReadingsVal( $args[0], 'ASC_Enable', 'off' ) eq 'on'
+                ReadingsVal( $a->[0], 'ASC_Enable', 'off' ) eq 'on'
                 ? 'off'
                 : 'on'
             ),
@@ -672,9 +673,9 @@ sub Set {
         );
     }
     elsif ( lc $cmd eq 'wiggle' ) {
-        return "usage: $cmd" if ( @args > 1 );
+        return "usage: $cmd" if ( scalar(@{$a}) > 1 );
 
-        ( $args[0] eq 'all' ? wiggleAll($hash) : wiggle( $hash, $args[0] ) );
+        ( $a->[0] eq 'all' ? wiggleAll($hash) : wiggle( $hash, $a->[0] ) );
     }
     else {
         my $list = 'scanForShutters:noArg';
@@ -696,12 +697,12 @@ sub Set {
 }
 
 sub Get {
-    my ( $hash, $name, @aa ) = @_;
-
-    my ( $cmd, @args ) = @aa;
+    my ($hash,$a,undef) = @_;
+    my $name    = shift @$a;
+    my $cmd     = shift @$a;
 
     if ( lc $cmd eq 'shownotifydevsinformations' ) {
-        return "usage: $cmd" if ( @args != 0 );
+        return "usage: $cmd" if ( scalar(@{$a}) != 0 );
         my $ret = GetMonitoredDevs($hash);
         return $ret;
     }
@@ -3238,6 +3239,9 @@ sub CreateNewNotifyDev {
 }
 
 sub ShuttersInformation {
+    return
+      if ( !defined($shutters->getSunriseUnixTime)
+        or !defined($shutters->getSunsetUnixTime) );
 
     my ( $FW_wname, $d, $room, $pageHash ) = @_;
     my $hash = $defs{$d};
@@ -8075,7 +8079,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.21",
+  "version": "v0.8.22",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
