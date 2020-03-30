@@ -2732,22 +2732,35 @@ sub EventProcessingExternalTriggerDevice {
 
     my $reading            = $shutters->getExternalTriggerReading;
     my $triggerValActive   = $shutters->getExternalTriggerValueActive;
+    my $triggerValActive2  = $shutters->getExternalTriggerValueActive2;
     my $triggerValInactive = $shutters->getExternalTriggerValueInactive;
     my $triggerPosActive   = $shutters->getExternalTriggerPosActive;
+    my $triggerPosActive2  = $shutters->getExternalTriggerPosActive2;
     my $triggerPosInactive = $shutters->getExternalTriggerPosInactive;
 
-    if ( $events =~ m{$reading:\s($triggerValActive)}xms
-        && !$shutters->getQueryShuttersPos($triggerPosActive) )
-    {
+    if ( $events =~ m{$reading:\s($triggerValActive|$triggerValActive2)}xms ) {
+
+        #         && !$shutters->getQueryShuttersPos($triggerPosActive)
+
         ASC_Debug( 'EventProcessingExternalTriggerDevice: '
               . ' In der RegEx Schleife Trigger Val Aktiv'
               . ' - TriggerVal: '
-              . $triggerValActive );
+              . $triggerValActive
+              . ' - TriggerVal2: '
+              . $triggerValActive2 );
 
-        $shutters->setLastDrive('external trigger device active');
-        $shutters->setNoDelay(1);
-        $shutters->setExternalTriggerState(1);
-        ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive );
+        if ( $1 eq $triggerValActive2 ) {
+            $shutters->setLastDrive('external trigger2 device active');
+            $shutters->setNoDelay(1);
+            $shutters->setExternalTriggerState(1);
+            ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive2 );
+        }
+        else {
+            $shutters->setLastDrive('external trigger device active');
+            $shutters->setNoDelay(1);
+            $shutters->setExternalTriggerState(1);
+            ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive );
+        }
     }
     elsif (
         $events =~ m{$reading:\s($triggerValInactive)}xms
@@ -3473,8 +3486,7 @@ sub GetMonitoredDevs {
         my $linecount = 1;
         for my $notifydev ( sort keys( %{$notifydevs} ) ) {
             if ( ref( $notifydevs->{$notifydev} ) eq "HASH" ) {
-                for
-                  my $shutters ( sort keys( %{ $notifydevs->{$notifydev} } ) )
+                for my $shutters ( sort keys( %{ $notifydevs->{$notifydev} } ) )
                 {
                     if ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
                     else                       { $ret .= '<tr class="odd">'; }
@@ -6117,12 +6129,12 @@ sub getExternalTriggerDevice {
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{LASTGETTIME} =
       int( gettimeofday() );
     my ( $device, $reading, $valueActive, $valueInactive, $posActive,
-        $posInactive )
+        $posInactive, $valueActive2, $posActive2 )
       = FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
         'ASC_ExternalTrigger', 'none' );
 
     ### erwartetes Ergebnis
-    # DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE
+# DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE VALUEACTIVE2:POSACTIVE2
 
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{device} =
       $device;
@@ -6136,6 +6148,10 @@ sub getExternalTriggerDevice {
       $posActive;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posinactive} =
       ( $posInactive ne 'none' ? $posInactive : $shutters->getLastPos );
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueactive2} =
+      $valueActive2;
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive2} =
+      $posActive2;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{device};
 
@@ -6178,6 +6194,26 @@ sub getExternalTriggerValueActive {
       ->{valueactive};
 }
 
+sub getExternalTriggerValueActive2 {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+      ->{valueactive2}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+              ->{LASTGETTIME}
+        )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+      ->{valueactive2};
+}
+
 sub getExternalTriggerValueInactive {
     my $self = shift;
 
@@ -6214,6 +6250,24 @@ sub getExternalTriggerPosActive {
     $shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive};
+}
+
+sub getExternalTriggerPosActive2 {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive2}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+              ->{LASTGETTIME}
+        )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getExternalTriggerDevice;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive2};
 }
 
 sub getExternalTriggerPosInactive {
@@ -7232,8 +7286,6 @@ sub _getTempSensor {
 
     ## erwartetes Ergebnis
     # DEVICE:READING
-
-    return $device if ( $device eq 'none' );
     $self->{ASC_tempSensor}->{device} = $device;
     $self->{ASC_tempSensor}->{reading} =
       ( $reading ne 'none' ? $reading : 'temperature' );
@@ -8244,7 +8296,7 @@ sub getBlockAscDrivesAfterManual {
             <li><strong>ASC_PrivacyDownValue_beforeNightClose</strong> - wie viele Sekunden vor dem abendlichen schlie&szlig;en soll der Rollladen in die Sichtschutzposition fahren, oder bei Brightness ab welchem minimum Brightnesswert soll das Rollo in die Privacy Position fahren. Bei Brightness muss zusätzlich zum Zeitwert der Brightnesswert mit angegeben werden 1800:300 bedeutet 30 min vor night close oder bei unter einem Brightnesswert von 300 (default: -1)</li>
             <li><strong>ASC_PrivacyUp_Pos</strong> - Position den Rollladens f&uuml;r den morgendlichen Sichtschutz (default: 50) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_PrivacyDown_Pos</strong> - Position den Rollladens f&uuml;r den abendlichen Sichtschutz (default: 50) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-            <li><strong>ASC_ExternalTrigger</strong> - DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:POSINACTIVE, Beispiel: "WohnzimmerTV:state on:off 66:100" bedeutet das wenn ein "state:on" Event kommt soll das Rollo in Position 66 fahren, kommt ein "state:off" Event soll es in Position 100 fahren. Es ist m&ouml;glich die POSINACTIVE weg zu lassen dann f&auml;hrt das Rollo in LastStatus Position.</li>
+            <li><strong>ASC_ExternalTrigger</strong> - DEVICE:READING VALUEACTIVE:VALUEINACTIVE POSACTIVE:[POSINACTIVE VALUEACTIVE2:POSACTIVE2], Beispiel: "WohnzimmerTV:state on:off 66:100" bedeutet das wenn ein "state:on" Event kommt soll das Rollo in Position 66 fahren, kommt ein "state:off" Event soll es in Position 100 fahren. Es ist m&ouml;glich die POSINACTIVE weg zu lassen dann f&auml;hrt das Rollo in LastStatus Position.</li>
             <li><strong>ASC_WindProtection - on/off</strong> - soll der Rollladen beim Windschutz beachtet werden. on=JA, off=NEIN. (default off)</li>
             <li><strong>ASC_RainProtection - on/off</strong> - soll der Rollladen beim Regenschutz beachtet werden. on=JA, off=NEIN. (default off)</li>
             <li><strong>ASC_Roommate_Device</strong> - mit Komma getrennte Namen des/der Roommate Device/s, welche den/die Bewohner des Raumes vom Rollladen wiedergibt. Es macht nur Sinn in Schlaf- oder Kinderzimmern (default: none)</li>
