@@ -785,7 +785,7 @@ sub ShuttersDeviceScan {
         return;
     }
     my $shuttersList = '';
-    foreach (@list) {
+    for (@list) {
         push( @{ $hash->{helper}{shuttersList} }, $_ )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
@@ -868,7 +868,7 @@ sub WriteReadingsShuttersList {
     CommandDeleteReading( undef, $name . ' room_.*' );
 
     readingsBeginUpdate($hash);
-    foreach ( @{ $hash->{helper}{shuttersList} } ) {
+    for ( @{ $hash->{helper}{shuttersList} } ) {
         readingsBulkUpdate(
             $hash,
             'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ),
@@ -911,7 +911,7 @@ sub UserAttributs_Readings_ForShutters {
     my $name = $hash->{NAME};
 
     while ( my ( $attrib, $attribValue ) = each %{userAttrList} ) {
-        foreach ( @{ $hash->{helper}{shuttersList} } ) {
+        for ( @{ $hash->{helper}{shuttersList} } ) {
             addToDevAttrList( $_, $attrib )
               ; ## fhem.pl bietet eine Funktion um ein userAttr Attribut zu befüllen. Wir schreiben also in den Attribut userAttr alle unsere Attribute rein. Pro Rolladen immer ein Attribut pro Durchlauf
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
@@ -999,7 +999,7 @@ sub AddNotifyDev {
     $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
     my @devs = split( ',', $dev );
-    foreach (@devs) {
+    for (@devs) {
         $hash->{monitoredDevs}{$_}{$shuttersDev} = $shuttersAttr;
     }
 
@@ -1018,7 +1018,7 @@ sub DeleteNotifyDev {
     my $notifyDevs =
       ExtractNotifyDevFromEvent( $hash, $shuttersDev, $shuttersAttr );
 
-    foreach my $notifyDev ( keys( %{$notifyDevs} ) ) {
+    for my $notifyDev ( keys( %{$notifyDevs} ) ) {
         Log3( $name, 4,
             "AutoShuttersControl ($name) - DeleteNotifyDev - NotifyDev: "
               . $_ );
@@ -1438,7 +1438,7 @@ sub EventProcessingResidents {
     my $getResidentsLastStatus = $ascDev->getResidentsLastStatus;
 
     if ( $events =~ m{$reading:\s((?:pet_[a-z]+)|(?:absent))}xms ) {
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             my $getModeUp   = $shutters->getModeUp;
             my $getModeDown = $shutters->getModeDown;
@@ -1481,7 +1481,7 @@ sub EventProcessingResidents {
     elsif ($events =~ m{$reading:\s(gone)}xms
         && $ascDev->getSelfDefense eq 'on' )
     {
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             $shutters->setHardLockOut('off');
             if ( $shutters->getSelfDefenseMode ne 'off' ) {
@@ -1500,7 +1500,7 @@ sub EventProcessingResidents {
             || $getResidentsLastStatus eq 'awoken' )
       )
     {
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
             my $getModeUp   = $shutters->getModeUp;
             my $getModeDown = $shutters->getModeDown;
@@ -1665,7 +1665,7 @@ sub EventProcessingRain {
 sub RainProtection {
     my ( $hash, $val, $triggerMax, $closedPos ) = @_;
 
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
 
         next
@@ -1711,7 +1711,7 @@ sub EventProcessingWind {
 
     my $reading = $ascDev->getWindSensorReading;
     if ( $events =~ m{$reading:\s(\d+(\.\d+)?)}xms ) {
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
 
             ASC_Debug( 'EventProcessingWind: '
@@ -2256,7 +2256,7 @@ sub EventProcessingTwilightDevice {
               . ' - Passendes Event wurde erkannt. Verarbeitung über alle Rollos beginnt'
         );
 
-        foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
 
             my $homemode = $shutters->getRoommatesStatus;
@@ -2580,7 +2580,7 @@ sub EventProcessingPartyMode {
 
     my $name = $hash->{NAME};
 
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
         next
           if ( $shutters->getPartyMode eq 'off' );
@@ -2633,7 +2633,7 @@ sub EventProcessingAdvShuttersClose {
 
     my $name = $hash->{NAME};
 
-    foreach my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
         next
           if ( !$shutters->getAdv
@@ -2977,7 +2977,7 @@ sub CreateSunRiseSetShuttersTimer {
 sub RenewSunRiseSetShuttersTimer {
     my $hash = shift;
 
-    foreach ( @{ $hash->{helper}{shuttersList} } ) {
+    for ( @{ $hash->{helper}{shuttersList} } ) {
         my $name  = $_;
         my $dhash = $defs{$name};
 
@@ -3075,7 +3075,7 @@ sub HardewareBlockForShutters {
     my $hash = shift;
     my $cmd  = shift;
 
-    foreach ( @{ $hash->{helper}{shuttersList} } ) {
+    for ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($_);
         $shutters->setHardLockOut($cmd);
     }
@@ -3087,7 +3087,7 @@ sub HardewareBlockForShutters {
 sub wiggleAll {
     my $hash = shift;
 
-    foreach ( @{ $hash->{helper}{shuttersList} } ) {
+    for ( @{ $hash->{helper}{shuttersList} } ) {
         wiggle( $hash, $_ );
     }
 
@@ -3322,7 +3322,7 @@ sub CreateNewNotifyDev {
 
     CommandDeleteReading( undef, $name . ' .monitoredDevs' );
     my $shuttersList = '';
-    foreach ( @{ $hash->{helper}{shuttersList} } ) {
+    for ( @{ $hash->{helper}{shuttersList} } ) {
         AddNotifyDev( $hash, AttrVal( $_, 'ASC_Roommate_Device', 'none' ),
             $_, 'ASC_Roommate_Device' )
           if ( AttrVal( $_, 'ASC_Roommate_Device', 'none' ) ne 'none' );
@@ -3402,7 +3402,7 @@ sub ShuttersInformation {
     $ret .= '</tr>';
 
     my $linecount = 1;
-    foreach my $shutter ( @{ $hash->{helper}{shuttersList} } ) {
+    for my $shutter ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shutter);
 
         if   ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
@@ -3471,9 +3471,9 @@ sub GetMonitoredDevs {
 
     if ( ref($notifydevs) eq "HASH" ) {
         my $linecount = 1;
-        foreach my $notifydev ( sort keys( %{$notifydevs} ) ) {
+        for my $notifydev ( sort keys( %{$notifydevs} ) ) {
             if ( ref( $notifydevs->{$notifydev} ) eq "HASH" ) {
-                foreach
+                for
                   my $shutters ( sort keys( %{ $notifydevs->{$notifydev} } ) )
                 {
                     if ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
@@ -5239,7 +5239,7 @@ sub getRoommatesStatus {
     );
     my $minPrio = 10;
 
-    foreach my $ro ( split( ",", $shutters->getRoommates ) ) {
+    for my $ro ( split( ",", $shutters->getRoommates ) ) {
         $shutters->setRoommate($ro);
         my $currentPrio = $statePrio{ $shutters->_getRoommateStatus };
         $minPrio = $currentPrio if ( $minPrio > $currentPrio );
@@ -5265,7 +5265,7 @@ sub getRoommatesLastStatus {
     );
     my $minPrio = 10;
 
-    foreach my $ro ( split( ",", $shutters->getRoommates ) ) {
+    for my $ro ( split( ",", $shutters->getRoommates ) ) {
         $shutters->setRoommate($ro);
         my $currentPrio = $statePrio{ $shutters->_getRoommateLastStatus };
         $minPrio = $currentPrio if ( $minPrio > $currentPrio );
