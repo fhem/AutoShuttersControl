@@ -2169,7 +2169,7 @@ sub EventProcessingShadingBrightness {
     my $reading = $shutters->getBrightnessReading;
     my $outTemp = $ascDev->getOutTemp;
 
-    return Log3( $name, 2,
+    return Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness: no shading function then is night"
       )
       if (!$shutters->getIsDay
