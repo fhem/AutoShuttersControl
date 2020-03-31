@@ -2169,6 +2169,14 @@ sub EventProcessingShadingBrightness {
     my $reading = $shutters->getBrightnessReading;
     my $outTemp = $ascDev->getOutTemp;
 
+    return Log3( $name, 2,
+        "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness: no shading function then is night"
+      )
+      if (!$shutters->getIsDay
+        && $shutters->getShadingStatus eq 'out'
+        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
+        1800 );
+
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
     );
@@ -2375,6 +2383,7 @@ sub ShadingProcessing {
                $outTemp < $shutters->getShadingMinOutsideTemperature - 3
             || $azimuth < $azimuthLeft
             || $azimuth > $azimuthRight
+            || !$shutters->getIsDay
         )
         && $shutters->getShadingStatus ne 'out'
       )
@@ -2469,8 +2478,7 @@ sub ShadingProcessing {
 
     ShadingProcessingDriveCommand( $hash, $shuttersDev )
       if (
-           $shutters->getIsDay
-        && IsAfterShuttersTimeBlocking($shuttersDev)
+           IsAfterShuttersTimeBlocking($shuttersDev)
         && !$shutters->getShadingManualDriveStatus
         && (
             (
