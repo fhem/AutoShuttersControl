@@ -2174,7 +2174,7 @@ sub EventProcessingShadingBrightness {
       )
       if (!$shutters->getIsDay
         && $shutters->getShadingStatus eq 'out'
-        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) <
+        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
         1800 );
 
     Log3( $name, 4,
@@ -4199,7 +4199,7 @@ sub ShuttersSunrise {
         return $shutters->getTimeUpEarly if ( $shutters->getUp eq 'time' );
     }
 
-    return 0;
+    return;
 }
 
 sub IsAfterShuttersTimeBlocking {
@@ -4314,7 +4314,7 @@ sub ShuttersSunset {
           if ( $shutters->getDown eq 'time' );
     }
 
-    return 0;
+    return;
 }
 
 ## Kontrolliert ob das Fenster von einem bestimmten Rolladen offen ist
@@ -4333,7 +4333,7 @@ sub CheckIfShuttersWindowRecOpen {
         return 1;
     }
     elsif ( $shutters->getWinStatus =~ m{[Cc]lose|true}xms ) {
-        return 0;
+        return;
     }                                                # CK: covers: close|closed
 }
 
@@ -4704,7 +4704,7 @@ sub setAttrUpdateChanges {
     my ( $self, $attr, $value ) = @_;
 
     $self->{ $self->{shuttersDev} }{AttrUpdateChanges}{$attr} = $value;
-    return 0;
+    return;
 }
 
 sub setHardLockOut {
@@ -4725,7 +4725,7 @@ sub setHardLockOut {
               . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
           if ( $shutters->getLockOutCmd eq 'protected' );
     }
-    return 0;
+    return;
 }
 
 sub setNoDelay {
@@ -4733,7 +4733,7 @@ sub setNoDelay {
     my $noDelay = shift;
 
     $self->{ $self->{shuttersDev} }{noDelay} = $noDelay;
-    return 0;
+    return;
 }
 
 sub setSelfDefenseAbsent {
@@ -4743,7 +4743,7 @@ sub setSelfDefenseAbsent {
     $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{active}    = $active;
     $self->{ $self->{shuttersDev} }{selfDefenseAbsent}{timerhash} = $timerhash
       if ( defined($timerhash) );
-    return 0;
+    return;
 }
 
 sub setDriveCmd {
@@ -4851,7 +4851,7 @@ sub setSunsetUnixTime {
     my $unixtime = shift;
 
     $self->{ $self->{shuttersDev} }{sunsettime} = $unixtime;
-    return 0;
+    return;
 }
 
 sub setSunset {
@@ -4859,7 +4859,7 @@ sub setSunset {
     my $value = shift;
 
     $self->{ $self->{shuttersDev} }{sunset} = $value;
-    return 0;
+    return;
 }
 
 sub setSunriseUnixTime {
@@ -4867,7 +4867,7 @@ sub setSunriseUnixTime {
     my $unixtime = shift;
 
     $self->{ $self->{shuttersDev} }{sunrisetime} = $unixtime;
-    return 0;
+    return;
 }
 
 sub setSunrise {
@@ -4875,7 +4875,7 @@ sub setSunrise {
     my $value = shift;
 
     $self->{ $self->{shuttersDev} }{sunrise} = $value;
-    return 0;
+    return;
 }
 
 sub setDelayCmd {
@@ -4883,7 +4883,7 @@ sub setDelayCmd {
     my $posValue = shift;
 
     $self->{ $self->{shuttersDev} }{delayCmd} = $posValue;
-    return 0;
+    return;
 }
 
 sub setLastDrive {
@@ -4891,7 +4891,7 @@ sub setLastDrive {
     my $lastDrive = shift;
 
     $self->{ $self->{shuttersDev} }{lastDrive} = $lastDrive;
-    return 0;
+    return;
 }
 
 sub setPosSetCmd {
@@ -4899,7 +4899,7 @@ sub setPosSetCmd {
     my $posSetCmd = shift;
 
     $self->{ $self->{shuttersDev} }{posSetCmd} = $posSetCmd;
-    return 0;
+    return;
 }
 
 sub setLastDriveReading {
@@ -4913,7 +4913,7 @@ sub setLastDriveReading {
 
     InternalTimer( gettimeofday() + 0.1,
         \&FHEM::AutoShuttersControl::_setShuttersLastDriveDelayed, \%h );
-    return 0;
+    return;
 }
 
 sub setLastPos {
@@ -4926,7 +4926,7 @@ sub setLastPos {
       if ( defined($position) );
     $self->{ $self->{shuttersDev} }{lastPos}{TIME} = int( gettimeofday() )
       if ( defined( $self->{ $self->{shuttersDev} }{lastPos} ) );
-    return 0;
+    return;
 }
 
 sub setLastManPos {
@@ -4942,7 +4942,7 @@ sub setLastManPos {
       int( gettimeofday() ) - 86400
       if ( defined( $self->{ $self->{shuttersDev} }{lastManPos} )
         && !defined( $self->{ $self->{shuttersDev} }{lastManPos}{TIME} ) );
-    return 0;
+    return;
 }
 
 sub setDefault {
@@ -4967,7 +4967,7 @@ sub setInTimerFuncHash {
 
     $self->{ $self->{shuttersDev} }{inTimerFuncHash} = $inTimerFuncHash
       if ( defined($inTimerFuncHash) );
-    return 0;
+    return;
 }
 
 sub setPrivacyDownStatus {
@@ -4975,7 +4975,7 @@ sub setPrivacyDownStatus {
     my $statusValue = shift;
 
     $self->{ $self->{shuttersDev} }->{privacyDownStatus} = $statusValue;
-    return 0;
+    return;
 }
 
 sub setPrivacyUpStatus {
@@ -4983,7 +4983,7 @@ sub setPrivacyUpStatus {
     my $statusValue = shift;
 
     $self->{ $self->{shuttersDev} }->{privacyUpStatus} = $statusValue;
-    return 0;
+    return;
 }
 
 sub setSelfDefenseState {
@@ -4991,7 +4991,7 @@ sub setSelfDefenseState {
     my $value = shift;
 
     $self->{ $self->{shuttersDev} }{selfDefenseState} = $value;
-    return 0;
+    return;
 }
 
 sub setAdvDelay {
@@ -4999,7 +4999,7 @@ sub setAdvDelay {
     my $advDelay = shift;
 
     $self->{ $self->{shuttersDev} }->{AdvDelay} = $advDelay;
-    return 0;
+    return;
 }
 
 sub getAdvDelay {
@@ -5315,25 +5315,37 @@ sub setShadingStatus {
     my $self  = shift;
     my $value = shift; ### Werte für value = in, out, in reserved, out reserved
 
+    return
+      if ( defined($value)
+        && exists($self->{ $self->{shuttersDev} }{ShadingStatus}{VAL})
+        && $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} eq $value );
+
     $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} = $value
       if ( defined($value) );
     $self->{ $self->{shuttersDev} }{ShadingStatus}{TIME} = int( gettimeofday() )
       if ( defined( $self->{ $self->{shuttersDev} }{ShadingStatus} ) );
-    return 0;
+
+    return;
 }
 
 sub setShadingLastStatus {
     my $self  = shift;
     my $value = shift;    ### Werte für value = in, out
 
+    return
+      if ( defined($value)
+        && exists($self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL})
+        && $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} eq $value );
+
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} = $value
       if ( defined($value) );
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} =
       int( gettimeofday() )
-      if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
+        if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
     $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = 0
       if ( $value eq 'out' );
-    return 0;
+
+    return;
 }
 
 sub setShadingManualDriveStatus {
@@ -5342,7 +5354,8 @@ sub setShadingManualDriveStatus {
 
     $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = $value
       if ( defined($value) );
-    return 0;
+
+    return;
 }
 
 sub setWindProtectionStatus {    # Werte protected, unprotected
@@ -5351,7 +5364,8 @@ sub setWindProtectionStatus {    # Werte protected, unprotected
 
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
       if ( defined($value) );
-    return 0;
+
+    return;
 }
 
 sub setRainProtectionStatus {    # Werte protected, unprotected
@@ -5360,7 +5374,7 @@ sub setRainProtectionStatus {    # Werte protected, unprotected
 
     $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
       if ( defined($value) );
-    return 0;
+    return;
 }
 
 sub setExternalTriggerState {
@@ -5369,7 +5383,8 @@ sub setExternalTriggerState {
 
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event} = $value
       if ( defined($value) );
-    return 0;
+
+    return;
 }
 
 sub setPushBrightnessInArray {
@@ -6973,7 +6988,7 @@ sub setDelayCmdReading {
     readingsSingleUpdate( $hash,
         $shutters->getShuttersDev . '_lastDelayPosValue',
         $shutters->getDelayCmd, 1 );
-    return 0;
+    return;
 }
 
 sub setStateReading {
@@ -6985,7 +7000,7 @@ sub setStateReading {
 
     readingsSingleUpdate( $hash, 'state',
         ( defined($value) ? $value : $shutters->getLastDrive ), 1 );
-    return 0;
+    return;
 }
 
 sub setPosReading {
@@ -6996,7 +7011,7 @@ sub setPosReading {
 
     readingsSingleUpdate( $hash, $shutters->getShuttersDev . '_PosValue',
         $shutters->getStatus, 1 );
-    return 0;
+    return;
 }
 
 sub setLastPosReading {
@@ -7007,7 +7022,7 @@ sub setLastPosReading {
 
     readingsSingleUpdate( $hash, $shutters->getShuttersDev . '_lastPosValue',
         $shutters->getLastPos, 1 );
-    return 0;
+    return;
 }
 
 sub getPartyMode {
