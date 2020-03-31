@@ -4333,7 +4333,7 @@ sub CheckIfShuttersWindowRecOpen {
         return 1;
     }
     elsif ( $shutters->getWinStatus =~ m{[Cc]lose|true}xms ) {
-        return;
+        return 0;
     }                                                # CK: covers: close|closed
 }
 
