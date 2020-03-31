@@ -1302,6 +1302,7 @@ sub EventProcessingRoommate {
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeDown eq 'home'
                         || $getModeDown eq 'always' )
+                    && $shutters->getDown ne 'roommate'
                   )
                 {
                     $shutters->setLastDrive('roommate come home');
