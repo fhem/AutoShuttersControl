@@ -8434,7 +8434,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.23",
+  "version": "v0.8.24",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
