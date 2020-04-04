@@ -4449,7 +4449,7 @@ sub ASC_Debug {
 }
 
 sub _averageBrightness {
-    my @input = shift;
+    my @input = @_;
     use List::Util qw(sum);
 
     return int( sum(@input) / @input );
