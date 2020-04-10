@@ -2511,8 +2511,7 @@ sub ShadingProcessingDriveCommand {
             && $getShadingPos != $getStatus )
         {
             if ( !CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                 && $shutters->getShuttersPlace eq 'terrace'
-               )
+                && $shutters->getShuttersPlace eq 'terrace' )
             {
                 $shutters->setLastDrive('shading in');
                 ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
@@ -2949,8 +2948,8 @@ sub CreateSunRiseSetShuttersTimer {
     }
     else {
         CommandDeleteReading( undef, $shuttersDev . ' ASC_Time_PrivacyDriveUp' )
-          if ( ReadingsVal( $shuttersDev, 'ASC_Time_PrivacyDriveUp', 'none' )
-            ne 'none' );
+          if ( ReadingsVal( $shuttersDev, 'ASC_Time_PrivacyDriveUp', 'none' ) ne
+            'none' );
     }
 
     ## Abfrage für die Sichtschutzfahrt am Abend vor dem eigentlichen kompletten schließen
@@ -2962,8 +2961,8 @@ sub CreateSunRiseSetShuttersTimer {
         CommandDeleteReading( undef,
             $shuttersDev . ' ASC_Time_PrivacyDriveDown' )
           if (
-            ReadingsVal( $shuttersDev, 'ASC_Time_PrivacyDriveDown', 'none' )
-              ne 'none' );
+            ReadingsVal( $shuttersDev, 'ASC_Time_PrivacyDriveDown', 'none' ) ne
+            'none' );
     }
 
     ## kleine Hilfe für InternalTimer damit ich alle benötigten Variablen an die Funktion übergeben kann welche von Internal Timer aufgerufen wird.
@@ -5308,7 +5307,7 @@ sub setShadingStatus {
 
     return
       if ( defined($value)
-        && exists($self->{ $self->{shuttersDev} }{ShadingStatus}{VAL})
+        && exists( $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} )
         && $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} eq $value );
 
     $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} = $value
@@ -5325,14 +5324,14 @@ sub setShadingLastStatus {
 
     return
       if ( defined($value)
-        && exists($self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL})
+        && exists( $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} )
         && $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} eq $value );
 
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{VAL} = $value
       if ( defined($value) );
     $self->{ $self->{shuttersDev} }{ShadingLastStatus}{TIME} =
       int( gettimeofday() )
-        if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
+      if ( defined( $self->{ $self->{shuttersDev} }{ShadingLastStatus} ) );
     $self->{ $self->{shuttersDev} }{ShadingManualDriveStatus}{VAL} = 0
       if ( $value eq 'out' );
 
