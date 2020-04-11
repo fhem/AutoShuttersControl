@@ -1210,15 +1210,7 @@ sub EventProcessingWindowRec {
             if ( defined($posValue) && $posValue ) {
                 $shutters->setLastDrive($setLastDrive);
                 $shutters->setNoDelay(1);
-                $shutters->setDriveCmd(
-
-            #                     (
-            #                           $shutters->getShuttersPlace eq 'terrace'
-            #                         ? $shutters->getOpenPos
-                    $posValue
-
-                      #                     )
-                );
+                $shutters->setDriveCmd($posValue);
             }
         }
     }
@@ -2404,14 +2396,7 @@ sub ShadingProcessing {
           if ( $shutters->getShadingStatus eq 'in'
             || $shutters->getShadingStatus eq 'in reserved' );
 
-        if (
-            (
-                $shutters->getShadingStatus eq 'out reserved'
-                and
-                ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp )
-            ) > $shutters->getShadingWaitingPeriod
-          )
-        {
+        if ( $shutters->getShadingStatus eq 'out reserved' ) {
             $shutters->setShadingStatus('out');
             $shutters->setShadingLastStatus('in')
               if ( $shutters->getShadingLastStatus eq 'out' );
@@ -2443,11 +2428,7 @@ sub ShadingProcessing {
           if ( $shutters->getShadingStatus eq 'out'
             || $shutters->getShadingStatus eq 'out reserved' );
 
-        if ( $shutters->getShadingStatus eq 'in reserved'
-            and
-            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
-            ( $shutters->getShadingWaitingPeriod / 2 ) )
-        {
+        if ( $shutters->getShadingStatus eq 'in reserved' ) {
             $shutters->setShadingStatus('in');
             $shutters->setShadingLastStatus('out')
               if ( $shutters->getShadingLastStatus eq 'in' );
@@ -2481,6 +2462,7 @@ sub ShadingProcessing {
             || (   $shutters->getShadingStatus eq 'in'
                 && $shutters->getShadingLastStatus eq 'out' )
         )
+        && $shutters->getRoommatesStatus ne 'asleep'
       );
 
     return;
@@ -2502,10 +2484,7 @@ sub ShadingProcessingDriveCommand {
     if (   $shutters->getShadingMode eq 'always'
         || $shutters->getShadingMode eq $homemode )
     {
-        $shutters->setShadingStatus( $shutters->getShadingStatus )
-          if (
-            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
-            ( $shutters->getShadingWaitingPeriod / 2 ) );
+        $shutters->setShadingStatus( $shutters->getShadingStatus );
 
         if (   $shutters->getShadingStatus eq 'in'
             && $getShadingPos != $getStatus )
