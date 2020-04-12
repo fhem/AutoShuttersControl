@@ -1336,9 +1336,8 @@ sub EventProcessingRoommate {
                         && $shutters->getShadingMode eq 'home' )
                     {
                         $shutters->setLastDrive('shading in');
-                        $posValue = $shutters->getShadingPos;
-
-                        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                        ShuttersCommandSet( $hash, $shuttersDev,
+                            $shutters->getShadingPos );
                     }
                     elsif (
                         (
@@ -1363,9 +1362,9 @@ sub EventProcessingRoommate {
                                 : 'shading out'
                             )
                         );
-                        $posValue = $shutters->getOpenPos;
 
-                        ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                        ShuttersCommandSet( $hash, $shuttersDev,
+                            $shutters->getOpenPos );
                     }
                 }
             }
@@ -1401,7 +1400,8 @@ sub EventProcessingRoommate {
             $1 eq 'absent'
             && (  !$shutters->getIsDay
                 || $shutters->getDown eq 'roommate'
-                || $shutters->getShadingMode eq 'absent' )
+                || $shutters->getShadingMode eq 'absent'
+                || $shutters->getUp eq 'absent' )
           )
         {
             if (   ( $shutters->getIsDay || $shutters->getUp eq 'roommate' )
@@ -1409,17 +1409,24 @@ sub EventProcessingRoommate {
                 && !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
                 && $shutters->getShadingMode eq 'absent' )
             {
-                $posValue = $shutters->getShadingPos;
                 $shutters->setLastDrive('shading in');
-                ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                ShuttersCommandSet( $hash, $shuttersDev,
+                    $shutters->getShadingPos );
             }
             elsif (( !$shutters->getIsDay || $shutters->getDown eq 'roommate' )
                 && $getModeDown eq 'absent'
                 && $getRoommatesStatus eq 'absent' )
             {
-                $posValue = $shutters->getClosedPos;
                 $shutters->setLastDrive('roommate absent');
-                ShuttersCommandSet( $hash, $shuttersDev, $posValue );
+                ShuttersCommandSet( $hash, $shuttersDev,
+                    $shutters->getClosedPos );
+            }
+            elsif ($shutters->getIsDay
+                && $shutters->getUp eq 'absent' )
+            {
+                $shutters->setLastDrive('roommate absent');
+                ShuttersCommandSet( $hash, $shuttersDev,
+                    $shutters->getOpenPos );
             }
         }
     }
