@@ -2521,7 +2521,11 @@ sub ShadingProcessingDriveCommand {
                     ? $shutters->getOpenPos
                     : (
                         $shutters->getQueryShuttersPos( $shutters->getLastPos )
-                        ? $shutters->getLastPos
+                        ? (
+                              $shutters->getLastPos == $shutters->getSleepPos
+                            ? $shutters->getOpenPos
+                            : $shutters->getLastPos
+                          )
                         : $shutters->getOpenPos
                     )
                 )
@@ -8411,7 +8415,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.26",
+  "version": "v0.8.27",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
