@@ -408,32 +408,18 @@ sub Notify {
           . " Notify: "
           . Dumper $events);    # mit Dumper
 
-    my $found_event = {         # container to memoize specific found events
-        'defined'       => 0,
-        'initialized'   => 0,
-        'rereadcfg'     => 0,
-        'modified'      => 0,
-        'rolledout'     => 0,
-        'partyoff'      => 0,
-        'timeweholiday' => 0,
-        'attrdelattr'   => 0,
-        'posreading'    => 0,
-    };
-
-    # iterate the event list just ONCE
-    for my $event ( @{$events} ) {
-        $found_event->{'defined'}++     if ( $event =~ m{^DEFINED\s$name$}xms );
-        $found_event->{'initialized'}++ if ( $event =~ m{^INITIALIZED$}xms );
-        $found_event->{'rereadcfg'}++   if ( $event =~ m{^REREADCFG$}xms );
-        $found_event->{'modified'}++ if ( $event =~ m{^MODIFIED\s$name$}xms );
-    }
-
     if (
-        ( $found_event->{'defined'} && $devname eq 'global' && $init_done )
-        || (   $found_event->{'initialized'}
-            || $found_event->{'rereadcfg'}
-            || $found_event->{'modified'} )
-        && $devname eq 'global'
+        (
+            grep m{^DEFINED.$name$}xms,
+            @{$events} and $devname eq 'global' and $init_done
+        )
+        or (
+            grep m{^INITIALIZED$}xms,
+            @{$events} or grep m{^REREADCFG$}xms,
+            @{$events} or grep m{^MODIFIED.$name$}xms,
+            @{$events}
+        )
+        and $devname eq 'global'
       )
     {
         readingsSingleUpdate( $hash, 'partyMode', 'off', 0 )
@@ -470,74 +456,41 @@ sub Notify {
     }
     return
       unless ( ref( $hash->{helper}{shuttersList} ) eq 'ARRAY'
-        && scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
+        and scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
 
     my $posReading = $shutters->getPosCmd;
-    for my $event ( @{$events} ) {
-        $found_event->{'rolledout'}++
-          if ( $event =~ m{^userAttrList:\srolled\sout$}xms );
-        $found_event->{'partyoff'}++ if ( $event =~ m{^partyMode:\soff$}xms );
-        $found_event->{'sunrise'}++
-          if ( $event =~ m{^sunriseTimeWeHoliday:\s(on|off)$}xms );
-        $found_event->{'attrdelattr'}++
-          if (
-            $event =~ m{^(ATTR|DELETEATTR)
-            \s(.*ASC_Time_Up_WE_Holiday
-                |.*ASC_Up
-                |.*ASC_Down
-                |.*ASC_AutoAstroModeMorning
-                |.*ASC_AutoAstroModeMorningHorizon
-                |.*ASC_AutoAstroModeEvening
-                |.*ASC_AutoAstroModeEveningHorizon
-                |.*ASC_Time_Up_Early
-                |.*ASC_Time_Up_Late
-                |.*ASC_Time_Down_Early
-                |.*ASC_Time_Down_Late
-                |.*ASC_autoAstroModeMorning
-                |.*ASC_autoAstroModeMorningHorizon
-                |.*ASC_PrivacyDownValue_beforeNightClose
-                |.*ASC_PrivacyUpValue_beforeDayOpen
-                |.*ASC_autoAstroModeEvening
-                |.*ASC_autoAstroModeEveningHorizon
-                |.*ASC_Roommate_Device
-                |.*ASC_WindowRec
-                |.*ASC_residentsDev
-                |.*ASC_rainSensor
-                |.*ASC_windSensor
-                |.*ASC_BrightnessSensor
-                |.*ASC_twilightDevice
-                |.*ASC_ExternalTrigger)
-            (\s.*|$)}xms
-          );
-        $found_event->{'posreading'}++
-          if ( $event =~ m{^($posReading):\s\d+$}xms );
-    }
 
     if ( $devname eq $name ) {
-        if ( $found_event->{'rolledout'} ) {
+        if ( grep m{^userAttrList:.rolled.out$}xms, @{$events} ) {
             unless ( scalar( @{ $hash->{helper}{shuttersList} } ) == 0 ) {
                 WriteReadingsShuttersList($hash);
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
                 InternalTimer( gettimeofday() + 3,
-                    \&RenewSunRiseSetShuttersTimer, $hash );
+                    'FHEM::AutoShuttersControl::RenewSunRiseSetShuttersTimer',
+                    $hash );
                 InternalTimer( gettimeofday() + 5,
-                    \&AutoSearchTwilightDev, $hash );
+                    'FHEM::AutoShuttersControl::AutoSearchTwilightDev', $hash );
             }
         }
-        elsif ( $found_event->{'partyoff'} ) {
+        elsif ( grep m{^partyMode:.off$}xms, @{$events} ) {
             EventProcessingPartyMode($hash);
         }
-        elsif ( $found_event->{'sunrise'} ) {
+        elsif ( grep m{^sunriseTimeWeHoliday:.(on|off)$}xms, @{$events} ) {
             RenewSunRiseSetShuttersTimer($hash);
         }
     }
     elsif ( $devname eq "global" )
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
-        if ( $found_event->{'attrdelattr'} ) {
+        if (
+            grep
+m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger)(\s.*|$)}xms,
+            @{$events}
+          )
+        {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( $found_event->{'posreading'} ) {
+    elsif ( grep m{^($posReading):\s\d+$}xms, @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
               . ' - RECEIVED EVENT: '
@@ -548,6 +501,7 @@ sub Notify {
         EventProcessingGeneral( $hash, $devname, join( ' ', @{$events} ) )
           ; # bei allen anderen Events wird die entsprechende Funktion zur Verarbeitung aufgerufen
     }
+
     return;
 }
 
@@ -2406,7 +2360,14 @@ sub ShadingProcessing {
           if ( $shutters->getShadingStatus eq 'in'
             || $shutters->getShadingStatus eq 'in reserved' );
 
-        if ( $shutters->getShadingStatus eq 'out reserved' ) {
+        if (
+            (
+                $shutters->getShadingStatus eq 'out reserved'
+                and
+                ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp )
+            ) > $shutters->getShadingWaitingPeriod
+          )
+        {
             $shutters->setShadingStatus('out');
             $shutters->setShadingLastStatus('in')
               if ( $shutters->getShadingLastStatus eq 'out' );
@@ -2438,7 +2399,11 @@ sub ShadingProcessing {
           if ( $shutters->getShadingStatus eq 'out'
             || $shutters->getShadingStatus eq 'out reserved' );
 
-        if ( $shutters->getShadingStatus eq 'in reserved' ) {
+        if ( $shutters->getShadingStatus eq 'in reserved'
+            and
+            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) >
+            ( $shutters->getShadingWaitingPeriod / 2 ) )
+        {
             $shutters->setShadingStatus('in');
             $shutters->setShadingLastStatus('out')
               if ( $shutters->getShadingLastStatus eq 'in' );
@@ -5429,7 +5394,7 @@ sub getShadingLastStatus {    # Werte für value = in, out
     );
 }
 
-sub getShadingManualDriveStatus {    # Werte für value = in, out
+sub getShadingManualDriveStatus {    # Werte für value = 0, 1
     my $self = shift;
 
     return (
