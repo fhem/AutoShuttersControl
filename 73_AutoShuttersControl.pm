@@ -2461,6 +2461,7 @@ sub ShadingProcessing {
         )
         && $shutters->getRoommatesStatus ne 'asleep'
         && $shutters->getRoommatesStatus ne 'gotosleep'
+        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
       );
 
     return;
