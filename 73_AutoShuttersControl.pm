@@ -4350,6 +4350,7 @@ sub _SetCmdFn {
 
     my $idleDetectionValue = $shutters->getIdleDetectionValue;
     my $idleDetection      = $shutters->getIdleDetection;
+
     return
       unless (
            $shutters->getASCenable eq 'on'
@@ -4381,13 +4382,19 @@ sub _SetCmdFn {
           . '. Grund der Fahrt: '
           . $shutters->getLastDrive );
 
+    my $driveCommand =
+          $posValue == $shutters->getShadingPos
+            && $shutters->getShadingPositionAssignment ne 'none'    ? $shutters->getShadingPositionAssignment
+        : $posValue == $shutters->getVentilatePos
+            && $shutters->getVentilatePositionAssignment ne 'none'  ? $shutters->getVentilatePositionAssignment
+        : $shutters->getPosSetCmd . ' ' . $posValue;
+
     CommandSet( undef,
             $shuttersDev
           . ':FILTER='
           . $shutters->getPosCmd . '!='
           . $posValue . ' '
-          . $shutters->getPosSetCmd . ' '
-          . $posValue );
+          . $driveCommand );
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
@@ -5514,6 +5521,75 @@ BEGIN {
     );
 }
 
+sub _getPosition {
+    my $self = shift;
+
+    my $attr         = shift;
+    my $userAttrList = shift;
+
+    return $self->{ $self->{shuttersDev} }->{$attr}->{position}
+      if (
+        exists( $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} =
+      int( gettimeofday() );
+    my ( $position, $posAssignment ) =
+      FHEM::AutoShuttersControl::GetAttrValues(
+        $self->{shuttersDev},
+        $attr,
+        $userAttrList{$userAttrList}
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+      );
+
+    ### erwartetes Ergebnis
+    # DEVICE:READING
+    $self->{ $self->{shuttersDev} }->{$attr}->{position} = $position;
+    $self->{ $self->{shuttersDev} }->{$attr}->{posAssignment} =
+      $posAssignment;
+
+    return $self->{ $self->{shuttersDev} }->{$attr}->{position};
+
+    if (
+        defined(
+            FHEM::AutoShuttersControl::_perlCodeCheck(
+                $self->{ $self->{shuttersDev} }->{$attr}->{position}
+            )
+        )
+      )
+    {
+        $self->{ $self->{shuttersDev} }->{$attr}->{position} =
+          FHEM::AutoShuttersControl::_perlCodeCheck(
+            $self->{ $self->{shuttersDev} }->{$attr}->{position} );
+    }
+
+    return (
+        $self->{ $self->{shuttersDev} }->{$attr}->{position} =~
+          m{^\d+(\.\d+)?$}xms
+        ? $self->{ $self->{shuttersDev} }->{$attr}->{position}
+        : $userAttrList{$userAttrList}
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+    );
+}
+
+sub _getPositionAssignment {
+    my $self = shift;
+
+    my $attr  = shift;
+    my $getFn = shift;
+
+    return $self->{ $self->{shuttersDev} }->{$attr}->{posAssignment}
+      if (
+        exists( $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} ) < 2
+      );
+    $shutters->$getFn;
+
+    return ( $self->{ $self->{shuttersDev} }->{$attr}->{posAssignment} );
+}
+
 sub getAntiFreezePos {
     my $self = shift;
 
@@ -5728,20 +5804,15 @@ sub getAdv {
 sub getShadingPos {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Shading_Pos',
-        $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    return $shutters->_getPosition( 'ASC_Shading_Pos',
+        'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getShadingPositionAssignment {
+    my $self = shift;
 
-    return (
-          $val =~ m{^\d+(\.\d+)?$}xms
-        ? $val
-        : $userAttrList{'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+    return $shutters->_getPositionAssignment( 'ASC_Shading_Pos',
+        'getShadingPos' );
 }
 
 sub getShadingMode {
@@ -6351,20 +6422,15 @@ sub getOpenPos {
 sub getVentilatePos {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Ventilate_Pos',
-        $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    return $shutters->_getPosition( 'ASC_Ventilate_Pos',
+        'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100' );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getVentilatePositionAssignment {
+    my $self = shift;
 
-    return (
-          $val =~ m{^\d+(\.\d+)?$}xms
-        ? $val
-        : $userAttrList{'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+    return $shutters->_getPositionAssignment( 'ASC_Ventilate_Pos',
+        'getVentilatePos' );
 }
 
 sub getVentilatePosAfterDayClosed {
@@ -8412,7 +8478,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.28",
+  "version": "v0.9.1",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
