@@ -490,7 +490,7 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( grep m{^($posReading):\s\d+$}xms, @{$events} ) {
+    elsif ( grep m{^($posReading):\s\d{1,3}$}xms, @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
               . ' - RECEIVED EVENT: '
@@ -6335,7 +6335,9 @@ sub getBlockingTimeBeforDayOpen {
 sub getPosCmd {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Pos_Reading', 'pct' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Pos_Reading',
+        $userAttrList{'ASC_Pos_Reading'}
+          [ AttrVal( $self->{shuttersDev}, 'ASC', 1 ) ] );
 }
 
 sub getOpenPos {
@@ -8410,7 +8412,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.27",
+  "version": "v0.8.28",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
