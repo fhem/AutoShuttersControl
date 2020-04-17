@@ -4404,51 +4404,18 @@ sub _SetCmdFn {
           . $shutters->getLastDrive );
 
     my $driveCommand = $shutters->getPosSetCmd . ' ' . $posValue;
-    my $slatPos      = undef;
+    my $slatPos      = -1;
 
     if (   $shutters->getShadingPositionAssignment ne 'none'
         && $shutters->getShadingPositionAssignment =~ m{\A[a-zA-Z]+\z}xms )
     {
         $driveCommand = _DetermineSlatCmd( $driveCommand, $posValue );
-
-#         $driveCommand =
-#             $posValue == $shutters->getShadingPos
-#                 && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
-#             : $posValue == $shutters->getVentilatePos
-#                 && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
-#             : $posValue == $shutters->getOpenPos
-#                 && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
-#             : $posValue == $shutters->getClosedPos
-#                 && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
-#             : $posValue == $shutters->getSleepPos
-#                 && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
-#             : $posValue == $shutters->getComfortOpenPos
-#                 && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
-#             : $posValue == $shutters->getAntiFreezePos
-#                 && $shutters->getAntiFreezePosAssignment ne 'none'          ? $shutters->getAntiFreezePosAssignment
-#             : $driveCommand;
     }
     elsif ($shutters->getShadingPositionAssignment ne 'none'
         && $shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms )
     {
+    
         $slatPos = _DetermineSlatCmd( $slatPos, $posValue );
-
-#           $slatPos =
-#             $posValue == $shutters->getShadingPos
-#                 && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
-#             : $posValue == $shutters->getVentilatePos
-#                 && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
-#             : $posValue == $shutters->getOpenPos
-#                 && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
-#             : $posValue == $shutters->getClosedPos
-#                 && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
-#             : $posValue == $shutters->getSleepPos
-#                 && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
-#             : $posValue == $shutters->getComfortOpenPos
-#                 && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
-#             : $posValue == $shutters->getAntiFreezePos
-#                 && $shutters->getAntiFreezePosAssignment ne 'none'          ? $shutters->getAntiFreezePosAssignment
-#             : $slatPos;
     }
 
     CommandSet( undef,
@@ -4465,13 +4432,11 @@ sub _SetCmdFn {
             : $shuttersDev
           )
           . ' '
-          . (
-              $shutters->getSlatPosCmd ne 'none' ? $shutters->getSlatPosCmd
-            : $shutters->getPosCmd
-          )
+          . $shutters->getSlatPosCmd
           . ' '
           . $slatPos
-    ) if ( defined($slatPos) );
+    ) if ( $slatPos > -1
+        && $shutters->getSlatPosCmd ne 'none' );
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
@@ -5705,7 +5670,7 @@ sub getSlatPosCmd {
     my $self = shift;
 
     return $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
-      ->{uptime}
+      ->{poscmd}
       if (
         exists(
             $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
@@ -5749,7 +5714,7 @@ sub getSlatDevice {
       );
     $shutters->getSlatPosCmd;
 
-    return ( $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice} );
+    return ( $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{device} );
 }
 
 sub getPrivacyUpTime {
@@ -8620,7 +8585,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.3",
+  "version": "v0.9.4",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
