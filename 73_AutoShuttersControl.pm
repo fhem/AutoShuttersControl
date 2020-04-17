@@ -2469,7 +2469,8 @@ sub ShadingProcessing {
         && (   $shutters->getShadingMode eq 'always'
             || $shutters->getShadingMode eq $homemode )
         && (   $shutters->getModeUp eq 'always'
-            || $shutters->getModeUp eq $homemode )
+            || $shutters->getModeUp eq $homemode
+            || $shutters->getModeUp eq 'off' )
         && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
       );
 
@@ -8625,7 +8626,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.5",
+  "version": "v0.9.6",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
