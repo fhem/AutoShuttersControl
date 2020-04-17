@@ -202,7 +202,7 @@ my %userAttrList = (
       => '-',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
-    'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100'  => [ '', 75,  25 ],
+    'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100'  => [ '', -1,  -1 ],
     'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
     'ASC_Time_Up_Early'                          => '-',
     'ASC_Time_Up_Late'                           => '-',
@@ -8626,7 +8626,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.6",
+  "version": "v0.9.7",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
