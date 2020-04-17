@@ -4341,8 +4341,8 @@ sub IsWe {
 }
 
 sub _DetermineSlatCmd {
-    my $value       = shift;
-    my $posValue    = shift;
+    my $value    = shift;
+    my $posValue = shift;
 
     return $posValue == $shutters->getShadingPos
             && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
@@ -4414,7 +4414,7 @@ sub _SetCmdFn {
     elsif ($shutters->getShadingPositionAssignment ne 'none'
         && $shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms )
     {
-    
+
         $slatPos = _DetermineSlatCmd( $slatPos, $posValue );
     }
 
@@ -4428,14 +4428,15 @@ sub _SetCmdFn {
     CommandSet(
         undef,
         (
-              $shutters->getSlatDevice ne 'none' ? $shutters->getSlatDevice
+              $shutters->getSlatDevice ne 'none'
+            ? $shutters->getSlatDevice
             : $shuttersDev
           )
           . ' '
-          . $shutters->getSlatPosCmd
-          . ' '
+          . $shutters->getSlatPosCmd . ' '
           . $slatPos
-    ) if ( $slatPos > -1
+      )
+      if ( $slatPos > -1
         && $shutters->getSlatPosCmd ne 'none' );
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
@@ -4484,7 +4485,7 @@ sub _perlCodeCheck {
     my $exec = shift;
     my $val  = undef;
 
-    if ( $exec =~ m{^\{(.+)\}$}xms ) {
+    if ( $exec =~ m{\A\{(.+)\}\z}xms ) {
         $val = main::AnalyzePerlCommand( undef, $1 );
     }
 
@@ -5590,13 +5591,50 @@ sub _getPosition {
       );
     $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} =
       int( gettimeofday() );
-    my ( $position, $posAssignment ) =
-      FHEM::AutoShuttersControl::GetAttrValues(
-        $self->{shuttersDev},
-        $attr,
-        $userAttrList{$userAttrList}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-      );
+
+    my $position;
+    my $posAssignment;
+
+    if (
+        AttrVal( $self->{shuttersDev}, $attr,
+            $userAttrList{$userAttrList}
+              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] ) =~
+        m{\A\{.+\}\z}xms
+      )
+    {
+        my $response = FHEM::AutoShuttersControl::_perlCodeCheck(
+            AttrVal(
+                $self->{shuttersDev},
+                $attr,
+                $userAttrList{$userAttrList}
+                  [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+            )
+        );
+
+        ( $position, $posAssignment ) = split ':', $response;
+
+        $position = (
+              $position =~ m{\A\d+(\.\d+)?\z}xms
+            ? $position
+            : $userAttrList{$userAttrList}
+              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+        );
+
+        $posAssignment = (
+              $posAssignment =~ m{\A\d+(\.\d+)?\z}xms
+            ? $posAssignment
+            : 'none'
+        );
+    }
+    else {
+        ( $position, $posAssignment ) =
+          FHEM::AutoShuttersControl::GetAttrValues(
+            $self->{shuttersDev},
+            $attr,
+            $userAttrList{$userAttrList}
+              [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
+          );
+    }
 
     ### erwartetes Ergebnis
     # DEVICE:READING
@@ -5714,7 +5752,9 @@ sub getSlatDevice {
       );
     $shutters->getSlatPosCmd;
 
-    return ( $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{device} );
+    return (
+        $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{device}
+    );
 }
 
 sub getPrivacyUpTime {
@@ -8585,7 +8625,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.4",
+  "version": "v0.9.5",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
