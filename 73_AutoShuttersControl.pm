@@ -202,7 +202,7 @@ my %userAttrList = (
       => '-',
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
-    'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100'  => '-',
+    'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100'  => [ '', 75,  25 ],
     'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
     'ASC_Time_Up_Early'                          => '-',
     'ASC_Time_Up_Late'                           => '-',
@@ -252,7 +252,8 @@ my %userAttrList = (
     'ASC_WindProtection:on,off'             => '-',
     'ASC_RainProtection:on,off'             => '-',
     'ASC_ExternalTrigger'                   => '-',
-    'ASC_Adv:on,off'                        => '-'
+    'ASC_Adv:on,off'                        => '-',
+    'ASC_SlatPosCmd_SlatDevice'             => '-',
 );
 
 my %posSetCmds = (
@@ -779,9 +780,10 @@ sub ShuttersDeviceScan {
         $shutters->setShadingStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'out' : 'in' )
         );
-        $shutters->setShadingLastStatus(
-            ( $shutters->getStatus != $shutters->getShadingPos ? 'in' : 'out' )
-        );
+
+#         $shutters->setShadingLastStatus(
+#             ( $shutters->getStatus != $shutters->getShadingPos ? 'in' : 'out' )
+#         );
         $shutters->setPushBrightnessInArray( $shutters->getBrightness );
         readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
           if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
@@ -2344,6 +2346,9 @@ sub ShadingProcessing {
     my $getStatus        = $shutters->getStatus;
     my $oldShadingStatus = $shutters->getShadingStatus;
 
+    my $getModeUp = $shutters->getModeUp;
+    my $homemode  = $shutters->getHomemode;
+
     ASC_Debug( 'ShadingProcessing: '
           . $shutters->getShuttersDev
           . ' - Alle Werte für die weitere Verarbeitung sind korrekt vorhanden und es wird nun mit der Beschattungsverarbeitung begonnen'
@@ -2359,7 +2364,7 @@ sub ShadingProcessing {
         && $shutters->getShadingStatus ne 'out'
       )
     {
-        $shutters->setShadingLastStatus('in');
+        #         $shutters->setShadingLastStatus('in');
         $shutters->setShadingStatus('out');
 
         ASC_Debug( 'ShadingProcessing: '
@@ -2391,8 +2396,9 @@ sub ShadingProcessing {
           )
         {
             $shutters->setShadingStatus('out');
-            $shutters->setShadingLastStatus('in')
-              if ( $shutters->getShadingLastStatus eq 'out' );
+
+            #             $shutters->setShadingLastStatus('in')
+            #               if ( $shutters->getShadingLastStatus eq 'out' );
         }
 
         Log3( $name, 4,
@@ -2427,8 +2433,9 @@ sub ShadingProcessing {
             ( $shutters->getShadingWaitingPeriod / 2 ) )
         {
             $shutters->setShadingStatus('in');
-            $shutters->setShadingLastStatus('out')
-              if ( $shutters->getShadingLastStatus eq 'in' );
+
+            #             $shutters->setShadingLastStatus('out')
+            #               if ( $shutters->getShadingLastStatus eq 'in' );
         }
 
         Log3( $name, 4,
@@ -2459,8 +2466,10 @@ sub ShadingProcessing {
             || (   $shutters->getShadingStatus eq 'in'
                 && $shutters->getShadingLastStatus eq 'out' )
         )
-        && $shutters->getRoommatesStatus ne 'asleep'
-        && $shutters->getRoommatesStatus ne 'gotosleep'
+        && (   $shutters->getShadingMode eq 'always'
+            || $shutters->getShadingMode eq $homemode )
+        && (   $shutters->getModeUp eq 'always'
+            || $shutters->getModeUp eq $homemode )
         && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
       );
 
@@ -2477,79 +2486,72 @@ sub ShadingProcessingDriveCommand {
     my $getShadingPos = $shutters->getShadingPos;
     my $getStatus     = $shutters->getStatus;
 
-    my $homemode = $shutters->getRoommatesStatus;
-    $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+    $shutters->setShadingStatus( $shutters->getShadingStatus );
 
-    if (   $shutters->getShadingMode eq 'always'
-        || $shutters->getShadingMode eq $homemode )
+    if (
+           $shutters->getShadingStatus eq 'in'
+        && $getShadingPos != $getStatus
+        && ( CheckIfShuttersWindowRecOpen($shuttersDev) != 2
+            || $shutters->getShuttersPlace ne 'terrace' )
+      )
     {
-        $shutters->setShadingStatus( $shutters->getShadingStatus );
+        $shutters->setLastDrive('shading in');
+        ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
 
-        if (
-               $shutters->getShadingStatus eq 'in'
-            && $getShadingPos != $getStatus
-            && ( CheckIfShuttersWindowRecOpen($shuttersDev) != 2
-                || $shutters->getShuttersPlace ne 'terrace' )
-          )
-        {
-            $shutters->setLastDrive('shading in');
-            ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
-
-            ASC_Debug( 'ShadingProcessingDriveCommand: '
-                  . $shutters->getShuttersDev
-                  . ' - Der aktuelle Beschattungsstatus ist: '
-                  . $shutters->getShadingStatus
-                  . ' und somit wird nun in die Position: '
-                  . $getShadingPos
-                  . ' zum Beschatten gefahren' );
-        }
-        elsif ($shutters->getShadingStatus eq 'out'
-            && $getShadingPos == $getStatus )
-        {
-            $shutters->setLastDrive('shading out');
-
-            ShuttersCommandSet(
-                $hash,
-                $shuttersDev,
-                (
-                      $getShadingPos == $shutters->getLastPos
-                    ? $shutters->getOpenPos
-                    : (
-                        $shutters->getQueryShuttersPos( $shutters->getLastPos )
-                        ? (
-                              $shutters->getLastPos == $shutters->getSleepPos
-                            ? $shutters->getOpenPos
-                            : $shutters->getLastPos
-                          )
-                        : $shutters->getOpenPos
-                    )
-                )
-            );
-
-            ASC_Debug( 'ShadingProcessingDriveCommand: '
-                  . $shutters->getShuttersDev
-                  . ' - Der aktuelle Beschattungsstatus ist: '
-                  . $shutters->getShadingStatus
-                  . ' und somit wird nun in die Position: '
-                  . $getShadingPos
-                  . ' zum beenden der Beschattung gefahren' );
-        }
-
-        Log3( $name, 4,
-"AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
-              . $shutters->getShadingStatus );
-
-        ASC_Debug(
-                'ShadingProcessingDriveCommand: '
+        ASC_Debug( 'ShadingProcessingDriveCommand: '
               . $shutters->getShuttersDev
               . ' - Der aktuelle Beschattungsstatus ist: '
               . $shutters->getShadingStatus
-              . ', Beschattungsstatus Zeitstempel: '
-              . strftime(
-                "%Y.%m.%e %T", localtime( $shutters->getShadingStatusTimestamp )
-              )
-        );
+              . ' und somit wird nun in die Position: '
+              . $getShadingPos
+              . ' zum Beschatten gefahren' );
     }
+    elsif ($shutters->getShadingStatus eq 'out'
+        && $getShadingPos == $getStatus )
+    {
+        $shutters->setLastDrive('shading out');
+
+        ShuttersCommandSet(
+            $hash,
+            $shuttersDev,
+            (
+                  $getShadingPos == $shutters->getLastPos
+                ? $shutters->getOpenPos
+                : (
+                    $shutters->getQueryShuttersPos( $shutters->getLastPos )
+                    ? (
+                          $shutters->getLastPos == $shutters->getSleepPos
+                        ? $shutters->getOpenPos
+                        : $shutters->getLastPos
+                      )
+                    : $shutters->getOpenPos
+                )
+            )
+        );
+
+        ASC_Debug( 'ShadingProcessingDriveCommand: '
+              . $shutters->getShuttersDev
+              . ' - Der aktuelle Beschattungsstatus ist: '
+              . $shutters->getShadingStatus
+              . ' und somit wird nun in die Position: '
+              . $getShadingPos
+              . ' zum beenden der Beschattung gefahren' );
+    }
+
+    Log3( $name, 4,
+"AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
+          . $shutters->getShadingStatus );
+
+    ASC_Debug(
+            'ShadingProcessingDriveCommand: '
+          . $shutters->getShuttersDev
+          . ' - Der aktuelle Beschattungsstatus ist: '
+          . $shutters->getShadingStatus
+          . ', Beschattungsstatus Zeitstempel: '
+          . strftime(
+            "%Y.%m.%e %T", localtime( $shutters->getShadingStatusTimestamp )
+          )
+    );
 
     return;
 }
@@ -4338,6 +4340,25 @@ sub IsWe {
     return main::IsWe( shift, shift );
 }
 
+sub _DetermineSlatCmd {
+    my $value       = shift;
+    my $posValue    = shift;
+
+    return $posValue == $shutters->getShadingPos
+            && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
+        : $posValue == $shutters->getVentilatePos
+            && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
+        : $posValue == $shutters->getOpenPos
+            && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
+        : $posValue == $shutters->getClosedPos
+            && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
+        : $posValue == $shutters->getSleepPos
+            && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
+        : $posValue == $shutters->getComfortOpenPos
+            && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
+        : $value;
+}
+
 sub _SetCmdFn {
     my $h = shift;
 
@@ -4382,12 +4403,53 @@ sub _SetCmdFn {
           . '. Grund der Fahrt: '
           . $shutters->getLastDrive );
 
-    my $driveCommand =
-          $posValue == $shutters->getShadingPos
-            && $shutters->getShadingPositionAssignment ne 'none'    ? $shutters->getShadingPositionAssignment
-        : $posValue == $shutters->getVentilatePos
-            && $shutters->getVentilatePositionAssignment ne 'none'  ? $shutters->getVentilatePositionAssignment
-        : $shutters->getPosSetCmd . ' ' . $posValue;
+    my $driveCommand = $shutters->getPosSetCmd . ' ' . $posValue;
+    my $slatPos      = undef;
+
+    if (   $shutters->getShadingPositionAssignment ne 'none'
+        && $shutters->getShadingPositionAssignment =~ m{\A[a-zA-Z]+\z}xms )
+    {
+        $driveCommand = _DetermineSlatCmd( $driveCommand, $posValue );
+
+#         $driveCommand =
+#             $posValue == $shutters->getShadingPos
+#                 && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
+#             : $posValue == $shutters->getVentilatePos
+#                 && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
+#             : $posValue == $shutters->getOpenPos
+#                 && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
+#             : $posValue == $shutters->getClosedPos
+#                 && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
+#             : $posValue == $shutters->getSleepPos
+#                 && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
+#             : $posValue == $shutters->getComfortOpenPos
+#                 && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
+#             : $posValue == $shutters->getAntiFreezePos
+#                 && $shutters->getAntiFreezePosAssignment ne 'none'          ? $shutters->getAntiFreezePosAssignment
+#             : $driveCommand;
+    }
+    elsif ($shutters->getShadingPositionAssignment ne 'none'
+        && $shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms )
+    {
+        $slatPos = _DetermineSlatCmd( $slatPos, $posValue );
+
+#           $slatPos =
+#             $posValue == $shutters->getShadingPos
+#                 && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
+#             : $posValue == $shutters->getVentilatePos
+#                 && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
+#             : $posValue == $shutters->getOpenPos
+#                 && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
+#             : $posValue == $shutters->getClosedPos
+#                 && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
+#             : $posValue == $shutters->getSleepPos
+#                 && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
+#             : $posValue == $shutters->getComfortOpenPos
+#                 && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
+#             : $posValue == $shutters->getAntiFreezePos
+#                 && $shutters->getAntiFreezePosAssignment ne 'none'          ? $shutters->getAntiFreezePosAssignment
+#             : $slatPos;
+    }
 
     CommandSet( undef,
             $shuttersDev
@@ -4395,6 +4457,21 @@ sub _SetCmdFn {
           . $shutters->getPosCmd . '!='
           . $posValue . ' '
           . $driveCommand );
+
+    CommandSet(
+        undef,
+        (
+              $shutters->getSlatDevice ne 'none' ? $shutters->getSlatDevice
+            : $shuttersDev
+          )
+          . ' '
+          . (
+              $shutters->getSlatPosCmd ne 'none' ? $shutters->getSlatPosCmd
+            : $shutters->getPosCmd
+          )
+          . ' '
+          . $slatPos
+    ) if ( defined($slatPos) );
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
@@ -4979,6 +5056,15 @@ sub setAdvDelay {
     return;
 }
 
+sub getHomemode {
+    my $self = shift;
+
+    my $homemode = $shutters->getRoommatesStatus;
+    $homemode = $ascDev->getResidentsStatus
+      if ( $homemode eq 'none' );
+    return $homemode;
+}
+
 sub getAdvDelay {
     my $self = shift;
 
@@ -5297,6 +5383,10 @@ sub setShadingStatus {
         && exists( $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} )
         && $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} eq $value );
 
+    $shutters->setShadingLastStatus( ( $value eq 'in' ? 'out' : 'in' ) )
+      if ( $value eq 'in'
+        || $value eq 'out' );
+
     $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} = $value
       if ( defined($value) );
     $self->{ $self->{shuttersDev} }{ShadingStatus}{TIME} = int( gettimeofday() )
@@ -5593,29 +5683,73 @@ sub _getPositionAssignment {
 sub getAntiFreezePos {
     my $self = shift;
 
-    my $val = AttrVal(
-        $self->{shuttersDev},
-        'ASC_Antifreeze_Pos',
-        $userAttrList{
+    return $shutters->_getPosition( 'ASC_Antifreeze_Pos',
 'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
-        }[ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
     );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getAntiFreezePosAssignment {
+    my $self = shift;
 
-    return (
-        $val =~ m{^\d+(\.\d+)?$}xms ? $val : $userAttrList{
-'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
-        }[ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+    return $shutters->_getPositionAssignment( 'ASC_Antifreeze_Pos',
+        'getAntiFreezePos' );
 }
 
 sub getShuttersPlace {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_ShuttersPlace', 'window' );
+}
+
+sub getSlatPosCmd {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+      ->{uptime}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+              ->{LASTGETTIME}
+        )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+            ->{LASTGETTIME} ) < 2
+      );
+    $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{LASTGETTIME}
+      = int( gettimeofday() );
+    my ( $slatPosCmd, $slatDevice ) =
+      FHEM::AutoShuttersControl::GetAttrValues( $self->{shuttersDev},
+        'ASC_SlatPosCmd_SlatDevice', 'none:none' );
+
+    ## Erwartetes Ergebnis
+    # upTime:upBrightnessVal
+
+    $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{poscmd} =
+      $slatPosCmd;
+    $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{device} =
+      $slatDevice;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+      ->{poscmd};
+}
+
+sub getSlatDevice {
+    my $self = shift;
+
+    return $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+      ->{device}
+      if (
+        exists(
+            $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+              ->{LASTGETTIME}
+        )
+        && ( gettimeofday() -
+            $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
+            ->{LASTGETTIME} ) < 2
+      );
+    $shutters->getSlatPosCmd;
+
+    return ( $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice} );
 }
 
 sub getPrivacyUpTime {
@@ -6414,9 +6548,14 @@ sub getPosCmd {
 sub getOpenPos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Open_Pos',
-        $userAttrList{'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    return $shutters->_getPosition( 'ASC_Open_Pos',
+        'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100' );
+}
+
+sub getOpenPositionAssignment {
+    my $self = shift;
+
+    return $shutters->_getPositionAssignment( 'ASC_Open_Pos', 'getOpenPos' );
 }
 
 sub getVentilatePos {
@@ -6443,21 +6582,28 @@ sub getVentilatePosAfterDayClosed {
 sub getClosedPos {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Closed_Pos',
-        $userAttrList{'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
+    return $shutters->_getPosition( 'ASC_Closed_Pos',
+        'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' );
+}
+
+sub getClosedPositionAssignment {
+    my $self = shift;
+
+    return $shutters->_getPositionAssignment( 'ASC_Closed_Pos',
+        'getClosedPos' );
 }
 
 sub getSleepPos {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_Sleep_Pos', -1 );
+    return $shutters->_getPosition( 'ASC_Sleep_Pos',
+        'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100' );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getSleepPositionAssignment {
+    my $self = shift;
 
-    return ( $val =~ m{^\d+(\.\d+)?$}xms ? $val : -1 );
+    return $shutters->_getPositionAssignment( 'ASC_Sleep_Pos', 'getSleepPos' );
 }
 
 sub getVentilateOpen {
@@ -6468,20 +6614,16 @@ sub getVentilateOpen {
 
 sub getComfortOpenPos {
     my $self = shift;
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_ComfortOpen_Pos',
-        $userAttrList{'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] );
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+    return $shutters->_getPosition( 'ASC_ComfortOpen_Pos',
+        'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' );
+}
 
-    return (
-          $val =~ m{^\d+(\.\d+)?$}xms
-        ? $val
-        : $userAttrList{'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100'}
-          [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
-    );
+sub getComfortOpenPositionAssignment {
+    my $self = shift;
+
+    return $shutters->_getPositionAssignment( 'ASC_ComfortOpen_Pos',
+        'getComfortOpenPos' );
 }
 
 sub getPartyMode {
@@ -8478,7 +8620,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.1",
+  "version": "v0.9.3",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
