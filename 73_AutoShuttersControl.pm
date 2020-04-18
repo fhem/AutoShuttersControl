@@ -211,8 +211,8 @@ my %userAttrList = (
     'ASC_Time_Down_Late'                         => '-',
     'ASC_PrivacyUpValue_beforeDayOpen'           => '-',
     'ASC_PrivacyDownValue_beforeNightClose'      => '-',
-    'ASC_PrivacyUp_Pos'                          => '-',
-    'ASC_PrivacyDown_Pos'                        => '-',
+    'ASC_PrivacyUp_Pos'                          => [ '', 50, 50 ],
+    'ASC_PrivacyDown_Pos'                        => [ '', 50, 50 ],
     'ASC_TempSensor'                             => '-',
     'ASC_Ventilate_Window_Open:on,off'           => '-',
     'ASC_LockOut:soft,hard,off'                  => '-',
@@ -2471,11 +2471,12 @@ sub ShadingProcessing {
         && (   $shutters->getModeUp eq 'always'
             || $shutters->getModeUp eq $homemode
             || $shutters->getModeUp eq 'off' )
-        && ( ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
-            || ( !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
-              && $shutters->getIfInShading
-              && $shutters->getStatus != $shutters->getShadingPos )
-           )
+        && (
+            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+            || (  !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
+                && $shutters->getIfInShading
+                && $shutters->getStatus != $shutters->getShadingPos )
+        )
       );
 
     return;
@@ -2781,47 +2782,48 @@ sub ShuttersCommandSet {
 
     if (
         (
-#                $posValue == $shutters->getShadingPos &&
-               CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+            #                $posValue == $shutters->getShadingPos &&
+            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
             && $shutters->getShuttersPlace eq 'terrace'
             && (   $shutters->getLockOut eq 'soft'
                 || $shutters->getLockOut eq 'hard' )
             && !$shutters->getQueryShuttersPos($posValue)
         )
         || (
-#             $posValue != $shutters->getShadingPos
-#             && (
-                (
-                       $shutters->getPartyMode eq 'on'
-                    && $ascDev->getPartyMode eq 'on'
-                )
-                || (
-                       CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    && $shutters->getSubTyp eq 'threestate'
-                    && (   $ascDev->getAutoShuttersControlComfort eq 'off'
-                        || $shutters->getComfortOpenPos != $posValue )
-                    && $shutters->getVentilateOpen eq 'on'
-                    && $shutters->getShuttersPlace eq 'window'
-                    && $shutters->getLockOut ne 'off'
-                )
-                || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    && $shutters->getSubTyp eq 'threestate'
-                    && $ascDev->getAutoShuttersControlComfort eq 'on'
-                    && $shutters->getVentilateOpen eq 'off'
-                    && $shutters->getShuttersPlace eq 'window'
-                    && $shutters->getLockOut ne 'off' )
-                || (
-                    CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    && (   $shutters->getLockOut eq 'soft'
-                        || $shutters->getLockOut eq 'hard' )
-                    && !$shutters->getQueryShuttersPos($posValue)
-                )
-                || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                    && $shutters->getShuttersPlace eq 'terrace'
-                    && !$shutters->getQueryShuttersPos($posValue) )
-                || (   $shutters->getRainProtectionStatus eq 'protected'
-                    && $shutters->getWindProtectionStatus eq 'protected' )
-#             )
+            #             $posValue != $shutters->getShadingPos
+            #             && (
+            (
+                   $shutters->getPartyMode eq 'on'
+                && $ascDev->getPartyMode eq 'on'
+            )
+            || (
+                   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                && $shutters->getSubTyp eq 'threestate'
+                && (   $ascDev->getAutoShuttersControlComfort eq 'off'
+                    || $shutters->getComfortOpenPos != $posValue )
+                && $shutters->getVentilateOpen eq 'on'
+                && $shutters->getShuttersPlace eq 'window'
+                && $shutters->getLockOut ne 'off'
+            )
+            || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                && $shutters->getSubTyp eq 'threestate'
+                && $ascDev->getAutoShuttersControlComfort eq 'on'
+                && $shutters->getVentilateOpen eq 'off'
+                && $shutters->getShuttersPlace eq 'window'
+                && $shutters->getLockOut ne 'off' )
+            || (
+                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                && (   $shutters->getLockOut eq 'soft'
+                    || $shutters->getLockOut eq 'hard' )
+                && !$shutters->getQueryShuttersPos($posValue)
+            )
+            || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                && $shutters->getShuttersPlace eq 'terrace'
+                && !$shutters->getQueryShuttersPos($posValue) )
+            || (   $shutters->getRainProtectionStatus eq 'protected'
+                && $shutters->getWindProtectionStatus eq 'protected' )
+
+            #             )
         )
       )
     {
@@ -4349,18 +4351,22 @@ sub _DetermineSlatCmd {
     my $value    = shift;
     my $posValue = shift;
 
-    return $posValue == $shutters->getShadingPos
-            && $shutters->getShadingPositionAssignment ne 'none'        ? $shutters->getShadingPositionAssignment
-        : $posValue == $shutters->getVentilatePos
-            && $shutters->getVentilatePositionAssignment ne 'none'      ? $shutters->getVentilatePositionAssignment
-        : $posValue == $shutters->getOpenPos
-            && $shutters->getOpenPositionAssignment ne 'none'           ? $shutters->getOpenPositionAssignment
-        : $posValue == $shutters->getClosedPos
-            && $shutters->getClosedPositionAssignment ne 'none'         ? $shutters->getClosedPositionAssignment
-        : $posValue == $shutters->getSleepPos
-            && $shutters->getSleepPositionAssignment ne 'none'          ? $shutters->getSleepPositionAssignment
-        : $posValue == $shutters->getComfortOpenPos
-            && $shutters->getComfortOpenPositionAssignment ne 'none'    ? $shutters->getComfortOpenPositionAssignment
+    return $posValue    == $shutters->getShadingPos
+            && $shutters->getShadingPositionAssignment      ne 'none'   ? $shutters->getShadingPositionAssignment
+        : $posValue     == $shutters->getVentilatePos
+            && $shutters->getVentilatePositionAssignment    ne 'none'   ? $shutters->getVentilatePositionAssignment
+        : $posValue     == $shutters->getOpenPos
+            && $shutters->getOpenPositionAssignment         ne 'none'   ? $shutters->getOpenPositionAssignment
+        : $posValue     == $shutters->getClosedPos
+            && $shutters->getClosedPositionAssignment       ne 'none'   ? $shutters->getClosedPositionAssignment
+        : $posValue     == $shutters->getSleepPos
+            && $shutters->getSleepPositionAssignment        ne 'none'   ? $shutters->getSleepPositionAssignment
+        : $posValue     == $shutters->getComfortOpenPos
+            && $shutters->getComfortOpenPositionAssignment  ne 'none'   ? $shutters->getComfortOpenPositionAssignment
+        : $posValue     == $shutters->getPrivacyUpPos
+            && $shutters->getPrivacyUpPositionAssignment    ne 'none'   ? $shutters->getPrivacyUpPositionAssignment
+        : $posValue     == $shutters->getPrivacyDownPos
+            && $shutters->getPrivacyDownPositionAssignment  ne 'none'   ? $shutters->getPrivacyDownPositionAssignment
         : $value;
 }
 
@@ -4412,15 +4418,53 @@ sub _SetCmdFn {
     my $slatPos      = -1;
 
     if (   $shutters->getShadingPositionAssignment ne 'none'
-        && $shutters->getShadingPositionAssignment =~ m{\A[a-zA-Z]+\z}xms )
+        || $shutters->getOpenPositionAssignment ne 'none'
+        || $shutters->getClosedPositionAssignment ne 'none'
+        || $shutters->getPrivacyUpPositionAssignment ne 'none'
+        || $shutters->getPrivacyDownPositionAssignment ne 'none'
+        || $shutters->getSleepPositionAssignment ne 'none'
+        || $shutters->getVentilatePositionAssignment ne 'none'
+        || $shutters->getComfortOpenPositionAssignment ne 'none' )
     {
-        $driveCommand = _DetermineSlatCmd( $driveCommand, $posValue );
-    }
-    elsif ($shutters->getShadingPositionAssignment ne 'none'
-        && $shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms )
-    {
-
-        $slatPos = _DetermineSlatCmd( $slatPos, $posValue );
+        if (
+            (
+                $shutters->getShadingPositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getShadingPositionAssignment ne 'none'
+            )
+            || (   $shutters->getOpenPositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getOpenPositionAssignment ne 'none' )
+            || (   $shutters->getClosedPositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getClosedPositionAssignment ne 'none' )
+            || (
+                $shutters->getPrivacyUpPositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getPrivacyUpPositionAssignment ne 'none' )
+            || ( $shutters->getPrivacyDownPositionAssignment =~
+                m{\A[a-zA-Z]+\z}xms
+                && $shutters->getPrivacyDownPositionAssignment ne 'none' )
+            || (   $shutters->getSleepPositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getSleepPositionAssignment ne 'none' )
+            || (
+                $shutters->getVentilatePositionAssignment =~ m{\A[a-zA-Z]+\z}xms
+                && $shutters->getVentilatePositionAssignment ne 'none' )
+            || ( $shutters->getComfortOpenPositionAssignment =~
+                m{\A[a-zA-Z]+\z}xms
+                && $shutters->getComfortOpenPositionAssignment ne 'none' )
+          )
+        {
+            $driveCommand = _DetermineSlatCmd( $driveCommand, $posValue );
+        }
+        elsif ($shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getOpenPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getClosedPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getPrivacyUpPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getPrivacyDownPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getSleepPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getVentilatePositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getComfortOpenPositionAssignment =~
+            m{\A\d{1,3}\z}xms )
+        {
+            $slatPos = _DetermineSlatCmd( $slatPos, $posValue );
+        }
     }
 
     CommandSet( undef,
@@ -5895,25 +5939,28 @@ sub getPrivacyDownBrightnessVal {
 sub getPrivacyUpPos {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_PrivacyUp_Pos', 50 );
+    return $shutters->_getPosition( 'ASC_PrivacyUp_Pos', 'ASC_PrivacyUp_Pos' );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getPrivacyUpPositionAssignment {
+    my $self = shift;
 
-    return ( $val =~ m{^\d+(\.\d+)?$}xms ? $val : 50 );
+    return $shutters->_getPositionAssignment( 'ASC_PrivacyUp_Pos',
+        'getPrivacyUpPos' );
 }
 
 sub getPrivacyDownPos {
     my $self = shift;
 
-    my $val = AttrVal( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', 50 );
+    return $shutters->_getPosition( 'ASC_PrivacyDown_Pos',
+        'ASC_PrivacyDown_Pos' );
+}
 
-    if ( defined( FHEM::AutoShuttersControl::_perlCodeCheck($val) ) ) {
-        $val = FHEM::AutoShuttersControl::_perlCodeCheck($val);
-    }
+sub getPrivacyDownPositionAssignment {
+    my $self = shift;
 
-    return ( $val =~ m{^\d+(\.\d+)?$}xms ? $val : 50 );
+    return $shutters->_getPositionAssignment( 'ASC_PrivacyDown_Pos',
+        'getPrivacyDownPos' );
 }
 
 sub getSelfDefenseMode {
@@ -8491,11 +8538,22 @@ sub getBlockAscDrivesAfterManual {
             <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
-            <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 0/100)</li>
-            <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 100/0)</li>
-            <li><strong>ASC_Sleep_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 75/25) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-            <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 20/80) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
+            <ul></p>
+                <strong><u>Beschreibung der besonderen Positionsattribute</u></strong>
+                <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 0/100)</li>
+                <li><strong>ASC_Open_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 100/0)</li>
+                <li><strong>ASC_Sleep_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut<em>ASC</em> 75/25) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
+                <li><strong>ASC_ComfortOpen_Pos</strong> - in 10 Schritten von 0 bis 100 (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 20/80) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
+                <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 80/20) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
+                <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 70/30) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
+                </p>
+                <strong>In Bezug auf die Verwendung mit Lamellen gibt es folgende erg&auml;nzende Parameter</strong>.
+                <ul>
+                    <li>Wird die gesamte Position inklusive der Lamellen mit Hilfe einer "festen Zurdnung" angefahren, so z.B. <em>set ROLLONAME Beschattung</em> dann wird hinter dem Positionswert mittels : getrennt die "feste Zuordnung" geschrieben. Beispiel: <em>attr ROLLONAME ASC_Shading_Pos 30:Beschattung</em></li>
+                    <li>Wird hingegen ein ander Command verwendet z.B. slatPct oder &auml;hnliches dann muss hinter der normalen Positionsangebe noch die Position f&uuml;r die Lamellen mit angegeb werden. Beispiel: <em>attr ROLLONAME ASC_Shading_Pos 30:75</em>. <strong>Bitte beachtet in diesem Zusammenhang auch das Attribut ASC_SlatPosCmd_SlatDevice wo mindesten die Angabe des SlatPosCMD Voraussetzung ist.</strong></li>
+                </ul>
+            </p></ul>
             <li><strong>ASC_Shutter_IdleDetection</strong> - <strong>READING:VALUE</strong> gibt das Reading an welches Auskunft &uuml;ber den Fahrstatus des Rollos gibt, sowie als zweites den Wert im Reading welcher aus sagt das das Rollo <strong>nicht</strong> f&auml;hrt</li>
             <li><strong>ASC_DriveUpMaxDuration</strong> - die Dauer des Hochfahrens des Rollladens plus 5 Sekunden (default: 60)</li>
             <li><strong>ASC_Drive_Delay</strong> - maximaler Wert f&uuml;r einen zuf&auml;llig ermittelte Verz&ouml;gerungswert in Sekunden bei der Berechnung der Fahrzeiten.</li>
@@ -8540,13 +8598,13 @@ sub getBlockAscDrivesAfterManual {
             <li><strong>ASC_Time_Up_Late</strong> - Sonnenaufgang sp&auml;teste Zeit zum Hochfahren (default: 08:30) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss ein Zeitformat in Form HH:MM[:SS] sein!!!</li>
             <li><strong>ASC_Time_Up_WE_Holiday</strong> - Sonnenaufgang fr&uuml;hste Zeit zum Hochfahren am Wochenende und/oder Urlaub (holiday2we wird beachtet). (default: 08:00) ACHTUNG!!! in Verbindung mit Brightness f&uuml;r <em>ASC_Up</em> muss die Uhrzeit kleiner sein wie die Uhrzeit aus <em>ASC_Time_Up_Late</em> !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss ein Zeitformat in Form HH:MM[:SS] sein!!!</li>
             <li><strong>ASC_Up - astro/time/brightness</strong> - bei astro wird Sonnenaufgang berechnet, bei time wird der Wert aus ASC_Time_Up_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Up_Early und ASC_Time_Up_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Up_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Up_Early und ASC_Time_Up_Late geschaut, ob die als Attribut im Moduldevice hinterlegte Down Wert von ASC_brightnessDriveUpDown erreicht wurde. Wenn ja, wird der Rollladen hoch gefahren (default: astro)</li>
-            <li><strong>ASC_Ventilate_Pos</strong> -  in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 70/30) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <li><strong>ASC_Ventilate_Window_Open</strong> - auf l&uuml;ften, wenn das Fenster gekippt/ge&ouml;ffnet wird und aktuelle Position unterhalb der L&uuml;ften-Position ist (default: on)</li>
             <li><strong>ASC_WiggleValue</strong> - Wert um welchen sich die Position des Rollladens &auml;ndern soll (default: 5)</li>
             <li><strong>ASC_WindParameters - TRIGGERMAX[:HYSTERESE] [DRIVEPOSITION]</strong> / Angabe von Max Wert ab dem f&uuml;r Wind getriggert werden soll, Hytsrese Wert ab dem der Windschutz aufgehoben werden soll TRIGGERMAX - HYSTERESE / Ist es bei einigen Rolll&auml;den nicht gew&uuml;nscht das gefahren werden soll, so ist der TRIGGERMAX Wert mit -1 an zu geben. (default: '50:20 ClosedPosition')</li>
             <li><strong>ASC_WindowRec_PosAfterDayClosed</strong> - open,lastManual / auf welche Position soll das Rollo nach dem schlie&szlig;en am Tag fahren. Open Position oder letzte gespeicherte manuelle Position (default: open)</li>
             <li><strong>ASC_WindowRec</strong> - WINDOWREC:[READING], Name des Fensterkontaktes, an dessen Fenster der Rollladen angebracht ist (default: none). Reading ist optional</li>
             <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
+            <li><strong>ASC_SlatPosCmd_SlatDevice</strong> - Angaben zu einem Slat (Lamellen) CMD und sofern diese Lamellen &uuml;ber ein anderes Device gesteuert werden zum Slat Device. Beispiel: attr ROLLO ASC_SlatPosCmd_SlatDevice slatPct[:ROLLOSLATDEVICE] [ ] bedeutet optinal. Kann also auch weg gelassen werden. Wenn Ihr das SLAT Device mit angibt dann bitte ohne []. Beispiel: attr ROLLO ASC_SlatPosCmd_SlatDevice slatPct:ROLLOSLATDEVICE. Damit das ganze dann auch greift muss in den 6 Positionsangaben ASC_Open_Pos, ASC_Closed_Pos, ASC_Ventilate_Pos, ASC_ComfortOpen_Pos, ASC_Shading_Pos und ASC_Sleep_Pos ein weiterer Parameter f&uuml;r die Lamellenstellung mit angegeben werden.</li>
         </ul>
     </ul>
     </p>
@@ -8630,7 +8688,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.8",
+  "version": "v0.9.9",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
