@@ -412,15 +412,15 @@ sub Notify {
     if (
         (
             grep m{^DEFINED.$name$}xms,
-            @{$events} and $devname eq 'global' and $init_done
+            @{$events} && $devname eq 'global' && $init_done
         )
-        or (
+        || (
             grep m{^INITIALIZED$}xms,
             @{$events} or grep m{^REREADCFG$}xms,
             @{$events} or grep m{^MODIFIED.$name$}xms,
             @{$events}
         )
-        and $devname eq 'global'
+        && $devname eq 'global'
       )
     {
         readingsSingleUpdate( $hash, 'partyMode', 'off', 0 )
@@ -457,7 +457,7 @@ sub Notify {
     }
     return
       unless ( ref( $hash->{helper}{shuttersList} ) eq 'ARRAY'
-        and scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
+        && scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
 
     my $posReading = $shutters->getPosCmd;
 
@@ -1234,7 +1234,7 @@ sub EventProcessingRoommate {
                     $shutters->setLastDrive('shading in');
                     $posValue = $shutters->getShadingPos;
                 }
-                else {
+                elsif ( !$shutters->getIfInShading ) {
                     $shutters->setLastDrive('roommate awoken');
                     $posValue = $shutters->getOpenPos;
                 }
@@ -2471,7 +2471,11 @@ sub ShadingProcessing {
         && (   $shutters->getModeUp eq 'always'
             || $shutters->getModeUp eq $homemode
             || $shutters->getModeUp eq 'off' )
-        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+        && ( ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+            || ( !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
+              && $shutters->getIfInShading
+              && $shutters->getStatus != $shutters->getShadingPos )
+           )
       );
 
     return;
@@ -2777,16 +2781,16 @@ sub ShuttersCommandSet {
 
     if (
         (
-               $posValue == $shutters->getShadingPos
-            && CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+#                $posValue == $shutters->getShadingPos &&
+               CheckIfShuttersWindowRecOpen($shuttersDev) == 2
             && $shutters->getShuttersPlace eq 'terrace'
             && (   $shutters->getLockOut eq 'soft'
                 || $shutters->getLockOut eq 'hard' )
             && !$shutters->getQueryShuttersPos($posValue)
         )
         || (
-            $posValue != $shutters->getShadingPos
-            && (
+#             $posValue != $shutters->getShadingPos
+#             && (
                 (
                        $shutters->getPartyMode eq 'on'
                     && $ascDev->getPartyMode eq 'on'
@@ -2817,7 +2821,7 @@ sub ShuttersCommandSet {
                     && !$shutters->getQueryShuttersPos($posValue) )
                 || (   $shutters->getRainProtectionStatus eq 'protected'
                     && $shutters->getWindProtectionStatus eq 'protected' )
-            )
+#             )
         )
       )
     {
@@ -5958,7 +5962,7 @@ sub getShadingPositionAssignment {
 sub getShadingMode {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'off' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'always' );
 }
 
 sub _getTempSensor {
@@ -8626,7 +8630,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.7",
+  "version": "v0.9.8",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
