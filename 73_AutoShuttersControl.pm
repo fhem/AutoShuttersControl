@@ -4852,8 +4852,8 @@ sub setDriveCmd {
           if ( $shutters->getExternalTriggerState );
 
         ### antifreeze Routine
-        if ( $shutters->getFreezeStatus > 0 ) {
-            if ( $shutters->getFreezeStatus != 1 ) {
+        if ( $shutters->getAntiFreezeStatus > 0 ) {
+            if ( $shutters->getAntiFreezeStatus != 1 ) {
 
                 $posValue = $shutters->getStatus;
                 $shutters->setLastDrive('no drive - antifreeze defense');
@@ -5129,7 +5129,7 @@ sub getIsDay {
     return FHEM::AutoShuttersControl::_IsDay( $self->{shuttersDev} );
 }
 
-sub getFreezeStatus {
+sub getAntiFreezeStatus {
     use POSIX qw(strftime);
     my $self = shift;
     my $daytime = strftime( "%P", localtime() );
@@ -5139,7 +5139,7 @@ sub getFreezeStatus {
         : ( strftime( "%k", localtime() ) < 12 ? 'am' : 'pm' )
     );
     my $outTemp = $ascDev->getOutTemp;
-    $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );
+#     $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );        sollte raus das der Sensor im Rollo auch ein Innentemperatursensor sein kann.
 
     if (   $shutters->getAntiFreeze ne 'off'
         && $outTemp <= $ascDev->getFreezeTemp )
@@ -8688,7 +8688,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.9",
+  "version": "v0.9.10",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
