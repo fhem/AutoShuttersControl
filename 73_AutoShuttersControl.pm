@@ -6009,7 +6009,7 @@ sub getShadingPositionAssignment {
 sub getShadingMode {
     my $self = shift;
 
-    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'always' );
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_Mode', 'off' );
 }
 
 sub _getTempSensor {
