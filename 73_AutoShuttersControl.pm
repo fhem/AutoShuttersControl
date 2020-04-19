@@ -45,6 +45,7 @@ package main;
 
 use strict;
 use warnings;
+use utf8;
 
 sub ascAPIget {
     my ( $getCommand, $shutterDev, $value ) = @_;
@@ -59,6 +60,7 @@ use strict;
 use warnings;
 use POSIX qw(strftime);
 use utf8;
+
 use Encode;
 use FHEM::Meta;
 use GPUtils qw(GP_Import GP_Export);
@@ -4736,7 +4738,8 @@ sub _CheckASC_ConditionsForShadingFn {
 
     my $error;
 
-    $error .= ' no valid data from the ASC temperature sensor, is ASC_tempSensor attribut set?'
+    $error .=
+' no valid data from the ASC temperature sensor, is ASC_tempSensor attribut set?'
       if ( $ascDev->getOutTemp == -100 );
     $error .= ' no twilight device found'
       if ( $ascDev->_getTwilightDevice eq 'none' );
@@ -4786,7 +4789,13 @@ sub _CheckShuttersConditionsForShadingFn {
         $shutters->getShadingMode ne 'off'
           && $ascDev->getAutoShuttersControlShading ne 'on'
           && $ascDev->getAutoShuttersControlShading ne 'off'
-        ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device'
+        ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device '
+          . '<a href="'
+          . '/fhem?detail='
+          . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+          . $::FW_CSRF . '">'
+          . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+          . '</a>'
         : ''
     );
 
@@ -4802,7 +4811,8 @@ sub _CheckShuttersConditionsForShadingFn {
       if ( defined($infoMessage)
         && $infoMessage ne '' );
 
-    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShadingMessage', $message, 1 );
+    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShadingMessage',
+        '<html>' . $message . ' </html>', 1 );
 }
 
 ######################################
@@ -7121,6 +7131,11 @@ sub getASCenable {
 
 ## Klasse Fenster (Window) und die Subklassen Attr und Readings ##
 package ASC_Window;
+
+use strict;
+use warnings;
+use utf8;
+
 our @ISA = qw(ASC_Window::Attr ASC_Window::Readings);
 
 ## Subklasse Attr von Klasse ASC_Window ##
@@ -8781,7 +8796,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.11",
+  "version": "v0.9.12",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
