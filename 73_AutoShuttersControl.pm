@@ -471,6 +471,12 @@ sub Notify {
                     $hash );
                 InternalTimer( gettimeofday() + 5,
                     'FHEM::AutoShuttersControl::AutoSearchTwilightDev', $hash );
+                InternalTimer(
+                    gettimeofday() + 5,
+                    sub() { CommandSet( undef, $name . ' controlShading on' ) },
+                    $hash
+                  )
+                  if ( ReadingsVal( $name, 'controlShading', 'off' ) eq 'on' );
             }
         }
         elsif ( grep m{^partyMode:.off$}xms, @{$events} ) {
@@ -4730,7 +4736,7 @@ sub _CheckASC_ConditionsForShadingFn {
 
     my $error;
 
-    $error .= ' no valid data from the ASC temperature sensor'
+    $error .= ' no valid data from the ASC temperature sensor, is ASC_tempSensor attribut set?'
       if ( $ascDev->getOutTemp == -100 );
     $error .= ' no twilight device found'
       if ( $ascDev->_getTwilightDevice eq 'none' );
@@ -4756,31 +4762,47 @@ sub _CheckShuttersConditionsForShadingFn {
 
     $shutters->setShuttersDev($shuttersDev);
     my $shuttersDevHash = $defs{$shuttersDev};
-    my $message = 'none';
+    my $message         = '';
     my $errorMessage;
     my $warnMessage;
     my $infoMessage;
 
-    $infoMessage .=
-      ( $shutters->getShadingMode eq 'off'
+    $infoMessage .= (
+        $shutters->getShadingMode eq 'off'
           && $ascDev->getAutoShuttersControlShading eq 'on'
-        ? ' global shading activ but no ASC_Shading_Mode attribut set'
-        : 'none' );
+        ? ' global shading active but ASC_Shading_Mode attribut is not set'
+        : ''
+    );
+
+    $infoMessage .= (
+        $shutters->getShadingMode ne 'off'
+          && $ascDev->getAutoShuttersControlShading eq 'on'
+          && $shutters->getOutTemp == -100
+        ? ' shading active, global temp sensor is set, but shutters temperature sensor is not set'
+        : ''
+    );
+
+    $warnMessage .= (
+        $shutters->getShadingMode ne 'off'
+          && $ascDev->getAutoShuttersControlShading ne 'on'
+          && $ascDev->getAutoShuttersControlShading ne 'off'
+        ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device'
+        : ''
+    );
 
     $message .= ' ERROR: ' . $errorMessage
       if ( defined($errorMessage)
-        && $errorMessage ne 'none' );
+        && $errorMessage ne '' );
 
     $message .= ' WARN: ' . $warnMessage
       if ( defined($warnMessage)
-        && $warnMessage ne 'none' );
+        && $warnMessage ne '' );
 
     $message .= ' INFO: ' . $infoMessage
       if ( defined($infoMessage)
-        && $infoMessage ne 'none' );
+        && $infoMessage ne '' );
 
-    readingsSingleUpdate( $shuttersDevHash, 'ASC_Shading_Message', $message,
-        1 );
+    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShadingMessage', $message, 1 );
 }
 
 ######################################
