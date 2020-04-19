@@ -645,7 +645,19 @@ sub Set {
     }
     elsif ( lc $cmd eq 'controlshading' ) {
         return "usage: $cmd" if ( scalar( @{$a} ) > 1 );
-        readingsSingleUpdate( $hash, $cmd, $a->[0], 1 );
+
+        my $response = _CheckASC_ConditionsForShadingFn($hash);
+        readingsSingleUpdate(
+            $hash, $cmd,
+            (
+                $a->[0] eq 'off' ? $a->[0]
+                : (
+                      $response eq 'none' ? $a->[0]
+                    : $response
+                )
+            ),
+            1
+        );
     }
     elsif ( lc $cmd eq 'selfdefense' ) {
         return "usage: $cmd" if ( scalar( @{$a} ) > 1 );
@@ -4713,6 +4725,64 @@ sub DevStateIcon {
     return;
 }
 
+sub _CheckASC_ConditionsForShadingFn {
+    my $hash = shift;
+
+    my $error;
+
+    $error .= ' no valid data from the ASC temperature sensor'
+      if ( $ascDev->getOutTemp == -100 );
+    $error .= ' no twilight device found'
+      if ( $ascDev->_getTwilightDevice eq 'none' );
+
+    my $count = 1;
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        InternalTimer( gettimeofday() + $count,
+            'FHEM::AutoShuttersControl::_CheckShuttersConditionsForShadingFn',
+            $shuttersDev );
+
+        $count++;
+    }
+
+    return (
+        defined($error)
+        ? $error
+        : 'none'
+    );
+}
+
+sub _CheckShuttersConditionsForShadingFn {
+    my $shuttersDev = shift;
+
+    $shutters->setShuttersDev($shuttersDev);
+    my $shuttersDevHash = $defs{$shuttersDev};
+    my $message = 'none';
+    my $errorMessage;
+    my $warnMessage;
+    my $infoMessage;
+
+    $infoMessage .=
+      ( $shutters->getShadingMode eq 'off'
+          && $ascDev->getAutoShuttersControlShading eq 'on'
+        ? ' global shading activ but no ASC_Shading_Mode attribut set'
+        : 'none' );
+
+    $message .= ' ERROR: ' . $errorMessage
+      if ( defined($errorMessage)
+        && $errorMessage ne 'none' );
+
+    $message .= ' WARN: ' . $warnMessage
+      if ( defined($warnMessage)
+        && $warnMessage ne 'none' );
+
+    $message .= ' INFO: ' . $infoMessage
+      if ( defined($infoMessage)
+        && $infoMessage ne 'none' );
+
+    readingsSingleUpdate( $shuttersDevHash, 'ASC_Shading_Message', $message,
+        1 );
+}
+
 ######################################
 ######################################
 ########## Begin der Klassendeklarierungen für OOP (Objektorientierte Programmierung) #########################
@@ -5139,6 +5209,7 @@ sub getAntiFreezeStatus {
         : ( strftime( "%k", localtime() ) < 12 ? 'am' : 'pm' )
     );
     my $outTemp = $ascDev->getOutTemp;
+
 #     $outTemp = $shutters->getOutTemp if ( $shutters->getOutTemp != -100 );        sollte raus das der Sensor im Rollo auch ein Innentemperatursensor sein kann.
 
     if (   $shutters->getAntiFreeze ne 'off'
@@ -8688,7 +8759,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.10",
+  "version": "v0.9.11",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
