@@ -2522,9 +2522,7 @@ sub ShadingProcessing {
         'INFO: current shading status is \''
           . $shutters->getShadingStatus . '\'',
         1
-      )
-      if ( $shutters->getShadingStatus ne 'in'
-        && $shutters->getShadingStatus ne 'out' );
+      );
 
     return;
 }
