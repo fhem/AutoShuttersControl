@@ -478,7 +478,7 @@ sub Notify {
                     sub() { CommandSet( undef, $name . ' controlShading on' ) },
                     $hash
                   )
-                  if ( ReadingsVal( $name, 'controlShading', 'off' ) eq 'on' );
+                  if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
             }
         }
         elsif ( grep m{^partyMode:.off$}xms, @{$events} ) {
@@ -492,7 +492,7 @@ sub Notify {
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
             grep
-m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger)(\s.*|$)}xms,
+m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger)(\s.*|$)}xms,
             @{$events}
           )
         {
@@ -608,6 +608,20 @@ sub EventProcessingGeneral {
           )
         {
             RenewSunRiseSetShuttersTimer($hash);
+        }
+
+        if (
+            $events =~
+m{^(DELETEATTR|ATTR)         #global ATTR myASC ASC_tempSensor Cellar
+                \s(.*)\s(ASC_tempSensor
+                    |ASC_Shading_Mode
+                    |ASC_BrightnessSensor
+                    |ASC_TempSensor)
+                (.*)?}xms
+          )
+        {
+            CommandSet( undef, $name . ' controlShading on' )
+              if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
         }
     }
 
@@ -2443,9 +2457,12 @@ sub ShadingProcessing {
         && $brightness > $shutters->getShadingStateChangeSunny
         && $outTemp > $shutters->getShadingMinOutsideTemperature )
     {
-        $shutters->setShadingStatus('in reserved')
-          if ( $shutters->getShadingStatus eq 'out'
-            || $shutters->getShadingStatus eq 'out reserved' );
+        if (   $shutters->getShadingStatus eq 'out'
+            || $shutters->getShadingStatus eq 'out reserved' )
+        {
+            $shutters->setShadingStatus('in reserved');
+
+        }
 
         if ( $shutters->getShadingStatus eq 'in reserved'
             and
@@ -2498,6 +2515,16 @@ sub ShadingProcessing {
                 && $shutters->getStatus != $shutters->getShadingPos )
         )
       );
+
+    readingsSingleUpdate(
+        $defs{$shuttersDev},
+        'ASC_ShadingMessage',
+        'INFO: current shading status is \''
+          . $shutters->getShadingStatus . '\'',
+        1
+      )
+      if ( $shutters->getShadingStatus ne 'in'
+        && $shutters->getShadingStatus ne 'out' );
 
     return;
 }
@@ -4785,7 +4812,7 @@ sub _CheckShuttersConditionsForShadingFn {
         : ''
     );
 
-    $warnMessage .= (
+    $errorMessage .= (
         $shutters->getShadingMode ne 'off'
           && $ascDev->getAutoShuttersControlShading ne 'on'
           && $ascDev->getAutoShuttersControlShading ne 'off'
@@ -4799,17 +4826,25 @@ sub _CheckShuttersConditionsForShadingFn {
         : ''
     );
 
+    $errorMessage .= (
+        $shutters->getBrightness == -1 && $shutters->getShadingMode ne 'off'
+        ? ' no brightness sensor found, please set ASC_BrightnessSensor attribut'
+        : ''
+    );
+
     $message .= ' ERROR: ' . $errorMessage
       if ( defined($errorMessage)
         && $errorMessage ne '' );
 
     $message .= ' WARN: ' . $warnMessage
       if ( defined($warnMessage)
-        && $warnMessage ne '' );
+        && $warnMessage ne ''
+        && $errorMessage eq '' );
 
     $message .= ' INFO: ' . $infoMessage
       if ( defined($infoMessage)
-        && $infoMessage ne '' );
+        && $infoMessage ne ''
+        && $errorMessage eq '' );
 
     readingsSingleUpdate( $shuttersDevHash, 'ASC_ShadingMessage',
         '<html>' . $message . ' </html>', 1 );
@@ -8796,7 +8831,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.12",
+  "version": "v0.9.13",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
