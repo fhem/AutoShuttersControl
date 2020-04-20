@@ -2379,6 +2379,7 @@ sub ShadingProcessing {
     my $getShadingPos    = $shutters->getShadingPos;
     my $getStatus        = $shutters->getStatus;
     my $oldShadingStatus = $shutters->getShadingStatus;
+    my $shuttersDevHash  = $defs{$shuttersDev};
 
     my $getModeUp = $shutters->getModeUp;
     my $homemode  = $shutters->getHomemode;
@@ -2516,13 +2517,14 @@ sub ShadingProcessing {
         )
       );
 
-    readingsSingleUpdate(
-        $defs{$shuttersDev},
+    readingsBeginUpdate($shuttersDevHash);
+    readingsBulkUpdateIfChanged(
+        $shuttersDevHash,
         'ASC_ShadingMessage',
         'INFO: current shading status is \''
           . $shutters->getShadingStatus . '\'',
-        1
-      );
+    );
+    readingsEndUpdate( $shuttersDevHash, 1 );
 
     return;
 }
@@ -4844,8 +4846,10 @@ sub _CheckShuttersConditionsForShadingFn {
         && $infoMessage ne ''
         && $errorMessage eq '' );
 
-    readingsSingleUpdate( $shuttersDevHash, 'ASC_ShadingMessage',
-        '<html>' . $message . ' </html>', 1 );
+    readingsBeginUpdate($shuttersDevHash);
+    readingsBulkUpdateIfChanged( $shuttersDevHash, 'ASC_ShadingMessage',
+        '<html>' . $message . ' </html>' );
+    readingsEndUpdate( $shuttersDevHash, 1 );
 }
 
 ######################################
