@@ -774,43 +774,43 @@ sub ShuttersDeviceScan {
         return;
     }
     my $shuttersList = '';
-    for (@list) {
-        push( @{ $hash->{helper}{shuttersList} }, $_ )
+    for my $shuttersDev (@list) {
+        push( @{ $hash->{helper}{shuttersList} }, $shuttersDev )
           ; ## einem Hash wird ein Array zugewiesen welches die Liste der erkannten Rollos beinhaltet
 
-        $shutters->setShuttersDev($_);
+        $shutters->setShuttersDev($shuttersDev);
 
         #### Ab hier können temporäre Änderungen der Attribute gesetzt werden
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen hier gelöscht und die Parameter in der Funktion renewSetSunriseSunsetTimer gesetzt werden,
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
         #### 'AttrUpdateChanges' erweitert
-        if ( ReadingsVal( $_, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
+        if ( ReadingsVal( $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
             == 0 )
         {
       #             $shutters->setAttrUpdateChanges( 'ASC_Up',
-      #                 AttrVal( $_, 'ASC_Up', 'none' ) );
-      #             delFromDevAttrList( $_, 'ASC_Up' );
+      #                 AttrVal( $shuttersDev, 'ASC_Up', 'none' ) );
+      #             delFromDevAttrList( $shuttersDev, 'ASC_Up' );
       #             $shutters->setAttrUpdateChanges( 'ASC_Down',
-      #                 AttrVal( $_, 'ASC_Down', 'none' ) );
-      #             delFromDevAttrList( $_, 'ASC_Down' );
+      #                 AttrVal( $shuttersDev, 'ASC_Down', 'none' ) );
+      #             delFromDevAttrList( $shuttersDev, 'ASC_Down' );
       #             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
-      #                 AttrVal( $_, 'ASC_Self_Defense_Mode', 'none' ) );
-      #             delFromDevAttrList( $_, 'ASC_Self_Defense_Mode' );
+      #                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Mode', 'none' ) );
+      #             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Mode' );
       #             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
-      #                 AttrVal( $_, 'ASC_Self_Defense_Exclude', 'none' ) );
-      #             delFromDevAttrList( $_, 'ASC_Self_Defense_Exclude' );
+      #                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Exclude', 'none' ) );
+      #             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Exclude' );
         }
 
         ####
         ####
 
-        $shuttersList = $shuttersList . ',' . $_;
+        $shuttersList = $shuttersList . ',' . $shuttersDev;
         $shutters->setLastManPos( $shutters->getStatus );
         $shutters->setLastPos( $shutters->getStatus );
         $shutters->setDelayCmd('none');
         $shutters->setNoDelay(0);
         $shutters->setSelfDefenseAbsent( 0, 0 );
-        $shutters->setPosSetCmd( $posSetCmds{ $defs{$_}->{TYPE} } );
+        $shutters->setPosSetCmd( $posSetCmds{ $defs{$shuttersDev}->{TYPE} } );
         $shutters->setShadingStatus(
             ( $shutters->getStatus != $shutters->getShadingPos ? 'out' : 'in' )
         );
@@ -819,8 +819,8 @@ sub ShuttersDeviceScan {
 #             ( $shutters->getStatus != $shutters->getShadingPos ? 'in' : 'out' )
 #         );
         $shutters->setPushBrightnessInArray( $shutters->getBrightness );
-        readingsSingleUpdate( $defs{$_}, 'ASC_Enable', 'on', 0 )
-          if ( ReadingsVal( $_, 'ASC_Enable', 'none' ) eq 'none' );
+        readingsSingleUpdate( $defs{$shuttersDev}, 'ASC_Enable', 'on', 0 )
+          if ( ReadingsVal( $shuttersDev, 'ASC_Enable', 'none' ) eq 'none' );
 
         if ( $shutters->getIsDay ) {
             $shutters->setSunrise(1);
@@ -838,8 +838,8 @@ sub ShuttersDeviceScan {
         $hash->{monitoredDevs} =
           eval { decode_json( $ascDev->getMonitoredDevs ) };
         my $notifyDevString = $hash->{NOTIFYDEV};
-        while ( each %{ $hash->{monitoredDevs} } ) {
-            $notifyDevString .= ',' . $_;
+        while ( my $shuttersDev = each %{ $hash->{monitoredDevs} } ) {
+            $notifyDevString .= ',' . $shuttersDev;
         }
         $hash->{NOTIFYDEV} = $notifyDevString;
     }
@@ -858,32 +858,32 @@ sub WriteReadingsShuttersList {
     CommandDeleteReading( undef, $name . ' room_.*' );
 
     readingsBeginUpdate($hash);
-    for ( @{ $hash->{helper}{shuttersList} } ) {
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         readingsBulkUpdate(
             $hash,
-            'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ),
+            'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ),
+                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
                 ''
               )
               . ','
-              . $_
+              . $shuttersDev
           )
           if (
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ),
+                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
                 'none'
             ) ne 'none'
           );
 
         readingsBulkUpdate( $hash,
-            'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ), $_ )
+            'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ), $shuttersDev )
           if (
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $_, 'room', 'unsorted' ) ),
+                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
                 'none'
             ) eq 'none'
           );
@@ -901,64 +901,64 @@ sub UserAttributs_Readings_ForShutters {
     my $name = $hash->{NAME};
 
     while ( my ( $attrib, $attribValue ) = each %{userAttrList} ) {
-        for ( @{ $hash->{helper}{shuttersList} } ) {
-            addToDevAttrList( $_, $attrib )
+        for my $shuttersDev( @{ $hash->{helper}{shuttersList} } ) {
+            addToDevAttrList( $shuttersDev, $attrib )
               ; ## fhem.pl bietet eine Funktion um ein userAttr Attribut zu befüllen. Wir schreiben also in den Attribut userAttr alle unsere Attribute rein. Pro Rolladen immer ein Attribut pro Durchlauf
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
             ## CommandAttr hat nicht funktioniert. Führte zu Problemen
             ## https://github.com/LeonGaultier/fhem-AutoShuttersControl/commit/e33d3cc7815031b087736c1054b98c57817e7083
             if ( $cmd eq 'add' ) {
                 if ( ref($attribValue) ne 'ARRAY' ) {
-                    $attr{$_}{ ( split( ':', $attrib ) )[0] } = $attribValue
-                      if ( !defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } )
+                    $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } = $attribValue
+                      if ( !defined( $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } )
                         && $attribValue ne '-' );
                 }
                 else {
-                    $attr{$_}{ ( split( ':', $attrib ) )[0] } =
-                      $attribValue->[ AttrVal( $_, 'ASC', 2 ) ]
-                      if ( !defined( $attr{$_}{ ( split( ':', $attrib ) )[0] } )
+                    $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } =
+                      $attribValue->[ AttrVal( $shuttersDev, 'ASC', 2 ) ]
+                      if ( !defined( $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } )
                         && $attrib eq 'ASC_Pos_Reading' );
                 }
 
                 ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
                 my $associatedString =
-                  ReadingsVal( $_, 'associatedWith', 'none' );
+                  ReadingsVal( $shuttersDev, 'associatedWith', 'none' );
                 if ( $associatedString ne 'none' ) {
                     my %hash;
                     %hash = map { ( $_ => 1 ) }
                       split( ',', "$associatedString,$name" );
 
-                    readingsSingleUpdate( $defs{$_},
+                    readingsSingleUpdate( $defs{$shuttersDev},
                         'associatedWith', join( ',', sort keys %hash ), 0 );
                 }
                 else {
-                    readingsSingleUpdate( $defs{$_},
+                    readingsSingleUpdate( $defs{$shuttersDev},
                         'associatedWith', $name, 0 );
                 }
                 #######################################
             }
             ## Oder das Attribut wird wieder gelöscht.
             elsif ( $cmd eq 'del' ) {
-                $shutters->setShuttersDev($_);
+                $shutters->setShuttersDev($shuttersDev);
 
                 RemoveInternalTimer( $shutters->getInTimerFuncHash );
-                CommandDeleteReading( undef, $_ . ' .?(ASC)_.*' );
-                CommandDeleteAttr( undef, $_ . ' ASC' );
-                delFromDevAttrList( $_, $attrib );
+                CommandDeleteReading( undef, $shuttersDev . ' .?(ASC)_.*' );
+                CommandDeleteAttr( undef, $shuttersDev . ' ASC' );
+                delFromDevAttrList( $shuttersDev, $attrib );
 
                 ### associatedWith wird wieder entfernt
                 my $associatedString =
-                  ReadingsVal( $_, 'associatedWith', 'none' );
+                  ReadingsVal( $shuttersDev, 'associatedWith', 'none' );
                 my %hash;
                 %hash = map { ( $_ => 1 ) }
-                  grep { " $name " !~ m{ $_ }xms }
+                  grep { " $name " !~ m{ $shuttersDev }xms }
                   split( ',', "$associatedString,$name" );
 
                 if ( keys %hash > 1 ) {
-                    readingsSingleUpdate( $defs{$_},
+                    readingsSingleUpdate( $defs{$shuttersDev},
                         'associatedWith', join( ',', sort keys %hash ), 0 );
                 }
-                else { CommandDeleteReading( undef, $_ . ' associatedWith' ); }
+                else { CommandDeleteReading( undef, $shuttersDev . ' associatedWith' ); }
                 ###################################
             }
         }
@@ -970,12 +970,12 @@ sub UserAttributs_Readings_ForShutters {
 ## Fügt dem NOTIFYDEV Hash weitere Devices hinzu
 sub AddNotifyDev {
     ### Beispielaufruf: AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
-    my ( $hash, $dev, $shuttersDev, $shuttersAttr ) = @_;
+    my ( $hash, $attrVal, $shuttersDev, $shuttersAttr ) = @_;
 
-    $dev = ( split( ':', $dev ) )[0];
-    my ( $key, $value ) = split( ':', ( split( ' ', $dev ) )[0], 2 )
+    $attrVal = ( split( ':', $attrVal ) )[0];
+    my ( $key, $value ) = split( ':', ( split( ' ', $attrVal ) )[0], 2 )
       ; ## Wir versuchen die Device Attribute anders zu setzen. device=DEVICE reading=READING
-    $dev = $key;
+    $attrVal = $key;
 
     my $name = $hash->{NAME};
 
@@ -984,13 +984,13 @@ sub AddNotifyDev {
 
     my %hash;
     %hash = map { ( $_ => 1 ) }
-      split( ',', "$notifyDev,$dev" );
+      split( ',', "$notifyDev,$attrVal" );
 
     $hash->{NOTIFYDEV} = join( ',', sort keys %hash );
 
-    my @devs = split( ',', $dev );
-    for (@devs) {
-        $hash->{monitoredDevs}{$_}{$shuttersDev} = $shuttersAttr;
+    my @devs = split( ',', $attrVal );
+    for my $dev (@devs) {
+        $hash->{monitoredDevs}{$dev}{$shuttersDev} = $shuttersAttr;
     }
 
     readingsSingleUpdate( $hash, '.monitoredDevs',
@@ -1011,7 +1011,7 @@ sub DeleteNotifyDev {
     for my $notifyDev ( keys( %{$notifyDevs} ) ) {
         Log3( $name, 4,
             "AutoShuttersControl ($name) - DeleteNotifyDev - NotifyDev: "
-              . $_ );
+              . $notifyDev );
         delete $hash->{monitoredDevs}{$notifyDev}{$shuttersDev};
 
         if ( !keys %{ $hash->{monitoredDevs}{$notifyDev} } ) {
@@ -3037,15 +3037,14 @@ sub CreateSunRiseSetShuttersTimer {
 sub RenewSunRiseSetShuttersTimer {
     my $hash = shift;
 
-    for ( @{ $hash->{helper}{shuttersList} } ) {
-        my $name  = $_;
-        my $dhash = $defs{$name};
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        my $dhash = $defs{$shuttersDev};
 
-        $shutters->setShuttersDev($name);
+        $shutters->setShuttersDev($shuttersDev);
 
         RemoveInternalTimer( $shutters->getInTimerFuncHash );
         $shutters->setInTimerFuncHash(undef);
-        CreateSunRiseSetShuttersTimer( $hash, $name );
+        CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
 
         #### Temporär angelegt damit die neue Attributs Parameter Syntax verteilt werden kann
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen bereits in der Funktion ShuttersDeviceScan gelöscht werden
@@ -3054,28 +3053,28 @@ sub RenewSunRiseSetShuttersTimer {
         if (
             ( int( gettimeofday() ) - $::fhem_started ) < 60
             and
-            ReadingsVal( $name, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+            ReadingsVal( $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
                 0 ) == 0
           )
         {
-#             $attr{$name}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
+#             $attr{$shuttersDev}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
 #               if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
-#             $attr{$name}{'ASC_Down'} =
+#             $attr{$shuttersDev}{'ASC_Down'} =
 #               $shutters->getAttrUpdateChanges('ASC_Down')
 #               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
-#             $attr{$name}{'ASC_Self_Defense_Mode'} =
+#             $attr{$shuttersDev}{'ASC_Self_Defense_Mode'} =
 #               $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode')
 #               if ( $shutters->getAttrUpdateChanges('ASC_Self_Defense_Mode') ne
 #                 'none' );
-#             $attr{$name}{'ASC_Self_Defense_Mode'} = 'off'
+#             $attr{$shuttersDev}{'ASC_Self_Defense_Mode'} = 'off'
 #               if (
 #                 $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
 #                 'on' );
 
-            CommandDeleteReading( undef, $name . ' .ASC_AttrUpdateChanges_.*' )
+            CommandDeleteReading( undef, $shuttersDev . ' .ASC_AttrUpdateChanges_.*' )
               if (
                 ReadingsVal(
-                    $name, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+                    $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
                     'none'
                 ) eq 'none'
               );
@@ -3084,47 +3083,47 @@ sub RenewSunRiseSetShuttersTimer {
                 1, 0 );
         }
 
-#         $attr{$name}{ASC_Drive_Delay} =
-#           AttrVal( $name, 'ASC_Drive_Offset', 'none' )
-#           if ( AttrVal( $name, 'ASC_Drive_Offset', 'none' ) ne 'none' );
-#         delFromDevAttrList( $name, 'ASC_Drive_Offset' );
+#         $attr{$shuttersDev}{ASC_Drive_Delay} =
+#           AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' )
+#           if ( AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' ) ne 'none' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_Offset' );
 #
-#         $attr{$name}{ASC_Drive_DelayStart} =
-#           AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' )
-#           if ( AttrVal( $name, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
-#         delFromDevAttrList( $name, 'ASC_Drive_OffsetStart' );
+#         $attr{$shuttersDev}{ASC_Drive_DelayStart} =
+#           AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' )
+#           if ( AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_OffsetStart' );
 #
-#         $attr{$name}{ASC_Shading_StateChange_SunnyCloudy} =
-#             AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
-#           . AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' )
+#         $attr{$shuttersDev}{ASC_Shading_StateChange_SunnyCloudy} =
+#             AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
+#           . AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Cloudy', 'none' )
 #           if (
-#             AttrVal( $name, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
-#             && AttrVal( $name, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
+#             AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Sunny', 'none' ) ne 'none'
+#             && AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Cloudy', 'none' ) ne
 #             'none' );
-#         delFromDevAttrList( $name, 'ASC_Shading_StateChange_Sunny' );
-#         delFromDevAttrList( $name, 'ASC_Shading_StateChange_Cloudy' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Shading_StateChange_Sunny' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Shading_StateChange_Cloudy' );
 #
-#         $attr{$name}{ASC_Shading_InOutAzimuth} =
-#           ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) -
-#               AttrVal( $name, 'ASC_Shading_Angle_Left', 85 ) )
+#         $attr{$shuttersDev}{ASC_Shading_InOutAzimuth} =
+#           ( AttrVal( $shuttersDev, 'ASC_Shading_Direction', 180 ) -
+#               AttrVal( $shuttersDev, 'ASC_Shading_Angle_Left', 85 ) )
 #           . ':'
-#           . ( AttrVal( $name, 'ASC_Shading_Direction', 180 ) +
-#               AttrVal( $name, 'ASC_Shading_Angle_Right', 85 ) )
-#           if ( AttrVal( $name, 'ASC_Shading_Direction', 'none' ) ne 'none'
-#             || AttrVal( $name, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
-#             || AttrVal( $name, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
-#         delFromDevAttrList( $name, 'ASC_Shading_Direction' );
-#         delFromDevAttrList( $name, 'ASC_Shading_Angle_Left' );
-#         delFromDevAttrList( $name, 'ASC_Shading_Angle_Right' );
+#           . ( AttrVal( $shuttersDev, 'ASC_Shading_Direction', 180 ) +
+#               AttrVal( $shuttersDev, 'ASC_Shading_Angle_Right', 85 ) )
+#           if ( AttrVal( $shuttersDev, 'ASC_Shading_Direction', 'none' ) ne 'none'
+#             || AttrVal( $shuttersDev, 'ASC_Shading_Angle_Left',  'none' ) ne 'none'
+#             || AttrVal( $shuttersDev, 'ASC_Shading_Angle_Right', 'none' ) ne 'none' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Shading_Direction' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Shading_Angle_Left' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_Shading_Angle_Right' );
 #
-#         $attr{$name}{ASC_PrivacyDownValue_beforeNightClose} =
-#           AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
+#         $attr{$shuttersDev}{ASC_PrivacyDownValue_beforeNightClose} =
+#           AttrVal( $shuttersDev, 'ASC_PrivacyDownTime_beforNightClose', 'none' )
 #           if (
-#             AttrVal( $name, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
+#             AttrVal( $shuttersDev, 'ASC_PrivacyDownTime_beforNightClose', 'none' ) ne
 #             'none' );
-#         delFromDevAttrList( $name, 'ASC_PrivacyDownTime_beforNightClose' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_PrivacyDownTime_beforNightClose' );
 #
-#         delFromDevAttrList( $name, 'ASC_ExternalTriggerDevice' );
+#         delFromDevAttrList( $shuttersDev, 'ASC_ExternalTriggerDevice' );
     }
 
     return;
@@ -3135,8 +3134,8 @@ sub HardewareBlockForShutters {
     my $hash = shift;
     my $cmd  = shift;
 
-    for ( @{ $hash->{helper}{shuttersList} } ) {
-        $shutters->setShuttersDev($_);
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
         $shutters->setHardLockOut($cmd);
     }
 
@@ -3147,8 +3146,8 @@ sub HardewareBlockForShutters {
 sub wiggleAll {
     my $hash = shift;
 
-    for ( @{ $hash->{helper}{shuttersList} } ) {
-        wiggle( $hash, $_ );
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        wiggle( $hash, $shuttersDev );
     }
 
     return;
@@ -3382,21 +3381,21 @@ sub CreateNewNotifyDev {
 
     CommandDeleteReading( undef, $name . ' .monitoredDevs' );
     my $shuttersList = '';
-    for ( @{ $hash->{helper}{shuttersList} } ) {
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_Roommate_Device', 'none' ),
-            $_, 'ASC_Roommate_Device' )
-          if ( AttrVal( $_, 'ASC_Roommate_Device', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_WindowRec', 'none' ),
-            $_, 'ASC_WindowRec' )
-          if ( AttrVal( $_, 'ASC_WindowRec', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_BrightnessSensor', 'none' ),
-            $_, 'ASC_BrightnessSensor' )
-          if ( AttrVal( $_, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $_, 'ASC_ExternalTrigger', 'none' ),
-            $_, 'ASC_ExternalTrigger' )
-          if ( AttrVal( $_, 'ASC_ExternalTrigger', 'none' ) ne 'none' );
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ),
+            $shuttersDev, 'ASC_Roommate_Device' )
+          if ( AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ) ne 'none' );
+        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_WindowRec', 'none' ),
+            $shuttersDev, 'ASC_WindowRec' )
+          if ( AttrVal( $shuttersDev, 'ASC_WindowRec', 'none' ) ne 'none' );
+        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ),
+            $shuttersDev, 'ASC_BrightnessSensor' )
+          if ( AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
+        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ),
+            $shuttersDev, 'ASC_ExternalTrigger' )
+          if ( AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ) ne 'none' );
 
-        $shuttersList = $shuttersList . ',' . $_;
+        $shuttersList = $shuttersList . ',' . $shuttersDev;
     }
 
     AddNotifyDev( $hash, AttrVal( $name, 'ASC_residentsDev', 'none' ),
@@ -3462,12 +3461,12 @@ sub ShuttersInformation {
     $ret .= '</tr>';
 
     my $linecount = 1;
-    for my $shutter ( @{ $hash->{helper}{shuttersList} } ) {
-        $shutters->setShuttersDev($shutter);
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
 
         if   ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
         else                         { $ret .= '<tr class="odd">'; }
-        $ret .= "<td>$shutter</td>";
+        $ret .= "<td>$shuttersDev</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
           . strftime( "%e.%m.%Y - %H:%M:%S",
@@ -3492,7 +3491,7 @@ sub ShuttersInformation {
         $ret .= "<td>" . $shutters->getLockOut . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
-          . ReadingsVal( $shutter, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
+          . ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getStatus . "</td>";
         $ret .= "<td> </td>";
@@ -3533,15 +3532,15 @@ sub GetMonitoredDevs {
         my $linecount = 1;
         for my $notifydev ( sort keys( %{$notifydevs} ) ) {
             if ( ref( $notifydevs->{$notifydev} ) eq "HASH" ) {
-                for my $shutters ( sort keys( %{ $notifydevs->{$notifydev} } ) )
+                for my $shuttersDev ( sort keys( %{ $notifydevs->{$notifydev} } ) )
                 {
                     if ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
                     else                       { $ret .= '<tr class="odd">'; }
-                    $ret .= "<td>$shutters</td>";
+                    $ret .= "<td>$shuttersDev</td>";
                     $ret .= "<td> </td>";
                     $ret .= "<td>$notifydev</td>";
                     $ret .= "<td> </td>";
-                    $ret .= "<td>$notifydevs->{$notifydev}{$shutters}</td>";
+                    $ret .= "<td>$notifydevs->{$notifydev}{$shuttersDev}</td>";
                     $ret .= "<td> </td>";
                     $ret .= '</tr>';
                     $linecount++;
@@ -8848,7 +8847,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.14",
+  "version": "v0.9.15",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
