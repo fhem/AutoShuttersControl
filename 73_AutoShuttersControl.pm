@@ -2518,11 +2518,23 @@ sub ShadingProcessing {
       );
 
     readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdateIfChanged(
+    readingsBulkUpdate(
         $shuttersDevHash,
         'ASC_ShadingMessage',
         'INFO: current shading status is \''
-          . $shutters->getShadingStatus . '\'',
+          . $shutters->getShadingStatus . '\''
+          . ' - next check in '
+          . (
+            (
+                (
+                         $shutters->getShadingLastStatus eq 'out reserved'
+                      || $shutters->getShadingLastStatus eq 'out'
+                )
+                ? $shutters->getShadingWaitingPeriod
+                : $shutters->getShadingWaitingPeriod / 2
+            )
+          ) / 60
+          . 'm'
     );
     readingsEndUpdate( $shuttersDevHash, 1 );
 
@@ -4800,7 +4812,7 @@ sub _CheckShuttersConditionsForShadingFn {
     $infoMessage .= (
         $shutters->getShadingMode eq 'off'
           && $ascDev->getAutoShuttersControlShading eq 'on'
-        ? ' global shading active but ASC_Shading_Mode attribut is not set'
+        ? ' global shading active but ASC_Shading_Mode attribut is not set or off'
         : ''
     );
 
@@ -8599,6 +8611,9 @@ sub getBlockAscDrivesAfterManual {
             <li><strong>ASC_Time_DriveUp</strong> - Im Astro-Modus ist hier die Sonnenaufgangszeit f&uuml;r das Rollo gespeichert. Im Brightnessmodus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Up_Late</em> gespeichert. Im Timemodus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Up_Early</em> gespeichert.</li>
             <li><strong>ASC_Time_DriveDown</strong>  - Im Astro-Modus ist hier die Sonnenuntergangszeit f&uuml;r das Rollo gespeichert. Im Brightnessmodus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Down_Late</em> gespeichert. Im Timemodus ist hier der Zeitpunkt aus dem Attribut <em>ASC_Time_Down_Early</em> gespeichert.</li>
             <li><strong>ASC_ShuttersLastDrive</strong>  - Grund der letzten Fahrt vom Rollladen</li>
+            <li><strong>ASC_ShadingMessage</strong>  - </li>
+            <li><strong>ASC_Time_PrivacyDriveDown</strong>  - </li>
+            <li><strong>ASC_Time_PrivacyDriveUp</strong>  - </li>
         </ul>
     </ul>
     <br /><br />
@@ -8833,7 +8848,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.13",
+  "version": "v0.9.14",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
