@@ -2496,6 +2496,8 @@ sub ShadingProcessing {
       if (
            IsAfterShuttersTimeBlocking($shuttersDev)
         && !$shutters->getShadingManualDriveStatus
+        && $shutters->getRoommatesStatus ne 'gotosleep'
+        && $shutters->getRoommatesStatus ne 'asleep'
         && (
             (
                    $shutters->getShadingStatus eq 'out'
