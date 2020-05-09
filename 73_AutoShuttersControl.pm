@@ -2253,7 +2253,7 @@ sub EventProcessingShadingBrightness {
     my $name    = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp = $$shutters->getOutTemp;
+    my $outTemp = $shutters->getOutTemp;
     $outTemp    = $ascDev->getOutTemp
         if ($outTemp == -100);
 
@@ -2327,7 +2327,7 @@ sub EventProcessingTwilightDevice {
 
     if ( $events =~ m{(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)}xms ) {
         my $name    = $device;
-        my $outTemp = $$shutters->getOutTemp;
+        my $outTemp = $shutters->getOutTemp;
         $outTemp    = $ascDev->getOutTemp
             if ($outTemp == -100);
         my ( $azimuth, $elevation );
