@@ -1,6 +1,7 @@
 --- In den Rolläden ---
 AntiFreezePos
 AntiFreezePosAssignment             - nur getter
+AntiFreeze
 ShuttersPlace
 SlatPosCmd
 SlatDevice                          - nur getter
@@ -27,8 +28,8 @@ ShadingAzimuthRight                 - nur getter
 ShadingAzimuthLeft                  - nur getter
 ShadingMinOutsideTemperature
 ShadingMinMaxElevation              - nur setter
-getShadingMinElevation              - nur getter
-getShadingMaxElevation              - nur getter
+ShadingMinElevation                 - nur getter
+ShadingMaxElevation                 - nur getter
 ShadingStateChangeSunnyCloudy       - nur setter
 ShadingStateChangeSunny             - nur getter
 ShadingStateChangeCloudy            - nur getter
@@ -76,7 +77,6 @@ ModeUp
 ModeDown
 LockOut
 LockOutCmd
-AntiFreeze
 AutoAstroModeMorning
 AutoAstroModeEvening
 AutoAstroModeMorningHorizon
@@ -95,7 +95,6 @@ Homemode                            - nur getter
 PrivacyDownStatus                   - nur getter
 PrivacyUpStatus                     - nur getter
 IsDay                               - nur getter
-AntiFreezeStatus                    - nur getter
 SelfDefenseState                    - nur getter
 LastDrive                           - nur getter
 LastPos                             - nur getter

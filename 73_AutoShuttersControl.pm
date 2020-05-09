@@ -300,7 +300,7 @@ sub ascAPIget {
     else {
         return $ascDev->$getter;
     }
-    
+
     return;
 }
 
@@ -312,13 +312,12 @@ sub ascAPIset {
     if (   defined($shutterDev)
         && $shutterDev
         && defined($value)
-        && $value
-      )
+        && $value )
     {
         $shutters->setShuttersDev($shutterDev);
         $shutters->$setter($value);
     }
-    
+
     return;
 }
 
@@ -657,10 +656,11 @@ m{^(DELETEATTR|ATTR)         #global ATTR myASC ASC_tempSensor Cellar
 
 sub Set {
     my $hash = shift // return;
-    my $aArg    = shift // return;
+    my $aArg = shift // return;
 
     my $name = shift @$aArg;
-    my $cmd  = shift @$aArg // return qq{"set $name" needs at least one argument};
+    my $cmd  = shift @$aArg
+      // return qq{"set $name" needs at least one argument};
 
     if ( lc $cmd eq 'renewalltimer' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
@@ -736,7 +736,11 @@ sub Set {
     elsif ( lc $cmd eq 'wiggle' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
 
-        ( $aArg->[0] eq 'all' ? wiggleAll($hash) : wiggle( $hash, $aArg->[0] ) );
+        (
+            $aArg->[0] eq 'all'
+            ? wiggleAll($hash)
+            : wiggle( $hash, $aArg->[0] )
+        );
     }
     else {
         my $list = 'scanForShutters:noArg';
@@ -760,11 +764,12 @@ sub Set {
 }
 
 sub Get {
-    my $hash    = shift // return;
-    my $aArg    = shift // return;
+    my $hash = shift // return;
+    my $aArg = shift // return;
 
-    my $name    = shift @$aArg // return;
-    my $cmd     = shift @$aArg // return qq{"get $name" needs at least one argument};
+    my $name = shift @$aArg // return;
+    my $cmd  = shift @$aArg
+      // return qq{"get $name" needs at least one argument};
 
     if ( lc $cmd eq 'shownotifydevsinformations' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
@@ -811,21 +816,25 @@ sub ShuttersDeviceScan {
         #### Gleichlautende Attribute wo lediglich die Parameter geändert werden sollen müssen hier gelöscht und die Parameter in der Funktion renewSetSunriseSunsetTimer gesetzt werden,
         #### vorher empfiehlt es sich die dort vergebenen Parameter aus zu lesen um sie dann hier wieder neu zu setzen. Dazu wird das shutters Objekt um einen Eintrag
         #### 'AttrUpdateChanges' erweitert
-        if ( ReadingsVal( $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 0 )
-            == 0 )
+        if (
+            ReadingsVal(
+                $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+                0
+            ) == 0
+          )
         {
-      #             $shutters->setAttrUpdateChanges( 'ASC_Up',
-      #                 AttrVal( $shuttersDev, 'ASC_Up', 'none' ) );
-      #             delFromDevAttrList( $shuttersDev, 'ASC_Up' );
-      #             $shutters->setAttrUpdateChanges( 'ASC_Down',
-      #                 AttrVal( $shuttersDev, 'ASC_Down', 'none' ) );
-      #             delFromDevAttrList( $shuttersDev, 'ASC_Down' );
-      #             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
-      #                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Mode', 'none' ) );
-      #             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Mode' );
-      #             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
-      #                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Exclude', 'none' ) );
-      #             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Exclude' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Up',
+#                 AttrVal( $shuttersDev, 'ASC_Up', 'none' ) );
+#             delFromDevAttrList( $shuttersDev, 'ASC_Up' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Down',
+#                 AttrVal( $shuttersDev, 'ASC_Down', 'none' ) );
+#             delFromDevAttrList( $shuttersDev, 'ASC_Down' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Mode',
+#                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Mode', 'none' ) );
+#             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Mode' );
+#             $shutters->setAttrUpdateChanges( 'ASC_Self_Defense_Exclude',
+#                 AttrVal( $shuttersDev, 'ASC_Self_Defense_Exclude', 'none' ) );
+#             delFromDevAttrList( $shuttersDev, 'ASC_Self_Defense_Exclude' );
         }
 
         ####
@@ -888,10 +897,14 @@ sub WriteReadingsShuttersList {
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         readingsBulkUpdate(
             $hash,
-            'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+            'room_'
+              . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+                'room_'
+                  . makeReadingName(
+                    AttrVal( $shuttersDev, 'room', 'unsorted' )
+                  ),
                 ''
               )
               . ','
@@ -900,17 +913,27 @@ sub WriteReadingsShuttersList {
           if (
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+                'room_'
+                  . makeReadingName(
+                    AttrVal( $shuttersDev, 'room', 'unsorted' )
+                  ),
                 'none'
             ) ne 'none'
           );
 
-        readingsBulkUpdate( $hash,
-            'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ), $shuttersDev )
+        readingsBulkUpdate(
+            $hash,
+            'room_'
+              . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+            $shuttersDev
+          )
           if (
             ReadingsVal(
                 $name,
-                'room_' . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+                'room_'
+                  . makeReadingName(
+                    AttrVal( $shuttersDev, 'room', 'unsorted' )
+                  ),
                 'none'
             ) eq 'none'
           );
@@ -928,7 +951,7 @@ sub UserAttributs_Readings_ForShutters {
     my $name = $hash->{NAME};
 
     while ( my ( $attrib, $attribValue ) = each %{userAttrList} ) {
-        for my $shuttersDev( @{ $hash->{helper}{shuttersList} } ) {
+        for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             addToDevAttrList( $shuttersDev, $attrib )
               ; ## fhem.pl bietet eine Funktion um ein userAttr Attribut zu befüllen. Wir schreiben also in den Attribut userAttr alle unsere Attribute rein. Pro Rolladen immer ein Attribut pro Durchlauf
             ## Danach werden die Attribute die im userAttr stehen gesetzt und mit default Werten befüllt
@@ -936,15 +959,24 @@ sub UserAttributs_Readings_ForShutters {
             ## https://github.com/LeonGaultier/fhem-AutoShuttersControl/commit/e33d3cc7815031b087736c1054b98c57817e7083
             if ( $cmd eq 'add' ) {
                 if ( ref($attribValue) ne 'ARRAY' ) {
-                    $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } = $attribValue
-                      if ( !defined( $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } )
-                        && $attribValue ne '-' );
+                    $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } =
+                      $attribValue
+                      if (
+                        !defined(
+                            $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] }
+                        )
+                        && $attribValue ne '-'
+                      );
                 }
                 else {
                     $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } =
                       $attribValue->[ AttrVal( $shuttersDev, 'ASC', 2 ) ]
-                      if ( !defined( $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] } )
-                        && $attrib eq 'ASC_Pos_Reading' );
+                      if (
+                        !defined(
+                            $attr{$shuttersDev}{ ( split( ':', $attrib ) )[0] }
+                        )
+                        && $attrib eq 'ASC_Pos_Reading'
+                      );
                 }
 
                 ### associatedWith damit man sieht das der Rollladen mit einem ASC Device verbunden ist
@@ -985,7 +1017,10 @@ sub UserAttributs_Readings_ForShutters {
                     readingsSingleUpdate( $defs{$shuttersDev},
                         'associatedWith', join( ',', sort keys %hash ), 0 );
                 }
-                else { CommandDeleteReading( undef, $shuttersDev . ' associatedWith' ); }
+                else {
+                    CommandDeleteReading( undef,
+                        $shuttersDev . ' associatedWith' );
+                }
                 ###################################
             }
         }
@@ -1259,10 +1294,11 @@ sub EventProcessingRoommate {
         my $getModeDown            = $shutters->getModeDown;
         my $getRoommatesStatus     = $shutters->getRoommatesStatus;
         my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
+        my $event                  = $1;
         my $posValue;
 
         if (
-            ( $1 eq 'home' || $1 eq 'awoken' )
+            ( $event eq 'home' || $event eq 'awoken' )
             && (   $getRoommatesStatus eq 'home'
                 || $getRoommatesStatus eq 'awoken' )
             && (   $ascDev->getAutoShuttersControlMorning eq 'on'
@@ -1275,8 +1311,16 @@ sub EventProcessingRoommate {
             );
             if (
                 (
-                       $getRoommatesLastStatus eq 'asleep'
-                    || $getRoommatesLastStatus eq 'awoken'
+                    (
+                        $getRoommatesLastStatus eq 'asleep'
+                        && (   $shutters->getModeUp eq 'always'
+                            or $shutters->getModeUp eq $event )
+                    )
+                    || (
+                        $getRoommatesLastStatus eq 'awoken'
+                        && (   $shutters->getModeUp eq 'always'
+                            or $shutters->getModeUp eq $event )
+                    )
                 )
                 && (   $shutters->getIsDay
                     || $shutters->getUp eq 'roommate' )
@@ -1387,7 +1431,7 @@ sub EventProcessingRoommate {
             }
         }
         elsif (
-            ( $1 eq 'gotosleep' || $1 eq 'asleep' )
+            ( $event eq 'gotosleep' || $event eq 'asleep' )
             && (   $ascDev->getAutoShuttersControlEvening eq 'on'
                 || $shutters->getDown eq 'roommate' )
             && ( IsAfterShuttersManualBlocking($shuttersDev)
@@ -1414,7 +1458,7 @@ sub EventProcessingRoommate {
             ShuttersCommandSet( $hash, $shuttersDev, $posValue );
         }
         elsif (
-            $1 eq 'absent'
+            $event eq 'absent'
             && (  !$shutters->getIsDay
                 || $shutters->getDown eq 'roommate'
                 || $shutters->getShadingMode eq 'absent'
@@ -2206,10 +2250,12 @@ sub EventProcessingBrightness {
 sub EventProcessingShadingBrightness {
     my ( $hash, $shuttersDev, $events ) = @_;
 
-    my $name = $hash->{NAME};
+    my $name    = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp = $ascDev->getOutTemp;
+    my $outTemp = $$shutters->getOutTemp;
+    $outTemp    = $ascDev->getOutTemp
+        if ($outTemp == -100);
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -2243,8 +2289,6 @@ sub EventProcessingShadingBrightness {
             && $shutters->getRainProtectionStatus eq 'unprotected'
             && $shutters->getWindProtectionStatus eq 'unprotected' )
         {
-            $outTemp = $shutters->getOutTemp
-              if ( $shutters->getOutTemp != -100 );
             ShadingProcessing(
                 $hash,
                 $shuttersDev,
@@ -2282,9 +2326,11 @@ sub EventProcessingTwilightDevice {
     );
 
     if ( $events =~ m{(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)}xms ) {
-        my $name = $device;
+        my $name    = $device;
+        my $outTemp = $$shutters->getOutTemp;
+        $outTemp    = $ascDev->getOutTemp
+            if ($outTemp == -100);
         my ( $azimuth, $elevation );
-        my $outTemp = $ascDev->getOutTemp;
 
         $azimuth   = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
         $elevation = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
@@ -2537,6 +2583,8 @@ sub ShadingProcessing {
             || $shutters->getShadingMode eq $homemode )
         && (   $shutters->getModeUp eq 'always'
             || $shutters->getModeUp eq $homemode
+            || (   $shutters->getModeUp eq 'home'
+                && $homemode ne 'asleep' )
             || $shutters->getModeUp eq 'off' )
         && (
             ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
@@ -3081,9 +3129,10 @@ sub RenewSunRiseSetShuttersTimer {
         #### 'AttrUpdateChanges' erweitert
         if (
             ( int( gettimeofday() ) - $::fhem_started ) < 60
-            and
-            ReadingsVal( $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
-                0 ) == 0
+            and ReadingsVal(
+                $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
+                0
+            ) == 0
           )
         {
 #             $attr{$shuttersDev}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
@@ -3100,12 +3149,12 @@ sub RenewSunRiseSetShuttersTimer {
 #                 $shutters->getAttrUpdateChanges('ASC_Self_Defense_Exclude') eq
 #                 'on' );
 
-            CommandDeleteReading( undef, $shuttersDev . ' .ASC_AttrUpdateChanges_.*' )
+            CommandDeleteReading( undef,
+                $shuttersDev . ' .ASC_AttrUpdateChanges_.*' )
               if (
-                ReadingsVal(
-                    $shuttersDev, '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
-                    'none'
-                ) eq 'none'
+                ReadingsVal( $shuttersDev,
+                    '.ASC_AttrUpdateChanges_' . $hash->{VERSION}, 'none' ) eq
+                'none'
               );
             readingsSingleUpdate( $dhash,
                 '.ASC_AttrUpdateChanges_' . $hash->{VERSION},
@@ -3411,18 +3460,24 @@ sub CreateNewNotifyDev {
     CommandDeleteReading( undef, $name . ' .monitoredDevs' );
     my $shuttersList = '';
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
-        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ),
+        AddNotifyDev( $hash,
+            AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ),
             $shuttersDev, 'ASC_Roommate_Device' )
-          if ( AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ) ne 'none' );
+          if (
+            AttrVal( $shuttersDev, 'ASC_Roommate_Device', 'none' ) ne 'none' );
         AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_WindowRec', 'none' ),
             $shuttersDev, 'ASC_WindowRec' )
           if ( AttrVal( $shuttersDev, 'ASC_WindowRec', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ),
+        AddNotifyDev( $hash,
+            AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ),
             $shuttersDev, 'ASC_BrightnessSensor' )
-          if ( AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
-        AddNotifyDev( $hash, AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ),
+          if (
+            AttrVal( $shuttersDev, 'ASC_BrightnessSensor', 'none' ) ne 'none' );
+        AddNotifyDev( $hash,
+            AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ),
             $shuttersDev, 'ASC_ExternalTrigger' )
-          if ( AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ) ne 'none' );
+          if (
+            AttrVal( $shuttersDev, 'ASC_ExternalTrigger', 'none' ) ne 'none' );
 
         $shuttersList = $shuttersList . ',' . $shuttersDev;
     }
@@ -3520,7 +3575,8 @@ sub ShuttersInformation {
         $ret .= "<td>" . $shutters->getLockOut . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
-          . ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' ) . "</td>";
+          . ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' )
+          . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>" . $shutters->getStatus . "</td>";
         $ret .= "<td> </td>";
@@ -3561,7 +3617,8 @@ sub GetMonitoredDevs {
         my $linecount = 1;
         for my $notifydev ( sort keys( %{$notifydevs} ) ) {
             if ( ref( $notifydevs->{$notifydev} ) eq "HASH" ) {
-                for my $shuttersDev ( sort keys( %{ $notifydevs->{$notifydev} } ) )
+                for my $shuttersDev (
+                    sort keys( %{ $notifydevs->{$notifydev} } ) )
                 {
                     if ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
                     else                       { $ret .= '<tr class="odd">'; }
@@ -4561,16 +4618,22 @@ sub _SetCmdFn {
           . $posValue . ' '
           . $driveCommand );
 
-    CommandSet(
-        undef,
-        (
-              $shutters->getSlatDevice ne 'none'
-            ? $shutters->getSlatDevice
-            : $shuttersDev
-          )
-          . ' '
-          . $shutters->getSlatPosCmd . ' '
-          . $slatPos
+    InternalTimer(
+        gettimeofday() + 3,
+        sub() {
+            CommandSet(
+                undef,
+                (
+                      $shutters->getSlatDevice ne 'none'
+                    ? $shutters->getSlatDevice
+                    : $shuttersDev
+                  )
+                  . ' '
+                  . $shutters->getSlatPosCmd . ' '
+                  . $slatPos
+            );
+        },
+        $shuttersDev
       )
       if ( $slatPos > -1
         && $shutters->getSlatPosCmd ne 'none' );
@@ -5808,17 +5871,12 @@ BEGIN {
 }
 
 sub _setAttributs {
-    my $shuttersDev    = shift;
-    my $attr    = shift;
-    my $attrVal = shift;
+    my $shuttersDev = shift;
+    my $attr        = shift;
+    my $attrVal     = shift;
 
-    CommandAttr(undef,$shuttersDev
-        . ' '
-        . $attr
-        . ' '
-        . $attrVal
-    );
-    
+    CommandAttr( undef, $shuttersDev . ' ' . $attr . ' ' . $attrVal );
+
     return;
 }
 
@@ -5929,11 +5987,11 @@ sub _getPositionAssignment {
 }
 
 sub setAntiFreezePos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Antifreeze_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Antifreeze_Pos', $attrVal );
+
     return;
 }
 
@@ -5953,11 +6011,11 @@ sub getAntiFreezePosAssignment {
 }
 
 sub setShuttersPlace {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_ShuttersPlace',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_ShuttersPlace', $attrVal );
+
     return;
 }
 
@@ -5968,11 +6026,12 @@ sub getShuttersPlace {
 }
 
 sub setSlatPosCmd {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_SlatPosCmd_SlatDevice',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_SlatPosCmd_SlatDevice',
+        $attrVal );
+
     return;
 }
 
@@ -6030,11 +6089,12 @@ sub getSlatDevice {
 }
 
 sub setPrivacyUpTime {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_PrivacyUpValue_beforeDayOpen',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_PrivacyUpValue_beforeDayOpen',
+        $attrVal );
+
     return;
 }
 
@@ -6104,11 +6164,12 @@ sub getPrivacyUpBrightnessVal {
 }
 
 sub setPrivacyDownTime {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_PrivacyDownValue_beforeNightClose',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev},
+        'ASC_PrivacyDownValue_beforeNightClose', $attrVal );
+
     return;
 }
 
@@ -6178,11 +6239,11 @@ sub getPrivacyDownBrightnessVal {
 }
 
 sub setPrivacyUpPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_PrivacyUp_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_PrivacyUp_Pos', $attrVal );
+
     return;
 }
 
@@ -6200,11 +6261,11 @@ sub getPrivacyUpPositionAssignment {
 }
 
 sub setPrivacyDownPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_PrivacyDown_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_PrivacyDown_Pos', $attrVal );
+
     return;
 }
 
@@ -6223,11 +6284,11 @@ sub getPrivacyDownPositionAssignment {
 }
 
 sub setSelfDefenseMode {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Self_Defense_Mode',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Self_Defense_Mode', $attrVal );
+
     return;
 }
 
@@ -6238,11 +6299,12 @@ sub getSelfDefenseMode {
 }
 
 sub setSelfDefenseAbsentDelay {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Self_Defense_AbsentDelay',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Self_Defense_AbsentDelay',
+        $attrVal );
+
     return;
 }
 
@@ -6253,11 +6315,11 @@ sub getSelfDefenseAbsentDelay {
 }
 
 sub setWiggleValue {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WiggleValue',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WiggleValue', $attrVal );
+
     return;
 }
 
@@ -6268,11 +6330,11 @@ sub getWiggleValue {
 }
 
 sub setAdv {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Adv',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Adv', $attrVal );
+
     return;
 }
 
@@ -6288,11 +6350,11 @@ sub getAdv {
 
 ### Begin Beschattung
 sub setShadingPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_Pos', $attrVal );
+
     return;
 }
 
@@ -6311,11 +6373,11 @@ sub getShadingPositionAssignment {
 }
 
 sub setShadingMode {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_Mode',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_Mode', $attrVal );
+
     return;
 }
 
@@ -6374,11 +6436,12 @@ sub getTempSensorReading {
 }
 
 sub setIdleDetectionReading {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shutter_IdleDetection',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shutter_IdleDetection',
+        $attrVal );
+
     return;
 }
 
@@ -6439,11 +6502,11 @@ sub getIdleDetectionValue {
 }
 
 sub setBrightnessSensor {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_BrightnessSensor',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_BrightnessSensor', $attrVal );
+
     return;
 }
 
@@ -6524,11 +6587,11 @@ sub getShadingAzimuthLeft {
 }
 
 sub setShadingInOutAzimuth {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_InOutAzimuth',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_InOutAzimuth', $attrVal );
+
     return;
 }
 
@@ -6565,11 +6628,12 @@ sub getShadingAzimuthRight {
 }
 
 sub setShadingMinOutsideTemperature {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_Min_OutsideTemperature',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_Min_OutsideTemperature',
+        $attrVal );
+
     return;
 }
 
@@ -6581,11 +6645,12 @@ sub getShadingMinOutsideTemperature {
 }
 
 sub setShadingMinMaxElevation {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_MinMax_Elevation',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_MinMax_Elevation',
+        $attrVal );
+
     return;
 }
 
@@ -6642,11 +6707,12 @@ sub getShadingMaxElevation {
 }
 
 sub setShadingStateChangeSunnyCloudy {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_StateChange_SunnyCloudy',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_StateChange_SunnyCloudy',
+        $attrVal );
+
     return;
 }
 
@@ -6730,11 +6796,12 @@ sub getMaxBrightnessAverageArrayObjects {
 }
 
 sub setShadingWaitingPeriod {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Shading_WaitingPeriod',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_WaitingPeriod',
+        $attrVal );
+
     return;
 }
 
@@ -6745,11 +6812,11 @@ sub getShadingWaitingPeriod {
 }
 ### Ende Beschattung
 sub setExternalTrigger {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_ExternalTrigger',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_ExternalTrigger', $attrVal );
+
     return;
 }
 
@@ -6944,11 +7011,11 @@ sub getExternalTriggerState {
 }
 
 sub setDelay {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Drive_Delay',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Drive_Delay', $attrVal );
+
     return;
 }
 
@@ -6960,11 +7027,11 @@ sub getDelay {
 }
 
 sub setDelayStart {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Drive_DelayStart',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Drive_DelayStart', $attrVal );
+
     return;
 }
 
@@ -6976,11 +7043,12 @@ sub getDelayStart {
 }
 
 sub setBlockingTimeAfterManual {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_BlockingTime_afterManual',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_BlockingTime_afterManual',
+        $attrVal );
+
     return;
 }
 
@@ -6992,11 +7060,12 @@ sub getBlockingTimeAfterManual {
 }
 
 sub setBlockingTimeBeforNightClose {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_BlockingTime_beforNightClose',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_BlockingTime_beforNightClose',
+        $attrVal );
+
     return;
 }
 
@@ -7008,11 +7077,12 @@ sub getBlockingTimeBeforNightClose {
 }
 
 sub setBlockingTimeBeforDayOpen {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_BlockingTime_beforDayOpen',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_BlockingTime_beforDayOpen',
+        $attrVal );
+
     return;
 }
 
@@ -7024,11 +7094,11 @@ sub getBlockingTimeBeforDayOpen {
 }
 
 sub setPosCmd {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Pos_Reading',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Pos_Reading', $attrVal );
+
     return;
 }
 
@@ -7041,11 +7111,11 @@ sub getPosCmd {
 }
 
 sub setOpenPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Open_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Open_Pos', $attrVal );
+
     return;
 }
 
@@ -7063,11 +7133,11 @@ sub getOpenPositionAssignment {
 }
 
 sub setVentilatePos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Ventilate_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Ventilate_Pos', $attrVal );
+
     return;
 }
 
@@ -7086,11 +7156,12 @@ sub getVentilatePositionAssignment {
 }
 
 sub setVentilatePosAfterDayClosed {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WindowRec_PosAfterDayClosed',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WindowRec_PosAfterDayClosed',
+        $attrVal );
+
     return;
 }
 
@@ -7102,11 +7173,11 @@ sub getVentilatePosAfterDayClosed {
 }
 
 sub setClosedPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Closed_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Closed_Pos', $attrVal );
+
     return;
 }
 
@@ -7125,11 +7196,11 @@ sub getClosedPositionAssignment {
 }
 
 sub setSleepPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Sleep_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Sleep_Pos', $attrVal );
+
     return;
 }
 
@@ -7147,11 +7218,12 @@ sub getSleepPositionAssignment {
 }
 
 sub setVentilateOpen {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Ventilate_Window_Open',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Ventilate_Window_Open',
+        $attrVal );
+
     return;
 }
 
@@ -7162,11 +7234,11 @@ sub getVentilateOpen {
 }
 
 sub setComfortOpenPos {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_ComfortOpen_Pos',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_ComfortOpen_Pos', $attrVal );
+
     return;
 }
 
@@ -7185,11 +7257,11 @@ sub getComfortOpenPositionAssignment {
 }
 
 sub setPartyMode {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Partymode',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Partymode', $attrVal );
+
     return;
 }
 
@@ -7200,11 +7272,11 @@ sub getPartyMode {
 }
 
 sub setRoommates {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Roommate_Device',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Roommate_Device', $attrVal );
+
     return;
 }
 
@@ -7215,11 +7287,11 @@ sub getRoommates {
 }
 
 sub setRoommatesReading {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Roommate_Reading',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Roommate_Reading', $attrVal );
+
     return;
 }
 
@@ -7281,11 +7353,11 @@ sub getWindMax {
 }
 
 sub setWindParameters {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WindParameters',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WindParameters', $attrVal );
+
     return;
 }
 
@@ -7309,11 +7381,11 @@ sub getWindMin {
 }
 
 sub setWindProtection {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WindProtection',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WindProtection', $attrVal );
+
     return;
 }
 
@@ -7324,11 +7396,11 @@ sub getWindProtection {
 }
 
 sub setRainProtection {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_RainProtection',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_RainProtection', $attrVal );
+
     return;
 }
 
@@ -7339,11 +7411,11 @@ sub getRainProtection {
 }
 
 sub setModeUp {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Mode_Up',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Mode_Up', $attrVal );
+
     return;
 }
 
@@ -7354,11 +7426,11 @@ sub getModeUp {
 }
 
 sub setModeDown {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Mode_Down',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Mode_Down', $attrVal );
+
     return;
 }
 
@@ -7369,11 +7441,11 @@ sub getModeDown {
 }
 
 sub setLockOut {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_LockOut',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_LockOut', $attrVal );
+
     return;
 }
 
@@ -7384,11 +7456,11 @@ sub getLockOut {
 }
 
 sub setLockOutCmd {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_LockOut_Cmd',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_LockOut_Cmd', $attrVal );
+
     return;
 }
 
@@ -7399,11 +7471,11 @@ sub getLockOutCmd {
 }
 
 sub setAntiFreeze {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Antifreeze',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Antifreeze', $attrVal );
+
     return;
 }
 
@@ -7414,11 +7486,11 @@ sub getAntiFreeze {
 }
 
 sub setAutoAstroModeMorning {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_AutoAstroModeMorning',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_AutoAstroModeMorning', $attrVal );
+
     return;
 }
 
@@ -7429,11 +7501,11 @@ sub getAutoAstroModeMorning {
 }
 
 sub setAutoAstroModeEvening {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_AutoAstroModeEvening',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_AutoAstroModeEvening', $attrVal );
+
     return;
 }
 
@@ -7444,11 +7516,12 @@ sub getAutoAstroModeEvening {
 }
 
 sub setAutoAstroModeMorningHorizon {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_AutoAstroModeMorningHorizon',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_AutoAstroModeMorningHorizon',
+        $attrVal );
+
     return;
 }
 
@@ -7460,11 +7533,12 @@ sub getAutoAstroModeMorningHorizon {
 }
 
 sub setAutoAstroModeEveningHorizon {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_AutoAstroModeEveningHorizon',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_AutoAstroModeEveningHorizon',
+        $attrVal );
+
     return;
 }
 
@@ -7476,11 +7550,11 @@ sub getAutoAstroModeEveningHorizon {
 }
 
 sub setUp {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Up',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Up', $attrVal );
+
     return;
 }
 
@@ -7491,11 +7565,11 @@ sub getUp {
 }
 
 sub setDown {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Down',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Down', $attrVal );
+
     return;
 }
 
@@ -7506,11 +7580,11 @@ sub getDown {
 }
 
 sub setTimeUpEarly {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Time_Up_Early',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Time_Up_Early', $attrVal );
+
     return;
 }
 
@@ -7531,11 +7605,11 @@ sub getTimeUpEarly {
 }
 
 sub setTimeUpLate {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Time_Up_Late',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Time_Up_Late', $attrVal );
+
     return;
 }
 
@@ -7556,11 +7630,11 @@ sub getTimeUpLate {
 }
 
 sub setTimeDownEarly {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Time_Down_Early',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Time_Down_Early', $attrVal );
+
     return;
 }
 
@@ -7581,11 +7655,11 @@ sub getTimeDownEarly {
 }
 
 sub setTimeDownLate {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Time_Down_Late',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Time_Down_Late', $attrVal );
+
     return;
 }
 
@@ -7606,11 +7680,11 @@ sub getTimeDownLate {
 }
 
 sub setTimeUpWeHoliday {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_Time_Up_WE_Holiday',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Time_Up_WE_Holiday', $attrVal );
+
     return;
 }
 
@@ -7670,11 +7744,11 @@ sub getBrightnessMaxVal {
 }
 
 sub setDriveUpMaxDuration {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_DriveUpMaxDuration',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_DriveUpMaxDuration', $attrVal );
+
     return;
 }
 
@@ -7762,11 +7836,11 @@ BEGIN {
 }
 
 sub setSubTyp {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WindowRec_subType',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WindowRec_subType', $attrVal );
+
     return;
 }
 
@@ -7777,11 +7851,11 @@ sub getSubTyp {
 }
 
 sub setWinDev {
-    my $self        = shift;
-    my $attrVal     = shift;
-    
-    _setAttributs($self->{shuttersDev},'ASC_WindowRec',$attrVal);
-    
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_WindowRec', $attrVal );
+
     return;
 }
 
@@ -9322,7 +9396,7 @@ sub getBlockAscDrivesAfterManual {
                 <li><strong>ASC_Shading_Min_OutsideTemperature</strong> - ab welcher Temperatur soll Beschattet werden, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte (default: 18)</li>
                 <li><strong>ASC_Shading_Mode - absent,always,off,home</strong> / wann soll die Beschattung nur stattfinden. (default: off)</li>
                 <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 80/20) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-                <li><strong>ASC_Shading_StateChange_SunnyCloudy</strong> - Brightness Wert ab welchen die Beschattung stattfinden und aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte. Ein optionaler dritter Wert gibt an wie, viele Brightnesswerte für den aktuellen Brightness-Durchschnitt berücksichtigt werden. Standard ist 3, es sollte nicht höher wie 5 genommen werden. (default: 35000:20000 [3])</li>
+                <li><strong>ASC_Shading_StateChange_SunnyCloudy</strong> - Brightness Wert ab welchen die Beschattung stattfinden und aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte. Ein optionaler dritter Wert gibt an wie, viele Brightnesswerte für den aktuellen Brightness-Durchschnitt berücksichtigt werden. Standard ist 3, es sollten nicht mehr als 5 ber&uuml;cksichtigt werden. (default: 35000:20000 [3])</li>
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
             </ul></p>
             <li><strong>ASC_ShuttersPlace - window/terrace</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen (default: window)</li>
@@ -9352,6 +9426,65 @@ sub getBlockAscDrivesAfterManual {
     <table>
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
         <tr><td>FreezeStatus</td><td>1=soft, 2=Daytime, 3=hard</td></tr>
+        <tr><td>AntiFreezePos</td><td>konfigurierte Position beim AntiFreeze Status</td></tr>
+        <tr><td>AntiFreezePosAssignment</td><td>konfigurierte Lamellen Position bei der AntiFreeze Position</td></tr>
+        <tr><td>AntiFreeze</td><td>aktuelle Konfiguration f&uuml;r AntiFreeze</td></tr>
+        <tr><td>ShuttersPlace</td><td>aktuelle Konfiguration an welchem Platz sich das Rollo befindet, Fenster oder Terrasse</td></tr>
+        <tr><td>SlatPosCmd</td><td>welcher PosCmd ist aktuell f&uuml;r den Lamellen Befehl konfiguriert</td></tr>
+        <tr><td>SlatDevice</td><td>welches Device aktuell f&uuml;r die Lamellen Steuerung konfiguriert ist</td></tr>
+        <tr><td>PrivacyUpTime</td><td>Privacy Zeit in Sekunden zum fahren in die Privacy Pos vor dem vollen &ouml;ffnen</td></tr>
+        <tr><td>PrivacyUpBrightnessVal</td><td>Privacy Brightness Wert zum fahren in die Privacy Pos</td></tr>
+        <tr><td>PrivacyUpPos</td><td>Position f&uuml;r die Privacy Up Fahrt</td></tr>
+        <tr><td>PrivacyUpPositionAssignment</td><td>Position f&uuml;r die Lamellenfahrt von Privacy Up</td></tr>
+        <tr><td>PrivacyDownTime</td><td>Privacy Zeit in Sekunden zum fahren in die Privacy Pos vor dem vollen schlie&szlig;</td></tr>
+        <tr><td>PrivacyDownBrightnessVal</td><td>Privacy Brightness Wert zum fahren in die Privacy Pos</td></tr>
+        <tr><td>PrivacyDownPos</td><td>Position f&uuml;r die Privacy Down Fahrt</td></tr>
+        <tr><td>PrivacyDownPositionAssignment</td><td>Position f&uuml;r die Lamellenfahrt von Privacy Down</td></tr>
+        <tr><td>SelfDefenseMode</td><td>Modus f&uuml;r den SelfDefense</td></tr>
+        <tr><td>SelfDefenseAbsentDelay</td><td>Verz&ouml;gerungszeit der SelfDefense Fahrt bei absent</td></tr>
+        <tr><td>WiggleValue</td><td>um welchen Wert soll das Rollo bei einer wiggle Fahrt fahren</td></tr>
+        <tr><td>Adv</td><td>Ist es in der definierten Weihnachtszeit</td></tr>
+        <tr><td>ShadingPos</td><td>konfigurierte Position f&uuml;r die Beschattungsfahrt</td></tr>
+        <tr><td>ShadingPositionAssignment</td><td>Position f&uuml;r die Lamellenfahrt f&uuml;r die Beschattungsfahrt</td></tr>
+        <tr><td>ShadingMode</td><td>welcher aktuelle Modus f&uuml;r das Beschatten ist konfiguriert</td></tr>
+        <tr><td>IdleDetectionValue</td><td>welcher Wert im IdleDetectionRading zeigt an dass das Rollo aktuell nicht in Bewegung ist</td></tr>
+        <tr><td>ShadingAzimuthLeft</td><td>ab welchem Azimut beginnt die Beschattung</td></tr>
+        <tr><td>ShadingAzimuthRight</td><td>ab welchem Azimut endet die Beschattung</td></tr>
+        <tr><td>ShadingMinOutsideTemperature</td><td>&uuml;ber welchem Temperaturwert beginnt die Beschattung</td></tr>
+        <tr><td>ShadingMinElevation</td><td>&uuml;ber welchem Elevationwert beginnt die Beschattung</td></tr>
+        <tr><td>ShadingMaxElevation</td><td>&uuml;ber welchem Elevationwert endet die Beschattung</td></tr>
+        <tr><td>ShadingStateChangeSunny</td><td>&uuml;ber welchem Brightnesswert beginnt die Beschattung</td></tr>
+        <tr><td>ShadingStateChangeCloudy</td><td>unter welchem Brightnesswert endet die Beschattung</td></tr>
+        <tr><td>ShadingWaitingPeriod</td><td>nach welcher Wartezeit werden Beschattungsrelevante Sensorwerte wieder beachtet und die Beschattungsroutine abgearbeitet</td></tr>
+        <tr><td>ExternalTriggerDevice</td><td>konfiguriertes Triggerdevice</td></tr>
+        <tr><td>ExternalTriggerReading</td><td>kofiguriertes Triggerdevice Reading</td></tr>
+        <tr><td>ExternalTriggerValueActive</td><td>Wert mit welchen der externe Trigger Prozess ausgel&uoml;st werden soll.</td></tr>
+        <tr><td>ExternalTriggerValueActive2</td><td>weiterer Wert mit welchen der externe zweite Trigger Prozess ausgel&uoml;st werden soll.</td></tr>
+        <tr><td>ExternalTriggerValueInactive</td><td>Wert mit welchen der externe Trigger Prozess beendet werden soll</td></tr>
+        <tr><td>ExternalTriggerPosActive</td><td>Rolloposition welche angefahren werden soll wenn der erste externe Trigger aktiv wird.</td></tr>
+        <tr><td>ExternalTriggerPosActive2</td><td>Rolloposition welche angefahren werden soll wenn der zweite externe Trigger aktiv wird.</td></tr>
+        <tr><td>ExternalTriggerPosInactive</td><td>Rolloposition welche angefahren werden soll wenn der externe Trigger inaktiv wird.</td></tr>
+        <tr><td>ExternalTriggerState</td><td>aktueller Status des externen Triggers, 0 oder 1</td></tr>
+        <tr><td>Delay</td><td>konfigurierte Verz&ouml;gerungswert welcher f&uuml;r die Zufallsberechnung werwendet werden soll</td></tr>
+        <tr><td>DelayStart</td><td>konfigurierter fester Verz&ouml;gerungswert</td></tr>
+        <tr><td>BlockingTimeAfterManual</td><td>konfigurierte Blockzeit nach einer manuellen Fahrt</td></tr>
+        <tr><td>BlockingTimeBeforNightClose</td><td>konfigurierte Blockzeit vor dem n&auml;chtlichen schlie&szlig;en</td></tr>
+        <tr><td>BlockingTimeBeforDayOpen</td><td>konfigurierte Blockzeit vor dem morgendlichen &ouml;ffnen</td></tr>
+        <tr><td>PosCmd</td><td>       </td></tr>
+        <tr><td>OpenPos</td><td>         </td></tr>
+        <tr><td>OpenPositionAssignment</td><td>           </td></tr> 
+        <tr><td>VentilatePos</td><td>              </td></tr>
+        <tr><td>VentilatePositionAssignment</td><td>          </td></tr>
+        <tr><td>VentilatePosAfterDayClosed</td><td>          </td></tr>
+        <tr><td>ClosedPos</td><td>           </td></tr>
+        
+        
+        
+        
+        
+        
+        
+        
         <tr><td>NoDelay</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</td></tr>
         <tr><td>LastDrive</td><td>Grund des letzten Fahrens</td></tr>
         <tr><td>LastPos</td><td>die letzte Position des Rollladens</td></tr>
@@ -9422,7 +9555,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.16",
+  "version": "v0.9.17",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
