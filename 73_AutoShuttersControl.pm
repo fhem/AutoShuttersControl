@@ -9470,14 +9470,14 @@ sub getBlockAscDrivesAfterManual {
         <tr><td>BlockingTimeAfterManual</td><td>konfigurierte Blockzeit nach einer manuellen Fahrt</td></tr>
         <tr><td>BlockingTimeBeforNightClose</td><td>konfigurierte Blockzeit vor dem n&auml;chtlichen schlie&szlig;en</td></tr>
         <tr><td>BlockingTimeBeforDayOpen</td><td>konfigurierte Blockzeit vor dem morgendlichen &ouml;ffnen</td></tr>
-        <tr><td>PosCmd</td><td>       </td></tr>
-        <tr><td>OpenPos</td><td>         </td></tr>
-        <tr><td>OpenPositionAssignment</td><td>           </td></tr> 
+        <tr><td>PosCmd</td><td>welches Kommando wird zum fahren der Rollos verwendet (pct, position?)</td></tr>
+        <tr><td>OpenPos</td><td>Position f&uuml;r Rollo ganz auf</td></tr>
+        <tr><td>OpenPositionAssignment</td><td>Slat-Position f&uuml;r Rollo ganz auf</td></tr> 
         <tr><td>VentilatePos</td><td>              </td></tr>
         <tr><td>VentilatePositionAssignment</td><td>          </td></tr>
         <tr><td>VentilatePosAfterDayClosed</td><td>          </td></tr>
         <tr><td>ClosedPos</td><td>           </td></tr>
-        
+        <tr><td>ClosedPositionAssignment</td><td>  </td></tr>
         
         
         
@@ -9555,7 +9555,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.17",
+  "version": "v0.9.18",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
