@@ -1044,9 +1044,14 @@ sub EventProcessingWindowRec {
         if (
                $match =~ m{[Cc]lose|true}xms
             && IsAfterShuttersTimeBlocking($shuttersDev)
-            && (   $shutters->getStatus == $shutters->getVentilatePos
+            && (
+                   $shutters->getStatus == $shutters->getVentilatePos
                 || $shutters->getStatus == $shutters->getComfortOpenPos
-                || $shutters->getStatus == $shutters->getOpenPos )
+                || $shutters->getStatus == $shutters->getOpenPos
+                || (   $shutters->getStatus == $shutters->getPrivacyDownPos
+                    && $shutters->getPrivacyDownStatus == 0
+                    && !$shutters->getIsDay )
+            )
             && (   $shutters->getVentilateOpen eq 'on'
                 || $ascDev->getAutoShuttersControlComfort eq 'on' )
           )
@@ -8410,7 +8415,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.27",
+  "version": "v0.8.28",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
