@@ -1142,9 +1142,14 @@ sub EventProcessingWindowRec {
         if (
                $match =~ m{[Cc]lose|true}xms
             && IsAfterShuttersTimeBlocking($shuttersDev)
-            && (   $shutters->getStatus == $shutters->getVentilatePos
+            && (
+                   $shutters->getStatus == $shutters->getVentilatePos
                 || $shutters->getStatus == $shutters->getComfortOpenPos
-                || $shutters->getStatus == $shutters->getOpenPos )
+                || $shutters->getStatus == $shutters->getOpenPos
+                || (   $shutters->getStatus == $shutters->getPrivacyDownPos
+                    && $shutters->getPrivacyDownStatus == 0
+                    && !$shutters->getIsDay )
+            )
             && (   $shutters->getVentilateOpen eq 'on'
                 || $ascDev->getAutoShuttersControlComfort eq 'on' )
           )
@@ -2250,12 +2255,12 @@ sub EventProcessingBrightness {
 sub EventProcessingShadingBrightness {
     my ( $hash, $shuttersDev, $events ) = @_;
 
-    my $name    = $hash->{NAME};
+    my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
     my $outTemp = $shutters->getOutTemp;
-    $outTemp    = $ascDev->getOutTemp
-        if ($outTemp == -100);
+    $outTemp = $ascDev->getOutTemp
+      if ( $outTemp == -100 );
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -2328,8 +2333,8 @@ sub EventProcessingTwilightDevice {
     if ( $events =~ m{(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)}xms ) {
         my $name    = $device;
         my $outTemp = $shutters->getOutTemp;
-        $outTemp    = $ascDev->getOutTemp
-            if ($outTemp == -100);
+        $outTemp = $ascDev->getOutTemp
+          if ( $outTemp == -100 );
         my ( $azimuth, $elevation );
 
         $azimuth   = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
@@ -2581,11 +2586,13 @@ sub ShadingProcessing {
         )
         && (   $shutters->getShadingMode eq 'always'
             || $shutters->getShadingMode eq $homemode )
-        && (   $shutters->getModeUp eq 'always'
+        && (
+               $shutters->getModeUp eq 'always'
             || $shutters->getModeUp eq $homemode
             || (   $shutters->getModeUp eq 'home'
                 && $homemode ne 'asleep' )
-            || $shutters->getModeUp eq 'off' )
+            || $shutters->getModeUp eq 'off'
+        )
         && (
             ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
             || (  !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
