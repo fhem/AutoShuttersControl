@@ -3684,7 +3684,7 @@ sub _IsDay {
             ) ? 1 : 0
         ) if ( $shutters->getDown eq 'brightness' );
 
-        ASC_Debug( 'FnIsDay: '
+        ASC_Debug( 'FnIsDay nach Sonnenuntergang / Abends: '
               . $shuttersDev
               . ' getDownBrightness: '
               . $respIsDay
@@ -3693,7 +3693,9 @@ sub _IsDay {
               . ' BrightnessMin: '
               . $brightnessMinVal
               . ' Sunset: '
-              . $shutters->getSunset );
+              . $shutters->getSunset
+              . ' isday: '
+              . $isday );
 
         ##### Nach Sonnenauf / Morgens
         $respIsDay = (
@@ -3701,14 +3703,14 @@ sub _IsDay {
                 (
                          $shutters->getBrightness > $brightnessMaxVal
                       && !$isday
-                      && !$shutters->getSunrise
+                      && $shutters->getSunrise
                 )
                   || $respIsDay
                   || $shutters->getSunrise
             ) ? 1 : 0
         ) if ( $shutters->getUp eq 'brightness' );
 
-        ASC_Debug( 'FnIsDay: '
+        ASC_Debug( 'FnIsDay nach Sonnenaufgang / Morgens: '
               . $shuttersDev
               . ' getUpBrightness: '
               . $respIsDay
@@ -3717,7 +3719,9 @@ sub _IsDay {
               . ' BrightnessMax: '
               . $brightnessMaxVal
               . ' Sunrise: '
-              . $shutters->getSunrise );
+              . $shutters->getSunrise
+              . ' isday: '
+              . $isday );
     }
 
     return $respIsDay;
@@ -8415,7 +8419,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.28",
+  "version": "v0.8.29",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
