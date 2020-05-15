@@ -3856,7 +3856,7 @@ sub _IsDay {
                 (
                          $shutters->getBrightness > $brightnessMaxVal
                       && !$isday
-                      && !$shutters->getSunrise
+                      && $shutters->getSunrise
                 )
                   || $respIsDay
                   || $shutters->getSunrise
