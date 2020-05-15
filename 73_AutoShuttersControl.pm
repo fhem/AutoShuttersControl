@@ -1147,7 +1147,7 @@ sub EventProcessingWindowRec {
                 || $shutters->getStatus == $shutters->getComfortOpenPos
                 || $shutters->getStatus == $shutters->getOpenPos
                 || (   $shutters->getStatus == $shutters->getPrivacyDownPos
-                    && $shutters->getPrivacyDownStatus == 0
+                    && $shutters->getPrivacyDownStatus == 1
                     && !$shutters->getIsDay )
             )
             && (   $shutters->getVentilateOpen eq 'on'
