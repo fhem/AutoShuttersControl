@@ -2222,16 +2222,16 @@ sub EventProcessingTwilightDevice {
     );
 
     if ( $events =~ m{(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)}xms ) {
-        my $name = $device;
+        my $name    = $device;
         my ( $azimuth, $elevation );
         my $outTemp = $ascDev->getOutTemp;
 
-        $azimuth   = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
-        $elevation = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
+        $azimuth    = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
+        $elevation  = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
 
-        $azimuth = $ascDev->getAzimuth
+        $azimuth    = $ascDev->getAzimuth
           if ( !defined($azimuth) && !$azimuth );
-        $elevation = $ascDev->getElevation
+        $elevation  = $ascDev->getElevation
           if ( !defined($elevation) && !$elevation );
 
         ASC_Debug( 'EventProcessingTwilightDevice: '
@@ -2354,7 +2354,7 @@ sub ShadingProcessing {
 
     if (
         (
-               $outTemp < $shutters->getShadingMinOutsideTemperature - 3
+               $outTemp < $shutters->getShadingMinOutsideTemperature - 4
             || $azimuth < $azimuthLeft
             || $azimuth > $azimuthRight
             || !$shutters->getIsDay
@@ -2379,7 +2379,7 @@ sub ShadingProcessing {
         || $elevation < $shutters->getShadingMinElevation
         || $elevation > $shutters->getShadingMaxElevation
         || $brightness < $shutters->getShadingStateChangeCloudy
-        || $outTemp < $shutters->getShadingMinOutsideTemperature )
+        || $outTemp < $shutters->getShadingMinOutsideTemperature - 1 )
     {
         $shutters->setShadingStatus('out reserved')
           if ( $shutters->getShadingStatus eq 'in'
