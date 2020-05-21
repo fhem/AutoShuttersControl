@@ -2258,9 +2258,7 @@ sub EventProcessingShadingBrightness {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp = $shutters->getOutTemp;
-    $outTemp = $ascDev->getOutTemp
-      if ( $outTemp == -100 );
+    my $outTemp = ( $shutters->getOutTemp != -100 ? $shutters->getOutTemp : $ascDev->getOutTemp );
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -2332,17 +2330,15 @@ sub EventProcessingTwilightDevice {
 
     if ( $events =~ m{(azimuth|elevation|SunAz|SunAlt):\s(\d+.\d+)}xms ) {
         my $name    = $device;
-        my $outTemp = $shutters->getOutTemp;
-        $outTemp = $ascDev->getOutTemp
-          if ( $outTemp == -100 );
+        my $outTemp = $ascDev->getOutTemp;
         my ( $azimuth, $elevation );
 
-        $azimuth   = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
-        $elevation = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
+        $azimuth    = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
+        $elevation  = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
 
-        $azimuth = $ascDev->getAzimuth
+        $azimuth    = $ascDev->getAzimuth
           if ( !defined($azimuth) && !$azimuth );
-        $elevation = $ascDev->getElevation
+        $elevation  = $ascDev->getElevation
           if ( !defined($elevation) && !$elevation );
 
         ASC_Debug( 'EventProcessingTwilightDevice: '
@@ -2353,10 +2349,10 @@ sub EventProcessingTwilightDevice {
         for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
 
-            my $homemode = $shutters->getRoommatesStatus;
-            $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
-            $outTemp = $shutters->getOutTemp
-              if ( $shutters->getOutTemp != -100 );
+            my $homemode    = $shutters->getRoommatesStatus;
+            $homemode       = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+            $outTemp        = $shutters->getOutTemp
+                if ( $shutters->getOutTemp != -100 );
 
             ASC_Debug( 'EventProcessingTwilightDevice: '
                   . $shutters->getShuttersDev
