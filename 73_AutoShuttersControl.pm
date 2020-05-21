@@ -2903,7 +2903,13 @@ sub EventProcessingExternalTriggerDevice {
         $shutters->setLastDrive('external trigger device inactive');
         $shutters->setNoDelay(1);
         $shutters->setExternalTriggerState(1);
-        ShuttersCommandSet( $hash, $shuttersDev, ($shutters->getIsDay ? $triggerPosInactive : $shutters->getClosedPos) );
+        ShuttersCommandSet( $hash, $shuttersDev,
+            (
+              $shutters->getIsDay
+                ? $triggerPosInactive
+                : $shutters->getClosedPos
+            )
+        );
     }
 
     ASC_Debug(
@@ -3758,6 +3764,18 @@ sub _IsDay {
 
     $shutters->setShuttersDev($shuttersDev);
 
+    my $brightnessMinVal =
+      ( $shutters->getBrightnessMinVal > -1
+          ? $shutters->getBrightnessMinVal
+          : $ascDev->getBrightnessMinVal
+      );
+
+    my $brightnessMaxVal =
+      ( $shutters->getBrightnessMaxVal > -1
+          ? $shutters->getBrightnessMaxVal
+          : $ascDev->getBrightnessMaxVal
+      );
+
     my $isday = ( ShuttersSunrise( $shuttersDev, 'unix' ) >
           ShuttersSunset( $shuttersDev, 'unix' ) ? 1 : 0 );
     my $respIsDay = $isday;
@@ -3766,63 +3784,41 @@ sub _IsDay {
 
     if (
         (
-               $shutters->getDown eq 'brightness'
-            || $shutters->getUp eq 'brightness'
-        )
-        || (
             (
                 (
-                    (
-                        int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime( '24:00',
-                                $shutters->getTimeUpEarly ) / 86400
-                        )
-                        && !IsWe()
+                    int( gettimeofday() / 86400 ) != int(
+                        computeAlignTime( '24:00',
+                            $shutters->getTimeUpEarly ) / 86400
                     )
-                    || (
-                        int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime( '24:00',
-                                $shutters->getTimeUpWeHoliday ) / 86400
-                        )
-                        && IsWe()
-                        && $ascDev->getSunriseTimeWeHoliday eq 'on'
-                        && $shutters->getTimeUpWeHoliday ne '01:25'
-                    )
+                    && !IsWe()
                 )
-                && int( gettimeofday() / 86400 ) == int(
-                    computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
-                      86400
+                || (
+                    int( gettimeofday() / 86400 ) != int(
+                        computeAlignTime( '24:00',
+                            $shutters->getTimeUpWeHoliday ) / 86400
+                    )
+                    && IsWe()
+                    && $ascDev->getSunriseTimeWeHoliday eq 'on'
+                    && $shutters->getTimeUpWeHoliday ne '01:25'
                 )
             )
-            || (
-                int( gettimeofday() / 86400 ) != int(
-                    computeAlignTime( '24:00', $shutters->getTimeDownEarly ) /
-                      86400
-                )
-                && int( gettimeofday() / 86400 ) == int(
-                    computeAlignTime( '24:00', $shutters->getTimeDownLate ) /
-                      86400
-                )
+            && int( gettimeofday() / 86400 ) == int(
+                computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
+                    86400
+            )
+        )
+        || (
+            int( gettimeofday() / 86400 ) != int(
+                computeAlignTime( '24:00', $shutters->getTimeDownEarly ) /
+                    86400
+            )
+            && int( gettimeofday() / 86400 ) == int(
+                computeAlignTime( '24:00', $shutters->getTimeDownLate ) /
+                    86400
             )
         )
       )
     {
-        my $brightnessMinVal;
-        if ( $shutters->getBrightnessMinVal > -1 ) {
-            $brightnessMinVal = $shutters->getBrightnessMinVal;
-        }
-        else {
-            $brightnessMinVal = $ascDev->getBrightnessMinVal;
-        }
-
-        my $brightnessMaxVal;
-        if ( $shutters->getBrightnessMaxVal > -1 ) {
-            $brightnessMaxVal = $shutters->getBrightnessMaxVal;
-        }
-        else {
-            $brightnessMaxVal = $ascDev->getBrightnessMaxVal;
-        }
-
         ##### Nach Sonnenuntergang / Abends
         $respIsDay = (
             (
