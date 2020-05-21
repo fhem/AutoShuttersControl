@@ -2773,7 +2773,13 @@ sub EventProcessingExternalTriggerDevice {
         $shutters->setLastDrive('external trigger device inactive');
         $shutters->setNoDelay(1);
         $shutters->setExternalTriggerState(1);
-        ShuttersCommandSet( $hash, $shuttersDev, $triggerPosInactive );
+        ShuttersCommandSet( $hash, $shuttersDev,
+            (
+              $shutters->getIsDay
+                ? $triggerPosInactive
+                : $shutters->getClosedPos
+            )
+        );
     }
 
     ASC_Debug(
