@@ -2465,7 +2465,7 @@ sub ShadingProcessing {
 
     if (
         (
-               $outTemp < $shutters->getShadingMinOutsideTemperature - 3
+               $outTemp < $shutters->getShadingMinOutsideTemperature - 4
             || $azimuth < $azimuthLeft
             || $azimuth > $azimuthRight
             || !$shutters->getIsDay
@@ -2490,7 +2490,7 @@ sub ShadingProcessing {
         || $elevation < $shutters->getShadingMinElevation
         || $elevation > $shutters->getShadingMaxElevation
         || $brightness < $shutters->getShadingStateChangeCloudy
-        || $outTemp < $shutters->getShadingMinOutsideTemperature )
+        || $outTemp < $shutters->getShadingMinOutsideTemperature - 1 )
     {
         $shutters->setShadingStatus('out reserved')
           if ( $shutters->getShadingStatus eq 'in'
