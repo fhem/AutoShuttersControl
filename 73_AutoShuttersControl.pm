@@ -2151,7 +2151,7 @@ sub EventProcessingShadingBrightness {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp = $ascDev->getOutTemp;
+    my $outTemp = ( $shutters->getOutTemp != -100 ? $shutters->getOutTemp : $ascDev->getOutTemp );
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -2185,8 +2185,6 @@ sub EventProcessingShadingBrightness {
             && $shutters->getRainProtectionStatus eq 'unprotected'
             && $shutters->getWindProtectionStatus eq 'unprotected' )
         {
-            $outTemp = $shutters->getOutTemp
-              if ( $shutters->getOutTemp != -100 );
             ShadingProcessing(
                 $hash,
                 $shuttersDev,
