@@ -2456,6 +2456,8 @@ sub ShadingProcessing {
       if (
            IsAfterShuttersTimeBlocking($shuttersDev)
         && !$shutters->getShadingManualDriveStatus
+        && $shutters->getRoommatesStatus ne 'gotosleep'
+        && $shutters->getRoommatesStatus ne 'asleep'
         && (
             (
                    $shutters->getShadingStatus eq 'out'
@@ -2464,9 +2466,21 @@ sub ShadingProcessing {
             || (   $shutters->getShadingStatus eq 'in'
                 && $shutters->getShadingLastStatus eq 'out' )
         )
-        && $shutters->getRoommatesStatus ne 'asleep'
-        && $shutters->getRoommatesStatus ne 'gotosleep'
-        && ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+        && (   $shutters->getShadingMode eq 'always'
+            || $shutters->getShadingMode eq $homemode )
+        && (
+               $shutters->getModeUp eq 'always'
+            || $shutters->getModeUp eq $homemode
+            || (   $shutters->getModeUp eq 'home'
+                && $homemode ne 'asleep' )
+            || $shutters->getModeUp eq 'off'
+        )
+        && (
+            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+            || (  !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
+                && $shutters->getIfInShading
+                && $shutters->getStatus != $shutters->getShadingPos )
+        )
       );
 
     return;
@@ -8419,7 +8433,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.8.29",
+  "version": "v0.8.30",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
