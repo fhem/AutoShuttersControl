@@ -2258,7 +2258,10 @@ sub EventProcessingShadingBrightness {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp = ( $shutters->getOutTemp != -100 ? $shutters->getOutTemp : $ascDev->getOutTemp );
+    my $outTemp =
+      (   $shutters->getOutTemp != -100
+        ? $shutters->getOutTemp
+        : $ascDev->getOutTemp );
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -2333,12 +2336,12 @@ sub EventProcessingTwilightDevice {
         my $outTemp = $ascDev->getOutTemp;
         my ( $azimuth, $elevation );
 
-        $azimuth    = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
-        $elevation  = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
+        $azimuth   = $2 if ( $1 eq 'azimuth'   || $1 eq 'SunAz' );
+        $elevation = $2 if ( $1 eq 'elevation' || $1 eq 'SunAlt' );
 
-        $azimuth    = $ascDev->getAzimuth
+        $azimuth = $ascDev->getAzimuth
           if ( !defined($azimuth) && !$azimuth );
-        $elevation  = $ascDev->getElevation
+        $elevation = $ascDev->getElevation
           if ( !defined($elevation) && !$elevation );
 
         ASC_Debug( 'EventProcessingTwilightDevice: '
@@ -2349,10 +2352,10 @@ sub EventProcessingTwilightDevice {
         for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $shutters->setShuttersDev($shuttersDev);
 
-            my $homemode    = $shutters->getRoommatesStatus;
-            $homemode       = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
-            $outTemp        = $shutters->getOutTemp
-                if ( $shutters->getOutTemp != -100 );
+            my $homemode = $shutters->getRoommatesStatus;
+            $homemode = $ascDev->getResidentsStatus if ( $homemode eq 'none' );
+            $outTemp = $shutters->getOutTemp
+              if ( $shutters->getOutTemp != -100 );
 
             ASC_Debug( 'EventProcessingTwilightDevice: '
                   . $shutters->getShuttersDev
@@ -2903,9 +2906,11 @@ sub EventProcessingExternalTriggerDevice {
         $shutters->setLastDrive('external trigger device inactive');
         $shutters->setNoDelay(1);
         $shutters->setExternalTriggerState(1);
-        ShuttersCommandSet( $hash, $shuttersDev,
+        ShuttersCommandSet(
+            $hash,
+            $shuttersDev,
             (
-              $shutters->getIsDay
+                  $shutters->getIsDay
                 ? $triggerPosInactive
                 : $shutters->getClosedPos
             )
@@ -3764,17 +3769,17 @@ sub _IsDay {
 
     $shutters->setShuttersDev($shuttersDev);
 
-    my $brightnessMinVal =
-      ( $shutters->getBrightnessMinVal > -1
-          ? $shutters->getBrightnessMinVal
-          : $ascDev->getBrightnessMinVal
-      );
+    my $brightnessMinVal = (
+          $shutters->getBrightnessMinVal > -1
+        ? $shutters->getBrightnessMinVal
+        : $ascDev->getBrightnessMinVal
+    );
 
-    my $brightnessMaxVal =
-      ( $shutters->getBrightnessMaxVal > -1
-          ? $shutters->getBrightnessMaxVal
-          : $ascDev->getBrightnessMaxVal
-      );
+    my $brightnessMaxVal = (
+          $shutters->getBrightnessMaxVal > -1
+        ? $shutters->getBrightnessMaxVal
+        : $ascDev->getBrightnessMaxVal
+    );
 
     my $isday = ( ShuttersSunrise( $shuttersDev, 'unix' ) >
           ShuttersSunset( $shuttersDev, 'unix' ) ? 1 : 0 );
@@ -3787,8 +3792,8 @@ sub _IsDay {
             (
                 (
                     int( gettimeofday() / 86400 ) != int(
-                        computeAlignTime( '24:00',
-                            $shutters->getTimeUpEarly ) / 86400
+                        computeAlignTime( '24:00', $shutters->getTimeUpEarly )
+                          / 86400
                     )
                     && !IsWe()
                 )
@@ -3803,18 +3808,16 @@ sub _IsDay {
                 )
             )
             && int( gettimeofday() / 86400 ) == int(
-                computeAlignTime( '24:00', $shutters->getTimeUpLate ) /
-                    86400
+                computeAlignTime( '24:00', $shutters->getTimeUpLate ) / 86400
             )
         )
         || (
             int( gettimeofday() / 86400 ) != int(
                 computeAlignTime( '24:00', $shutters->getTimeDownEarly ) /
-                    86400
+                  86400
             )
             && int( gettimeofday() / 86400 ) == int(
-                computeAlignTime( '24:00', $shutters->getTimeDownLate ) /
-                    86400
+                computeAlignTime( '24:00', $shutters->getTimeDownLate ) / 86400
             )
         )
       )
@@ -9554,7 +9557,7 @@ sub getBlockAscDrivesAfterManual {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.18",
+  "version": "v0.9.19",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
