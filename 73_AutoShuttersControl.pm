@@ -2478,6 +2478,8 @@ sub ShadingProcessing {
             || (  !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
                 && $shutters->getIfInShading
                 && $shutters->getStatus != $shutters->getShadingPos )
+            || (  !$shutters->getIfInShading
+                && $shutters->getStatus == $shutters->getShadingPos )
         )
       );
 
