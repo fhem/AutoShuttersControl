@@ -9405,6 +9405,7 @@ sub getBlockAscDrivesAfterManual {
             <li><strong>ASC_twilightDevice</strong> - das Device, welches die Informationen zum Sonnenstand liefert. Wird unter anderem f&uuml;r die Beschattung verwendet.</li>
             <a name="ASC_windSensor"></a>
             <li><strong>ASC_windSensor - DEVICE[:READING]</strong> - Sensor f&uuml;r die Windgeschwindigkeit. Kombination aus Device und Reading.</li>
+            <li><strong>ASC_slatDriveCmdInverse</strong> - Vertauscht wie Reihnfolge der Fahrbefehle f&uuml;r Slat und Drive</li>
         </ul>
         <br />
         <br />
