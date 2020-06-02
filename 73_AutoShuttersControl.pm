@@ -350,6 +350,7 @@ sub Initialize {
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
+      . 'ASC_slatDriveCmdInverse:0,1 '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{FW_detailFn} = \&ShuttersInformation;
@@ -1203,11 +1204,14 @@ sub EventProcessingWindowRec {
             elsif (
                    $shutters->getModeDown ne 'absent'
                 && $shutters->getModeDown ne 'off'
-                && (  (    !$shutters->getIsDay
+                && (
+                    (
+                          !$shutters->getIsDay
                         && $shutters->getModeDown ne 'roommate'
-                      )
+                    )
                     || $homemode eq 'asleep'
-                    || $homemode eq 'gotosleep' )
+                    || $homemode eq 'gotosleep'
+                )
                 && $ascDev->getAutoShuttersControlEvening eq 'on'
               )
             {
@@ -1542,12 +1546,10 @@ sub EventProcessingResidents {
                 && $shutters->getSelfDefenseMode ne 'off'
                 || (   $getModeDown eq 'absent'
                     || $getModeDown eq 'always' )
-                || (    $shutters->getShadingMode eq 'absent'
-                     && $shutters->getRoommatesStatus eq 'none'
-                   )
-                || (    $shutters->getShadingMode eq 'home'
-                     && $shutters->getRoommatesStatus eq 'none'
-                   )
+                || (   $shutters->getShadingMode eq 'absent'
+                    && $shutters->getRoommatesStatus eq 'none' )
+                || (   $shutters->getShadingMode eq 'home'
+                    && $shutters->getRoommatesStatus eq 'none' )
               )
             {
                 if (
@@ -1567,24 +1569,24 @@ sub EventProcessingResidents {
                     $shutters->setSelfDefenseState(1);
                     $shutters->setDriveCmd( $shutters->getClosedPos );
                 }
-                elsif (    $shutters->getIsDay
-                        && $shutters->getIfInShading
-                        && $shutters->getShadingMode eq 'absent'
-                        && $shutters->getRoommatesStatus eq 'none'
-                    )
+                elsif ($shutters->getIsDay
+                    && $shutters->getIfInShading
+                    && $shutters->getShadingMode eq 'absent'
+                    && $shutters->getRoommatesStatus eq 'none' )
                 {
                     ShadingProcessingDriveCommand( $hash, $shuttersDev );
                 }
-                elsif ( $shutters->getShadingMode eq 'home'
-                        && $shutters->getIsDay
-                        && $shutters->getIfInShading
-                        && $shutters->getStatus == $shutters->getShadingPos
-                        && $shutters->getRoommatesStatus eq 'none'
-                        && !(
-                            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
-                            && $shutters->getShuttersPlace eq 'terrace'
-                        )
-                        && !$shutters->getSelfDefenseState
+                elsif (
+                       $shutters->getShadingMode eq 'home'
+                    && $shutters->getIsDay
+                    && $shutters->getIfInShading
+                    && $shutters->getStatus == $shutters->getShadingPos
+                    && $shutters->getRoommatesStatus eq 'none'
+                    && !(
+                        CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                        && $shutters->getShuttersPlace eq 'terrace'
+                    )
+                    && !$shutters->getSelfDefenseState
                   )
                 {
                     $shutters->setLastDrive('shading out');
@@ -2288,10 +2290,11 @@ sub EventProcessingShadingBrightness {
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
     my $reading = $shutters->getBrightnessReading;
-    my $outTemp =
-      (   $shutters->getOutTemp != -100
+    my $outTemp = (
+          $shutters->getOutTemp != -100
         ? $shutters->getOutTemp
-        : $ascDev->getOutTemp );
+        : $ascDev->getOutTemp
+    );
 
     Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
@@ -4645,32 +4648,62 @@ sub _SetCmdFn {
         }
     }
 
-    CommandSet( undef,
-            $shuttersDev
-          . ':FILTER='
-          . $shutters->getPosCmd . '!='
-          . $posValue . ' '
-          . $driveCommand );
+    if ( $ascDev->getSlatDriveCmdInverse ) {
+        CommandSet(
+            undef,
+            (
+                  $shutters->getSlatDevice ne 'none'
+                ? $shutters->getSlatDevice
+                : $shuttersDev
+              )
+              . ' '
+              . $shutters->getSlatPosCmd . ' '
+              . $slatPos
+          )
+          if ( $slatPos > -1
+            && $shutters->getSlatPosCmd ne 'none' );
 
-    InternalTimer(
-        gettimeofday() + 3,
-        sub() {
-            CommandSet(
-                undef,
-                (
-                      $shutters->getSlatDevice ne 'none'
-                    ? $shutters->getSlatDevice
-                    : $shuttersDev
-                  )
-                  . ' '
-                  . $shutters->getSlatPosCmd . ' '
-                  . $slatPos
-            );
-        },
-        $shuttersDev
-      )
-      if ( $slatPos > -1
-        && $shutters->getSlatPosCmd ne 'none' );
+        InternalTimer(
+            gettimeofday() + 3,
+            sub() {
+                CommandSet( undef,
+                        $shuttersDev
+                      . ':FILTER='
+                      . $shutters->getPosCmd . '!='
+                      . $posValue . ' '
+                      . $driveCommand );
+            },
+            $shuttersDev
+          )
+          if ( $slatPos > -1
+            && $shutters->getSlatPosCmd ne 'none' );
+    }
+    else {
+        CommandSet( undef,
+                $shuttersDev
+              . ':FILTER='
+              . $shutters->getPosCmd . '!='
+              . $posValue . ' '
+              . $driveCommand );
+
+        InternalTimer(
+            gettimeofday() + 3,
+            sub() {
+                CommandSet(
+                    undef,
+                    (
+                          $shutters->getSlatDevice ne 'none'
+                        ? $shutters->getSlatDevice
+                        : $shuttersDev
+                      )
+                      . ' '
+                      . $shutters->getSlatPosCmd . ' '
+                      . $slatPos
+                );
+            },
+            $shuttersDev
+        );
+    }
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
@@ -8371,6 +8404,14 @@ sub getFreezeTemp {
     return AttrVal( $name, 'ASC_freezeTemp', 3 );
 }
 
+sub getSlatDriveCmdInverse {
+    my $self = shift;
+
+    my $name = $self->{name};
+
+    return AttrVal( $name, 'ASC_slatDriveCmdInverse', 0 );
+}
+
 sub _getTempSensor {
     my $self = shift;
 
@@ -9507,11 +9548,29 @@ sub getBlockAscDrivesAfterManual {
         <tr><td>PosCmd</td><td>welches Kommando wird zum fahren der Rollos verwendet (pct, position?)</td></tr>
         <tr><td>OpenPos</td><td>Position f&uuml;r Rollo ganz auf</td></tr>
         <tr><td>OpenPositionAssignment</td><td>Slat-Position f&uuml;r Rollo ganz auf</td></tr> 
-        <tr><td>VentilatePos</td><td>              </td></tr>
-        <tr><td>VentilatePositionAssignment</td><td>          </td></tr>
-        <tr><td>VentilatePosAfterDayClosed</td><td>          </td></tr>
-        <tr><td>ClosedPos</td><td>           </td></tr>
-        <tr><td>ClosedPositionAssignment</td><td>  </td></tr>
+        <tr><td>VentilatePos</td><td>L&uuml;ften Position</td></tr>
+        <tr><td>VentilatePositionAssignment</td><td>L&uuml;ften Slat-Position</td></tr>
+        <tr><td>VentilatePosAfterDayClosed</td><td>Position des Rollos beim schlie&szlig;en des Fensters am Tag</td></tr>
+        <tr><td>ClosedPos</td><td>Position f&uuml;r Rollo ganz geschlossen</td></tr>
+        <tr><td>ClosedPositionAssignment</td><td>Slat-Position f&uuml;r Rollo ganz geschlossen</td></tr>
+        <tr><td>SleepPos</td><td>Position f&uuml;r schlafen</td></tr>
+        <tr><td>SleepPositionAssignment</td><td>Slat-Position f&uuml;r schlafen</td></tr>
+        <tr><td>VentilateOpen</td><td>L&uuml;ften aktiv?</td></tr>
+        <tr><td>ComfortOpenPos</td><td>Comfort Position</td></tr>
+        <tr><td>ComfortOpenPositionAssignment</td><td>Slat-Comfort Position</td></tr>
+        <tr><td>PartyMode</td><td>Abfrage Party Mode</td></tr>
+        <tr><td>Roommates</td><td>Abfrage Roommates / Antwort als String</td></tr>
+        <tr><td>RoommatesReading</td><td>Roommates Reading</td></tr>
+        <tr><td>RoommatesStatus</td><td>Roommates Status unter Ber&uuml;cksichtigung aller Roommates und dessen Status</td></tr>
+        <tr><td>RoommatesLastStatus</td><td>Roommates letzter Status unter Ber&uuml;cksichtigung aller Roommates und dessen letzten Status</td></tr>
+        <tr><td>WindPos</td><td>Rollo Position bei Windtrigger</td></tr>
+        <tr><td>WindMax</td><td>Wert über dem die Windprotection aktiviert werden soll</td></tr>
+        <tr><td>WindMin</td><td>Wert unter dem die Windprotection aufgehoben werden soll</td></tr>
+        <tr><td>WindProtection</td><td>Windprotection soll aktiv sein oder nicht</td></tr>
+        <tr><td>WindProtectionStatus</td><td>aktueller Status der WindProtection</td></tr>
+        <tr><td>RainProtection</td><td>Rain Protection soll aktiv sein oder nicht</td></tr>
+        <tr><td>RainProtectionStatus</td><td>aktueller Staus der Rain Protection</td></tr>
+        
         
         
         
