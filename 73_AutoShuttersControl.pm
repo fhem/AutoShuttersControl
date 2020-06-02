@@ -1542,6 +1542,12 @@ sub EventProcessingResidents {
                 && $shutters->getSelfDefenseMode ne 'off'
                 || (   $getModeDown eq 'absent'
                     || $getModeDown eq 'always' )
+                || (    $shutters->getShadingMode eq 'absent'
+                     && $shutters->getRoommatesStatus eq 'none'
+                   )
+                || (    $shutters->getShadingMode eq 'home'
+                     && $shutters->getRoommatesStatus eq 'none'
+                   )
               )
             {
                 if (
@@ -1560,6 +1566,29 @@ sub EventProcessingResidents {
                       ; # der erste Wert ist ob der timer schon läuft, der zweite ist ob self defense aktiv ist durch die Bedingungen
                     $shutters->setSelfDefenseState(1);
                     $shutters->setDriveCmd( $shutters->getClosedPos );
+                }
+                elsif (    $shutters->getIsDay
+                        && $shutters->getIfInShading
+                        && $shutters->getShadingMode eq 'absent'
+                        && $shutters->getRoommatesStatus eq 'none'
+                    )
+                {
+                    ShadingProcessingDriveCommand( $hash, $shuttersDev );
+                }
+                elsif ( $shutters->getShadingMode eq 'home'
+                        && $shutters->getIsDay
+                        && $shutters->getIfInShading
+                        && $shutters->getStatus == $shutters->getShadingPos
+                        && $shutters->getRoommatesStatus eq 'none'
+                        && !(
+                            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                            && $shutters->getShuttersPlace eq 'terrace'
+                        )
+                        && !$shutters->getSelfDefenseState
+                  )
+                {
+                    $shutters->setLastDrive('shading out');
+                    $shutters->setDriveCmd( $shutters->getLastPos );
                 }
                 elsif (( $getModeDown eq 'absent' || $getModeDown eq 'always' )
                     && !$shutters->getIsDay
@@ -1640,8 +1669,7 @@ sub EventProcessingResidents {
                 && !$shutters->getSelfDefenseState
               )
             {
-                $shutters->setLastDrive('shading in');
-                $shutters->setDriveCmd( $shutters->getShadingPos );
+                ShadingProcessingDriveCommand( $hash, $shuttersDev );
             }
             elsif (
                    $shutters->getShadingMode eq 'absent'
