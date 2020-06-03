@@ -9568,11 +9568,33 @@ sub getBlockAscDrivesAfterManual {
         <tr><td>WindMax</td><td>Wert über dem die Windprotection aktiviert werden soll</td></tr>
         <tr><td>WindMin</td><td>Wert unter dem die Windprotection aufgehoben werden soll</td></tr>
         <tr><td>WindProtection</td><td>Windprotection soll aktiv sein oder nicht</td></tr>
-        <tr><td>WindProtectionStatus</td><td>aktueller Status der WindProtection</td></tr>
+        <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protected“ oder „unprotected“</td></tr>
         <tr><td>RainProtection</td><td>Rain Protection soll aktiv sein oder nicht</td></tr>
-        <tr><td>RainProtectionStatus</td><td>aktueller Staus der Rain Protection</td></tr>
-        
-        
+        <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „unprotected“ oder „unprotected“</td></tr>
+        <tr><td>ModeUp</td><td>   </td></tr>
+        <tr><td>ModeDown</td><td>   </td></tr>
+        <tr><td>LockOut</td><td>   </td></tr>
+        <tr><td>LockOutCmd</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
+        <tr><td>Up</td><td>   </td></tr>
+        <tr><td>Down</td><td>   </td></tr>
+        <tr><td>TimeUpEarly</td><td>   </td></tr>
+        <tr><td>TimeUpLate</td><td>   </td></tr>
+        <tr><td>TimeDownEarly</td><td>   </td></tr>
+        <tr><td>TimeDownLate</td><td>   </td></tr>
+        <tr><td>TimeUpWeHoliday</td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
+        <tr><td>   </td><td>   </td></tr>
         
         
         
@@ -9594,8 +9616,6 @@ sub getBlockAscDrivesAfterManual {
         <tr><td>ShadingStatus</td><td>Ausgabe des aktuellen Shading Status, „in“, „out“, „in reserved“, „out reserved“</td></tr>
         <tr><td>ShadingStatusTimestamp</td><td>Timestamp des letzten Beschattungsstatus</td></tr>
         <tr><td>IfInShading</td><td>Befindet sich der Rollladen, in Abh&auml;ngigkeit des Shading Mode, in der Beschattung</td></tr>
-        <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protected“ oder „unprotected“</td></tr>
-        <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „unprotected“ oder „unprotected“</td></tr>
         <tr><td>DelayCmd</td><td>letzter Fahrbefehl welcher in die Warteschlange kam. Grund z.B. Partymodus.</td></tr>
         <tr><td>Status</td><td>Position des Rollladens</td></tr>
         <tr><td>ASCenable</td><td>Abfrage ob f&uuml;r den Rollladen die ASC Steuerung aktiv ist.</td></tr>
