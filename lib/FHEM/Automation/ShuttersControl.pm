@@ -77,7 +77,7 @@ use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
 require Exporter;
-our @ISA = qw(Exporter);
+our @ISA    = qw(Exporter);
 our @Export = qw($shutters $ascDev %userAttrList);
 
 # try to use JSON::MaybeXS wrapper
@@ -192,18 +192,16 @@ BEGIN {
           computeAlignTime
           ReplaceEventMap)
     );
-    
+
     #-- Export to main context with different name
     GP_Export(
         qw(
           ascAPIget
           ascAPIset
           DevStateIcon
-        )
+          )
     );
 }
-
-
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 our %userAttrList = (
@@ -435,8 +433,7 @@ sub Notify {
         readingsSingleUpdate( $hash, 'ascEnable', 'on', 0 )
           if ( $ascDev->getASCenable eq 'none' );
         CommandAttr( undef,
-            $name
-              . ' devStateIcon { ShuttersControl_DevStateIcon($name) }' )
+            $name . ' devStateIcon { ShuttersControl_DevStateIcon($name) }' )
           unless (
             AttrVal(
                 $name, 'devStateIcon',
@@ -465,11 +462,16 @@ sub Notify {
             unless ( scalar( @{ $hash->{helper}{shuttersList} } ) == 0 ) {
                 WriteReadingsShuttersList($hash);
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
-                InternalTimer( gettimeofday() + 3,
-                    'FHEM::Automation::ShuttersControl::RenewSunRiseSetShuttersTimer',
-                    $hash );
-                InternalTimer( gettimeofday() + 5,
-                    'FHEM::Automation::ShuttersControl::AutoSearchTwilightDev', $hash );
+                InternalTimer(
+                    gettimeofday() + 3,
+'FHEM::Automation::ShuttersControl::RenewSunRiseSetShuttersTimer',
+                    $hash
+                );
+                InternalTimer(
+                    gettimeofday() + 5,
+                    'FHEM::Automation::ShuttersControl::AutoSearchTwilightDev',
+                    $hash
+                );
                 InternalTimer(
                     gettimeofday() + 5,
                     sub() { CommandSet( undef, $name . ' controlShading on' ) },
@@ -2578,7 +2580,6 @@ sub ShadingProcessing {
         && !$shutters->getShadingManualDriveStatus
         && $shutters->getRoommatesStatus ne 'gotosleep'
         && $shutters->getRoommatesStatus ne 'asleep'
-        && $shutters->getStatus != $shutters->getClosedPos
         && (
             (
                    $shutters->getShadingStatus eq 'out'
@@ -2597,10 +2598,15 @@ sub ShadingProcessing {
             || $shutters->getModeUp eq 'off'
         )
         && (
-            ( int( gettimeofday() ) - $shutters->getShadingStatusTimestamp ) < 2
+            (
+                (
+                    int( gettimeofday() ) -
+                    $shutters->getShadingStatusTimestamp
+                ) < 2
+                && $shutters->getStatus != $shutters->getClosedPos
+            )
             || (  !$shutters->getQueryShuttersPos( $shutters->getShadingPos )
-                && $shutters->getIfInShading
-                && $shutters->getStatus != $shutters->getShadingPos )
+                && $shutters->getIfInShading )
             || (  !$shutters->getIfInShading
                 && $shutters->getStatus == $shutters->getShadingPos )
         )
@@ -4914,9 +4920,11 @@ sub _CheckASC_ConditionsForShadingFn {
 
     my $count = 1;
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
-        InternalTimer( gettimeofday() + $count,
-            'FHEM::Automation::ShuttersControl::_CheckShuttersConditionsForShadingFn',
-            $shuttersDev );
+        InternalTimer(
+            gettimeofday() + $count,
+'FHEM::Automation::ShuttersControl::_CheckShuttersConditionsForShadingFn',
+            $shuttersDev
+        );
 
         $count++;
     }
@@ -4992,6 +5000,5 @@ sub _CheckShuttersConditionsForShadingFn {
         '<html>' . $message . ' </html>' );
     readingsEndUpdate( $shuttersDevHash, 1 );
 }
-
 
 1;
