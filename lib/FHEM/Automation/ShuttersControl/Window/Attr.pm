@@ -46,8 +46,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters        = $FHEM::Automation::ShuttersControl::shutters;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -122,7 +120,7 @@ sub getWinDevReading {
             $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{LASTGETTIME} ) <
         2
       );
-    $shutters->_getWinDev;
+    $FHEM::Automation::ShuttersControl::shutters->_getWinDev;
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{reading};
 }

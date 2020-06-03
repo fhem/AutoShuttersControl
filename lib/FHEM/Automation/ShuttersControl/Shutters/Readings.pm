@@ -47,9 +47,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
-my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -62,21 +59,21 @@ BEGIN {
 sub getBrightness {
     my $self = shift;
 
-    return ReadingsNum( $shutters->_getBrightnessSensor,
-        $shutters->getBrightnessReading, -1 );
+    return ReadingsNum( $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor,
+        $FHEM::Automation::ShuttersControl::shutters->getBrightnessReading, -1 );
 }
 
 sub getWindStatus {
     my $self = shift;
 
-    return ReadingsVal( $ascDev->_getWindSensor,
-        $ascDev->getWindSensorReading, -1 );
+    return ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getWindSensor,
+        $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading, -1 );
 }
 
 sub getStatus {
     my $self = shift;
 
-    return ReadingsNum( $self->{shuttersDev}, $shutters->getPosCmd, 0 );
+    return ReadingsNum( $self->{shuttersDev}, $FHEM::Automation::ShuttersControl::shutters->getPosCmd, 0 );
 }
 
 sub getDelayCmd {

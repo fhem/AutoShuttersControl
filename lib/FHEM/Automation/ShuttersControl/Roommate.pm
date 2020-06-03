@@ -46,8 +46,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -61,7 +59,7 @@ sub _getRoommateStatus {
 
     my $roommate = $self->{roommate};
 
-    return ReadingsVal( $roommate, $shutters->getRoommatesReading, 'none' );
+    return ReadingsVal( $roommate, $FHEM::Automation::ShuttersControl::shutters->getRoommatesReading, 'none' );
 }
 
 sub _getRoommateLastStatus {

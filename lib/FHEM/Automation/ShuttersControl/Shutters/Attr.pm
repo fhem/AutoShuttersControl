@@ -46,9 +46,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters        = $FHEM::Automation::ShuttersControl::shutters;
-my %userAttrList    = %FHEM::Automation::ShuttersControl::userAttrList;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -89,7 +86,7 @@ sub _getPosition {
 
     if (
         AttrVal( $self->{shuttersDev}, $attr,
-            $userAttrList{$userAttrList}
+            $FHEM::Automation::ShuttersControl::userAttrList{$userAttrList}
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ] ) =~
         m{\A\{.+\}\z}xms
       )
@@ -98,7 +95,7 @@ sub _getPosition {
             AttrVal(
                 $self->{shuttersDev},
                 $attr,
-                $userAttrList{$userAttrList}
+                $FHEM::Automation::ShuttersControl::userAttrList{$userAttrList}
                   [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
             )
         );
@@ -108,7 +105,7 @@ sub _getPosition {
         $position = (
               $position =~ m{\A\d+(\.\d+)?\z}xms
             ? $position
-            : $userAttrList{$userAttrList}
+            : $FHEM::Automation::ShuttersControl::userAttrList{$userAttrList}
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
         );
 
@@ -123,7 +120,7 @@ sub _getPosition {
           FHEM::Automation::ShuttersControl::GetAttrValues(
             $self->{shuttersDev},
             $attr,
-            $userAttrList{$userAttrList}
+            $FHEM::Automation::ShuttersControl::userAttrList{$userAttrList}
               [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
           );
     }
@@ -153,7 +150,7 @@ sub _getPosition {
         $self->{ $self->{shuttersDev} }->{$attr}->{position} =~
           m{^\d+(\.\d+)?$}xms
         ? $self->{ $self->{shuttersDev} }->{$attr}->{position}
-        : $userAttrList{$userAttrList}
+        : $FHEM::Automation::ShuttersControl::userAttrList{$userAttrList}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 2 ) ]
     );
 }
@@ -170,7 +167,7 @@ sub _getPositionAssignment {
         && ( gettimeofday() -
             $self->{ $self->{shuttersDev} }->{$attr}->{LASTGETTIME} ) < 2
       );
-    $shutters->$getFn;
+    $FHEM::Automation::ShuttersControl::shutters->$getFn;
 
     return ( $self->{ $self->{shuttersDev} }->{$attr}->{posAssignment} );
 }
@@ -187,7 +184,7 @@ sub setAntiFreezePos {
 sub getAntiFreezePos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Antifreeze_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Antifreeze_Pos',
 'ASC_Antifreeze_Pos:5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100'
     );
 }
@@ -195,7 +192,7 @@ sub getAntiFreezePos {
 sub getAntiFreezePosAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Antifreeze_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Antifreeze_Pos',
         'getAntiFreezePos' );
 }
 
@@ -270,7 +267,7 @@ sub getSlatDevice {
             $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getSlatPosCmd;
+    $FHEM::Automation::ShuttersControl::shutters->getSlatPosCmd;
 
     return (
         $self->{ $self->{shuttersDev} }->{ASC_SlatPosCmd_SlatDevice}->{device}
@@ -316,8 +313,8 @@ sub getPrivacyUpTime {
       ->{upbrightnessval} =
       ( $upBrightnessVal ne 'none' ? $upBrightnessVal : -1 );
 
-    $shutters->setPrivacyUpStatus(0)
-      if ( defined( $shutters->getPrivacyUpStatus )
+    $FHEM::Automation::ShuttersControl::shutters->setPrivacyUpStatus(0)
+      if ( defined( $FHEM::Automation::ShuttersControl::shutters->getPrivacyUpStatus )
         && $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
         ->{uptime} == -1 );
 
@@ -339,7 +336,7 @@ sub getPrivacyUpBrightnessVal {
             $self->{ $self->{shuttersDev} }->{ASC_PrivacyUpValue_beforeDayOpen}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getPrivacyUpTime;
+    $FHEM::Automation::ShuttersControl::shutters->getPrivacyUpTime;
 
     return (
         defined(
@@ -391,8 +388,8 @@ sub getPrivacyDownTime {
       ->{downbrightnessval} =
       ( $downBrightnessVal ne 'none' ? $downBrightnessVal : -1 );
 
-    $shutters->setPrivacyDownStatus(0)
-      if ( defined( $shutters->getPrivacyDownStatus )
+    $FHEM::Automation::ShuttersControl::shutters->setPrivacyDownStatus(0)
+      if ( defined( $FHEM::Automation::ShuttersControl::shutters->getPrivacyDownStatus )
         && $self->{ $self->{shuttersDev} }
         ->{ASC_PrivacyDownValue_beforeNightClose}->{downtime} == -1 );
 
@@ -414,7 +411,7 @@ sub getPrivacyDownBrightnessVal {
             $self->{ $self->{shuttersDev} }
             ->{ASC_PrivacyDownValue_beforeNightClose}->{LASTGETTIME} ) < 2
       );
-    $shutters->getPrivacyDownTime;
+    $FHEM::Automation::ShuttersControl::shutters->getPrivacyDownTime;
 
     return (
         defined(
@@ -439,13 +436,13 @@ sub setPrivacyUpPos {
 sub getPrivacyUpPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_PrivacyUp_Pos', 'ASC_PrivacyUp_Pos' );
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_PrivacyUp_Pos', 'ASC_PrivacyUp_Pos' );
 }
 
 sub getPrivacyUpPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_PrivacyUp_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_PrivacyUp_Pos',
         'getPrivacyUpPos' );
 }
 
@@ -461,14 +458,14 @@ sub setPrivacyDownPos {
 sub getPrivacyDownPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_PrivacyDown_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_PrivacyDown_Pos',
         'ASC_PrivacyDown_Pos' );
 }
 
 sub getPrivacyDownPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_PrivacyDown_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_PrivacyDown_Pos',
         'getPrivacyDownPos' );
 }
 
@@ -550,14 +547,14 @@ sub setShadingPos {
 sub getShadingPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Shading_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Shading_Pos',
         'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getShadingPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Shading_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Shading_Pos',
         'getShadingPos' );
 }
 
@@ -615,7 +612,7 @@ sub getTempSensorReading {
             $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{LASTGETTIME} )
         < 2
       );
-    $shutters->_getTempSensor;
+    $FHEM::Automation::ShuttersControl::shutters->_getTempSensor;
 
     return (
         defined( $self->{ $self->{shuttersDev} }->{ASC_TempSensor}->{reading} )
@@ -678,7 +675,7 @@ sub getIdleDetectionValue {
             $self->{ $self->{shuttersDev} }->{ASC_Shutter_IdleDetection}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->_getIdleDetectionReading;
+    $FHEM::Automation::ShuttersControl::shutters->_getIdleDetectionReading;
 
     return (
         defined(
@@ -744,7 +741,7 @@ sub getBrightnessReading {
             $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->_getBrightnessSensor;
+    $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor;
 
     return (
         defined(
@@ -769,7 +766,7 @@ sub getShadingAzimuthLeft {
             $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getShadingAzimuthRight;
+    $FHEM::Automation::ShuttersControl::shutters->getShadingAzimuthRight;
 
     return $self->{ $self->{shuttersDev} }->{ASC_Shading_InOutAzimuth}
       ->{leftVal};
@@ -889,7 +886,7 @@ sub getShadingMaxElevation {
             $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getShadingMinElevation;
+    $FHEM::Automation::ShuttersControl::shutters->getShadingMinElevation;
 
     return $self->{ $self->{shuttersDev} }->{ASC_Shading_MinMax_Elevation}
       ->{maxVal};
@@ -958,7 +955,7 @@ sub getShadingStateChangeCloudy {
             $self->{ $self->{shuttersDev} }
             ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME} ) < 2
       );
-    $shutters->getShadingStateChangeSunny;
+    $FHEM::Automation::ShuttersControl::shutters->getShadingStateChangeSunny;
 
     return $self->{ $self->{shuttersDev} }
       ->{ASC_Shading_StateChange_SunnyCloudy}->{cloudy};
@@ -978,7 +975,7 @@ sub getMaxBrightnessAverageArrayObjects {
             $self->{ $self->{shuttersDev} }
             ->{ASC_Shading_StateChange_SunnyCloudy}->{LASTGETTIME} ) < 2
       );
-    $shutters->getShadingStateChangeSunny;
+    $FHEM::Automation::ShuttersControl::shutters->getShadingStateChangeSunny;
 
     return $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}
       ->{MAXOBJECT};
@@ -1043,7 +1040,7 @@ sub getExternalTriggerDevice {
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive} =
       $posActive;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posinactive} =
-      ( $posInactive ne 'none' ? $posInactive : $shutters->getLastPos );
+      ( $posInactive ne 'none' ? $posInactive : $FHEM::Automation::ShuttersControl::shutters->getLastPos );
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{valueactive2} =
       $valueActive2;
     $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive2} =
@@ -1066,7 +1063,7 @@ sub getExternalTriggerReading {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{reading};
 }
@@ -1084,7 +1081,7 @@ sub getExternalTriggerValueActive {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
       ->{valueactive};
@@ -1104,7 +1101,7 @@ sub getExternalTriggerValueActive2 {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
       ->{valueactive2};
@@ -1124,7 +1121,7 @@ sub getExternalTriggerValueInactive {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
       ->{valueinactive};
@@ -1143,7 +1140,7 @@ sub getExternalTriggerPosActive {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive};
 }
@@ -1161,7 +1158,7 @@ sub getExternalTriggerPosActive2 {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{posactive2};
 }
@@ -1179,7 +1176,7 @@ sub getExternalTriggerPosInactive {
             $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->getExternalTriggerDevice;
+    $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerDevice;
 
     return $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}
       ->{posinactive};
@@ -1295,7 +1292,7 @@ sub getPosCmd {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Pos_Reading',
-        $userAttrList{'ASC_Pos_Reading'}
+        $FHEM::Automation::ShuttersControl::userAttrList{'ASC_Pos_Reading'}
           [ AttrVal( $self->{shuttersDev}, 'ASC', 1 ) ] );
 }
 
@@ -1311,14 +1308,14 @@ sub setOpenPos {
 sub getOpenPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Open_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Open_Pos',
         'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getOpenPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Open_Pos', 'getOpenPos' );
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Open_Pos', 'getOpenPos' );
 }
 
 sub setVentilatePos {
@@ -1333,14 +1330,14 @@ sub setVentilatePos {
 sub getVentilatePos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Ventilate_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Ventilate_Pos',
         'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getVentilatePositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Ventilate_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Ventilate_Pos',
         'getVentilatePos' );
 }
 
@@ -1373,14 +1370,14 @@ sub setClosedPos {
 sub getClosedPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Closed_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Closed_Pos',
         'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getClosedPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Closed_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Closed_Pos',
         'getClosedPos' );
 }
 
@@ -1396,14 +1393,14 @@ sub setSleepPos {
 sub getSleepPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_Sleep_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_Sleep_Pos',
         'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getSleepPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_Sleep_Pos', 'getSleepPos' );
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_Sleep_Pos', 'getSleepPos' );
 }
 
 sub setVentilateOpen {
@@ -1434,14 +1431,14 @@ sub setComfortOpenPos {
 sub getComfortOpenPos {
     my $self = shift;
 
-    return $shutters->_getPosition( 'ASC_ComfortOpen_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPosition( 'ASC_ComfortOpen_Pos',
         'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' );
 }
 
 sub getComfortOpenPositionAssignment {
     my $self = shift;
 
-    return $shutters->_getPositionAssignment( 'ASC_ComfortOpen_Pos',
+    return $FHEM::Automation::ShuttersControl::shutters->_getPositionAssignment( 'ASC_ComfortOpen_Pos',
         'getComfortOpenPos' );
 }
 
@@ -1504,7 +1501,7 @@ sub getWindPos {
             $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}
         ) < 2
       );
-    $shutters->getWindMax;
+    $FHEM::Automation::ShuttersControl::shutters->getWindMax;
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos};
 }
@@ -1536,7 +1533,7 @@ sub getWindMax {
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst} =
       ( $hyst ne 'none' ? $max - $hyst : $max - 20 );
     $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{closedPos} =
-      ( $pos ne 'none' ? $pos : $shutters->getOpenPos );
+      ( $pos ne 'none' ? $pos : $FHEM::Automation::ShuttersControl::shutters->getOpenPos );
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggermax};
 }
@@ -1564,7 +1561,7 @@ sub getWindMin {
             $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{LASTGETTIME}
         ) < 2
       );
-    $shutters->getWindMax;
+    $FHEM::Automation::ShuttersControl::shutters->getWindMax;
 
     return $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{triggerhyst};
 }
@@ -1907,7 +1904,7 @@ sub getBrightnessMinVal {
             $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->_getBrightnessSensor;
+    $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor;
 
     return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
       ->{triggermin};
@@ -1926,7 +1923,7 @@ sub getBrightnessMaxVal {
             $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
             ->{LASTGETTIME} ) < 2
       );
-    $shutters->_getBrightnessSensor;
+    $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor;
 
     return $self->{ $self->{shuttersDev} }->{ASC_BrightnessSensor}
       ->{triggermax};

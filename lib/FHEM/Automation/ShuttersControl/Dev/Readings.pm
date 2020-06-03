@@ -46,9 +46,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
-my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -66,8 +63,8 @@ sub setDelayCmdReading {
     my $hash = $defs{$name};
 
     readingsSingleUpdate( $hash,
-        $shutters->getShuttersDev . '_lastDelayPosValue',
-        $shutters->getDelayCmd, 1 );
+        $FHEM::Automation::ShuttersControl::shutters->getShuttersDev . '_lastDelayPosValue',
+        $FHEM::Automation::ShuttersControl::shutters->getDelayCmd, 1 );
     return;
 }
 
@@ -79,7 +76,7 @@ sub setStateReading {
     my $hash = $defs{$name};
 
     readingsSingleUpdate( $hash, 'state',
-        ( defined($value) ? $value : $shutters->getLastDrive ), 1 );
+        ( defined($value) ? $value : $FHEM::Automation::ShuttersControl::shutters->getLastDrive ), 1 );
     return;
 }
 
@@ -89,8 +86,8 @@ sub setPosReading {
     my $name = $self->{name};
     my $hash = $defs{$name};
 
-    readingsSingleUpdate( $hash, $shutters->getShuttersDev . '_PosValue',
-        $shutters->getStatus, 1 );
+    readingsSingleUpdate( $hash, $FHEM::Automation::ShuttersControl::shutters->getShuttersDev . '_PosValue',
+        $FHEM::Automation::ShuttersControl::shutters->getStatus, 1 );
     return;
 }
 
@@ -100,8 +97,8 @@ sub setLastPosReading {
     my $name = $self->{name};
     my $hash = $defs{$name};
 
-    readingsSingleUpdate( $hash, $shutters->getShuttersDev . '_lastPosValue',
-        $shutters->getLastPos, 1 );
+    readingsSingleUpdate( $hash, $FHEM::Automation::ShuttersControl::shutters->getShuttersDev . '_lastPosValue',
+        $FHEM::Automation::ShuttersControl::shutters->getLastPos, 1 );
     return;
 }
 
@@ -141,7 +138,7 @@ sub getMonitoredDevs {
 sub getOutTemp {
     my $self = shift;
 
-    return ReadingsVal( $ascDev->_getTempSensor, $ascDev->getTempSensorReading,
+    return ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getTempSensor, $FHEM::Automation::ShuttersControl::ascDev->getTempSensorReading,
         -100 );
 }
 
@@ -149,7 +146,7 @@ sub getResidentsStatus {
     my $self = shift;
 
     my $val =
-      ReadingsVal( $ascDev->_getResidentsDev, $ascDev->getResidentsReading,
+      ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getResidentsDev, $FHEM::Automation::ShuttersControl::ascDev->getResidentsReading,
         'none' );
 
     if ( $val =~ m{^(?:(.+)_)?(.+)$}xms ) {
@@ -157,7 +154,7 @@ sub getResidentsStatus {
         return $1 && $1 eq 'pet' ? 'absent' : $2;
     }
     elsif (
-        ReadingsVal( $ascDev->_getResidentsDev, 'homealoneType', '-' ) eq
+        ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getResidentsDev, 'homealoneType', '-' ) eq
         'PET' )
     {
         return ( 'pet', 'absent' ) if (wantarray);
@@ -172,14 +169,14 @@ sub getResidentsStatus {
 sub getResidentsLastStatus {
     my $self = shift;
 
-    my $val = ReadingsVal( $ascDev->_getResidentsDev, 'lastState', 'none' );
+    my $val = ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getResidentsDev, 'lastState', 'none' );
 
     if ( $val =~ m{^(?:(.+)_)?(.+)$}xms ) {
         return ( $1, $2 ) if (wantarray);
         return $1 && $1 eq 'pet' ? 'absent' : $2;
     }
     elsif (
-        ReadingsVal( $ascDev->_getResidentsDev, 'lastHomealoneType', '-' ) eq
+        ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getResidentsDev, 'lastHomealoneType', '-' ) eq
         'PET' )
     {
         return ( 'pet', 'absent' ) if (wantarray);
@@ -212,10 +209,10 @@ sub getAzimuth {
 
     my $azimuth;
 
-    $azimuth = ReadingsVal( $ascDev->_getTwilightDevice, 'azimuth', -1 )
-      if ( $defs{ $ascDev->_getTwilightDevice }->{TYPE} eq 'Twilight' );
-    $azimuth = ReadingsVal( $ascDev->_getTwilightDevice, 'SunAz', -1 )
-      if ( $defs{ $ascDev->_getTwilightDevice }->{TYPE} eq 'Astro' );
+    $azimuth = ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice, 'azimuth', -1 )
+      if ( $defs{ $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice }->{TYPE} eq 'Twilight' );
+    $azimuth = ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice, 'SunAz', -1 )
+      if ( $defs{ $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice }->{TYPE} eq 'Astro' );
 
     return $azimuth;
 }
@@ -225,10 +222,10 @@ sub getElevation {
 
     my $elevation;
 
-    $elevation = ReadingsVal( $ascDev->_getTwilightDevice, 'elevation', -1 )
-      if ( $defs{ $ascDev->_getTwilightDevice }->{TYPE} eq 'Twilight' );
-    $elevation = ReadingsVal( $ascDev->_getTwilightDevice, 'SunAlt', -1 )
-      if ( $defs{ $ascDev->_getTwilightDevice }->{TYPE} eq 'Astro' );
+    $elevation = ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice, 'elevation', -1 )
+      if ( $defs{ $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice }->{TYPE} eq 'Twilight' );
+    $elevation = ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice, 'SunAlt', -1 )
+      if ( $defs{ $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice }->{TYPE} eq 'Astro' );
 
     return $elevation;
 }

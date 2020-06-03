@@ -46,9 +46,6 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
-my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
-my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
-
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -74,7 +71,7 @@ sub getBrightnessMinVal {
     return $self->{ASC_brightness}->{triggermin}
       if ( exists( $self->{ASC_brightness}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_brightness}->{LASTGETTIME} ) < 2 );
-    $ascDev->getBrightnessMaxVal;
+    $FHEM::Automation::ShuttersControl::ascDev->getBrightnessMaxVal;
 
     return $self->{ASC_brightness}->{triggermin};
 }
@@ -212,7 +209,7 @@ sub getTempSensorReading {
     return $self->{ASC_tempSensor}->{reading}
       if ( exists( $self->{ASC_tempSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getTempSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getTempSensor;
     return $self->{ASC_tempSensor}->{reading};
 }
 
@@ -244,7 +241,7 @@ sub getResidentsReading {
     return $self->{ASC_residentsDev}->{reading}
       if ( exists( $self->{ASC_residentsDev}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getResidentsDev;
+    $FHEM::Automation::ShuttersControl::ascDev->_getResidentsDev;
     return $self->{ASC_residentsDev}->{reading};
 }
 
@@ -275,7 +272,7 @@ sub _getRainSensor {
         : ( $self->{ASC_rainSensor}->{triggermax} * 0 )
     );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
-      ( $pos ne 'none' ? $pos : $shutters->getClosedPos );
+      ( $pos ne 'none' ? $pos : $FHEM::Automation::ShuttersControl::shutters->getClosedPos );
     $self->{ASC_rainSensor}->{waitingTime} =
       ( $pos ne 'none' ? $wait : 900 );
 
@@ -290,7 +287,7 @@ sub getRainSensorReading {
     return $self->{ASC_rainSensor}->{reading}
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getRainSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{reading};
 }
 
@@ -302,7 +299,7 @@ sub getRainTriggerMax {
     return $self->{ASC_rainSensor}->{triggermax}
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getRainSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{triggermax};
 }
 
@@ -314,7 +311,7 @@ sub getRainTriggerMin {
     return $self->{ASC_rainSensor}->{triggerhyst}
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getRainSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{triggerhyst};
 }
 
@@ -326,7 +323,7 @@ sub getRainSensorShuttersClosedPos {
     return $self->{ASC_rainSensor}->{shuttersClosedPos}
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getRainSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{shuttersClosedPos};
 }
 
@@ -338,7 +335,7 @@ sub getRainWaitingTime {
     return $self->{ASC_rainSensor}->{waitingTime}
       if ( exists( $self->{ASC_rainSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getRainSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getRainSensor;
     return $self->{ASC_rainSensor}->{waitingTime};
 }
 
@@ -371,7 +368,7 @@ sub getWindSensorReading {
     return $self->{ASC_windSensor}->{reading}
       if ( exists( $self->{ASC_windSensor}->{LASTGETTIME} )
         && ( gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME} ) < 2 );
-    $ascDev->_getWindSensor;
+    $FHEM::Automation::ShuttersControl::ascDev->_getWindSensor;
     return (
         defined( $self->{ASC_windSensor}->{reading} )
         ? $self->{ASC_windSensor}->{reading}
