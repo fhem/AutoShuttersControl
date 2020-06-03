@@ -48,7 +48,6 @@ use warnings;
 use utf8;
 
 use FHEM::Automation::ShuttersControl;
-use FHEM::Meta;
 use GPUtils qw(GP_Import GP_Export);
 
 ## Import der FHEM Funktionen
@@ -1160,7 +1159,7 @@ sub Initialize {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.20",
+  "version": "v0.9.21",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
