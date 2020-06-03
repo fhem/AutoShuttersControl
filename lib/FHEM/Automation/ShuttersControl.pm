@@ -2578,6 +2578,7 @@ sub ShadingProcessing {
         && !$shutters->getShadingManualDriveStatus
         && $shutters->getRoommatesStatus ne 'gotosleep'
         && $shutters->getRoommatesStatus ne 'asleep'
+        && $shutters->getStatus != $shutters->getClosedPos
         && (
             (
                    $shutters->getShadingStatus eq 'out'
