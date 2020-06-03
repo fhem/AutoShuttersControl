@@ -39,6 +39,10 @@
 
 ## Klasse ASC_Dev plus Subklassen ASC_Attr_Dev und ASC_Readings_Dev##
 package FHEM::Automation::ShuttersControl::Dev;
+
+use FHEM::Automation::ShuttersControl::Dev::Readings;
+use FHEM::Automation::ShuttersControl::Dev::Attr;
+
 our @ISA = qw(FHEM::Automation::ShuttersControl::Dev::Readings FHEM::Automation::ShuttersControl::Dev::Attr);
 
 use strict;

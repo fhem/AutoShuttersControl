@@ -38,13 +38,16 @@
 ###############################################################################
 
 ## Subklasse Attr ##
-package ASC_Dev::Attr;
+package FHEM::Automation::ShuttersControl::Dev::Attr;
 
 use strict;
 use warnings;
 use utf8;
 
 use GPUtils qw(GP_Import);
+
+my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
+my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
 
 ## Import der FHEM Funktionen
 BEGIN {

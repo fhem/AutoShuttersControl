@@ -76,6 +76,10 @@ use Date::Parse;
 use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
+require Exporter;
+our @ISA = qw(Exporter);
+our @Export = qw($shutters $ascDev %userAttrList);
+
 # try to use JSON::MaybeXS wrapper
 #   for chance of better performance + open code
 eval {
@@ -202,7 +206,7 @@ BEGIN {
 
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
-my %userAttrList = (
+our %userAttrList = (
     'ASC_Mode_Up:absent,always,off,home'                            => '-',
     'ASC_Mode_Down:absent,always,off,home'                          => '-',
     'ASC_Up:time,astro,brightness,roommate'                         => '-',
@@ -285,8 +289,8 @@ my %posSetCmds = (
 );
 
 ## 2 Objekte werden erstellt
-my $shutters = ASC_Shutters->new();
-my $ascDev   = ASC_Dev->new();
+our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
+our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
 
 sub ascAPIget {
     my ( $getCommand, $shutterDev, $value ) = @_;
@@ -325,44 +329,6 @@ sub ascAPIset {
     return;
 }
 
-sub Initialize {
-    my $hash = shift;
-
-## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
-    #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = \&Set;
-    $hash->{GetFn}    = \&Get;
-    $hash->{DefFn}    = \&Define;
-    $hash->{NotifyFn} = \&Notify;
-    $hash->{UndefFn}  = \&Undef;
-    $hash->{AttrList} =
-        'ASC_tempSensor '
-      . 'ASC_brightnessDriveUpDown '
-      . 'ASC_autoShuttersControlMorning:on,off '
-      . 'ASC_autoShuttersControlEvening:on,off '
-      . 'ASC_autoShuttersControlComfort:on,off '
-      . 'ASC_residentsDev '
-      . 'ASC_rainSensor '
-      . 'ASC_autoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
-      . 'ASC_autoAstroModeMorningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
-      . 'ASC_autoAstroModeEvening:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON '
-      . 'ASC_autoAstroModeEveningHorizon:-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9 '
-      . 'ASC_freezeTemp:-5,-4,-3,-2,-1,0,1,2,3,4,5 '
-      . 'ASC_shuttersDriveDelay '
-      . 'ASC_twilightDevice '
-      . 'ASC_windSensor '
-      . 'ASC_expert:1 '
-      . 'ASC_blockAscDrivesAfterManual:0,1 '
-      . 'ASC_debug:1 '
-      . 'ASC_slatDriveCmdInverse:0,1 '
-      . $readingFnAttributes;
-    $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
-    $hash->{FW_detailFn} = \&ShuttersInformation;
-    $hash->{parseParams} = 1;
-
-    return FHEM::Meta::InitMod( __FILE__, $hash );
-}
-
 sub Define {
     my $hash = shift // return;
     my $aArg = shift // return;
@@ -398,7 +364,7 @@ sub Define {
     CommandAttr( undef, $name . ' icon fts_shutter_automatic' )
       if ( AttrVal( $name, 'icon', 'none' ) eq 'none' );
     CommandAttr( undef,
-        $name . ' devStateIcon { AutoShuttersControl_DevStateIcon($name) }' )
+        $name . ' devStateIcon { ShuttersControl_DevStateIcon($name) }' )
       if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
     addToAttrList('ASC:0,1,2');

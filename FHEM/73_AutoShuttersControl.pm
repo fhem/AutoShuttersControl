@@ -54,6 +54,13 @@ use GPUtils qw(GP_Import GP_Export);
 ## Import der FHEM Funktionen
 #-- Run before package compilation
 BEGIN {
+    # Import from main context
+    GP_Import(
+        qw(
+          readingFnAttributes
+        )
+    );
+
     #-- Export to main context with different name
     GP_Export(
         qw(
@@ -67,11 +74,11 @@ sub Initialize {
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = \&Set;
-    $hash->{GetFn}    = \&Get;
-    $hash->{DefFn}    = \&Define;
-    $hash->{NotifyFn} = \&Notify;
-    $hash->{UndefFn}  = \&Undef;
+    $hash->{SetFn}    = \&FHEM::Automation::ShuttersControl::Set;
+    $hash->{GetFn}    = \&FHEM::Automation::ShuttersControl::Get;
+    $hash->{DefFn}    = \&FHEM::Automation::ShuttersControl::Define;
+    $hash->{NotifyFn} = \&FHEM::Automation::ShuttersControl::Notify;
+    $hash->{UndefFn}  = \&FHEM::Automation::ShuttersControl::Undef;
     $hash->{AttrList} =
         'ASC_tempSensor '
       . 'ASC_brightnessDriveUpDown '
@@ -94,7 +101,7 @@ sub Initialize {
       . 'ASC_slatDriveCmdInverse:0,1 '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
-    $hash->{FW_detailFn} = \&ShuttersInformation;
+    $hash->{FW_detailFn} = \&FHEM::Automation::ShuttersControl::ShuttersInformation;
     $hash->{parseParams} = 1;
 
     return FHEM::Meta::InitMod( __FILE__, $hash );

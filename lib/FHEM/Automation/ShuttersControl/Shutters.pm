@@ -44,6 +44,12 @@
 ## desweiteren wird noch die Klasse ASC_Roommate mit eingebunden
 
 package FHEM::Automation::ShuttersControl::Shutters;
+
+use FHEM::Automation::ShuttersControl::Shutters::Readings;
+use FHEM::Automation::ShuttersControl::Shutters::Attr;
+use FHEM::Automation::ShuttersControl::Roommate;
+use FHEM::Automation::ShuttersControl::Window;
+
 our @ISA =
   qw(FHEM::Automation::ShuttersControl::Shutters::Readings FHEM::Automation::ShuttersControl::Shutters::Attr FHEM::Automation::ShuttersControl::Roommate FHEM::Automation::ShuttersControl::Window);
 
@@ -52,6 +58,9 @@ use warnings;
 use utf8;
 
 use GPUtils qw(GP_Import);
+
+my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
+my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
 
 ## Import der FHEM Funktionen
 BEGIN {

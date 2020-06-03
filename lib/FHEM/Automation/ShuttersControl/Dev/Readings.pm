@@ -46,6 +46,9 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
+my $shutters    = $FHEM::Automation::ShuttersControl::shutters;
+my $ascDev      = $FHEM::Automation::ShuttersControl::ascDev;
+
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(

@@ -46,6 +46,9 @@ use utf8;
 
 use GPUtils qw(GP_Import);
 
+my $shutters        = $FHEM::Automation::ShuttersControl::shutters;
+my %userAttrList    = %FHEM::Automation::ShuttersControl::userAttrList;
+
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
@@ -67,10 +70,10 @@ sub _setAttributs {
 }
 
 sub _getPosition {
-    my $self = shift;
+    my $self            = shift;
 
-    my $attr         = shift;
-    my $userAttrList = shift;
+    my $attr            = shift;
+    my $userAttrList    = shift;
 
     return $self->{ $self->{shuttersDev} }->{$attr}->{position}
       if (
@@ -529,7 +532,7 @@ sub getAdv {
 
     return (
         AttrVal( $self->{shuttersDev}, 'ASC_Adv', 'off' ) eq 'on'
-        ? ( FHEM::Automation::ShuttersControl::_IsAdv == 1 ? 1 : 0 )
+        ? ( \&FHEM::Automation::ShuttersControl::_IsAdv == 1 ? 1 : 0 )
         : 0
     );
 }
