@@ -436,12 +436,12 @@ sub Notify {
           if ( $ascDev->getASCenable eq 'none' );
         CommandAttr( undef,
             $name
-              . ' devStateIcon { AutoShuttersControl_DevStateIcon($name) }' )
+              . ' devStateIcon { ShuttersControl_DevStateIcon($name) }' )
           unless (
             AttrVal(
                 $name, 'devStateIcon',
-                '{ AutoShuttersControl_DevStateIcon($name) }'
-            ) eq '{ AutoShuttersControl_DevStateIcon($name) }'
+                '{ ShuttersControl_DevStateIcon($name) }'
+            ) eq '{ ShuttersControl_DevStateIcon($name) }'
           );
         CommandDeleteAttr( undef, $name . ' event-on-change-reading' )
           unless (
