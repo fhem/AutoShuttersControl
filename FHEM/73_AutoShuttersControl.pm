@@ -1063,7 +1063,7 @@ sub Initialize {
         <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „unprotected“ oder „unprotected“</td></tr>
         <tr><td>ModeUp</td><td>aktuelle Einstellung f&uuml;r den Modus des Morgens Hochfahren</td></tr>
         <tr><td>ModeDown</td><td>  </td></tr>
-        <tr><td>LockOut</td><td>   </td></tr>
+        <tr><td>LockOut</td><td>  </td></tr>
         <tr><td>LockOutCmd</td><td>   </td></tr>
         <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
         <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
