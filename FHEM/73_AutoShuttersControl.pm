@@ -1075,22 +1075,37 @@ sub Initialize {
         <tr><td>TimeUpLate</td><td>aktueller Wert f&uuml;r sp&auml;teste Morgenfahrt</td></tr>
         <tr><td>TimeDownEarly</td><td>aktueller Wert f&uuml;r fr&uuml;hste Abendfahrt</td></tr>
         <tr><td>TimeDownLate</td><td>aktueller Wert f&uuml;r sp&auml;teste Abendfahrt</td></tr>
-        <tr><td>TimeUpWeHoliday</td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        <tr><td>   </td><td>   </td></tr>
-        
-        
-        
-        
-        
-        
+        <tr><td>TimeUpWeHoliday</td><td>aktueller Wert f&uuml;r Wochenende und Feiertags Morgenfahrten</td></tr>
+        <tr><td>BrightnessMinVal</td><td>   </td></tr>
+        <tr><td>BrightnessMaxVal</td><td>   </td></tr>
+        <tr><td>DriveUpMaxDuration</td><td>   </td></tr>
+        <tr><td>Homemode</td><td>   </td></tr>
+        <tr><td>PrivacyDownStatus</td><td>   </td></tr>
+        <tr><td>PrivacyUpStatus</td><td>   </td></tr>
+        <tr><td>IsDay</td><td>   </td></tr>
+        <tr><td>SelfDefenseState</td><td>   </td></tr>
+        <tr><td>LastDrive</td><td>   </td></tr>
+        <tr><td>LastPos</td><td>   </td></tr>
+        <tr><td>Sunset</td><td>   </td></tr>
+        <tr><td>Sunrise</td><td>   </td></tr>
+        <tr><td>OutTemp</td><td>   </td></tr>
+        <tr><td>IdleDetection</td><td>   </td></tr>
+        <tr><td>BrightnessAverage</td><td>Nur f&uuml;r die Beschattung relevant</td></tr>
+        <tr><td>ShadingStatus</td><td>   </td></tr>
+        <tr><td>ShadingLastStatus</td><td>   </td></tr>
+        <tr><td>ShadingManualDriveStatus</td><td>   </td></tr>
+        <tr><td>IfInShading</td><td>   </td></tr>
+        <tr><td>WindProtectionStatus</td><td>   </td></tr>
+        <tr><td>RainProtectionStatus</td><td>   </td></tr>
+        <tr><td>Brightness</td><td>   </td></tr>
+        <tr><td>WindStatus</td><td>   </td></tr>
+        <tr><td>Status</td><td>aktuelle Position des Rollos   </td></tr>
+        <tr><td>DelayCmd</td><td>Status der Query von ausgesetzten Fahrten wegen PartyMod oder offnen Fenster   </td></tr>
+        <tr><td>ASCenable</td><td>Status der ASC Steuerung vom Rollo   </td></tr>
+        <tr><td>SubTyp</td><td>Subtype vom Rollo   </td></tr>
+        <tr><td>WinDevReading</td><td>   </td></tr>
+        <tr><td>WinDev</td><td>   </td></tr>
+        <tr><td>WinStatus</td><td>   </td></tr>
         <tr><td>NoDelay</td><td>Wurde die Behandlung von Offset deaktiviert (Beispiel bei Fahrten &uuml;ber Fensterevents)</td></tr>
         <tr><td>LastDrive</td><td>Grund des letzten Fahrens</td></tr>
         <tr><td>LastPos</td><td>die letzte Position des Rollladens</td></tr>
@@ -1135,6 +1150,27 @@ sub Initialize {
         <tr><td>Azimuth</td><td>Azimut Wert</td></tr>
         <tr><td>Elevation</td><td>Elevation Wert</td></tr>
         <tr><td>ASCenable</td><td>ist die ASC Steuerung global aktiv?</td></tr>
+        <tr><td>PartyMode</td><td>Party Mode Reading   </td></tr>
+        <tr><td>HardLockOut</td><td>Hard Lock Out Reading   </td></tr>
+        <tr><td>SunriseTimeWeHoliday</td><td>Feiertags und Wochenend Sunrise Zeiten beachten   </td></tr>
+        <tr><td>AutoShuttersControlShading</td><td>globale Beschattung on/off   </td></tr>
+        <tr><td>SelfDefense</td><td>global Self Defense on/off   </td></tr>
+        <tr><td>ShuttersOffset</td><td>globales Drive Delay   </td></tr>
+        <tr><td>BrightnessMinVal</td><td>Brightness Wert f&uuml;r Sonnenuntergang   </td></tr>
+        <tr><td>BrightnessMaxVal</td><td>Brightness Wert f&uuml;r Sonnenaufgang   </td></tr>
+        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlMorning</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlEvening</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlComfort</td><td>   </td></tr>
+        <tr><td>FreezeTemp</td><td>   </td></tr>
+        <tr><td>RainTriggerMax</td><td>   </td></tr>
+        <tr><td>RainTriggerMin</td><td>   </td></tr>
+        <tr><td>RainSensorShuttersClosedPos</td><td>   </td></tr>
+        <tr><td>RainWaitingTime</td><td>   </td></tr>
+        <tr><td>BlockAscDrivesAfterManual</td><td>   </td></tr>
     </table>
 </ul>
 
