@@ -57,14 +57,14 @@ BEGIN {
     GP_Import(
         qw(
           readingFnAttributes
-        )
+          )
     );
 
     #-- Export to main context with different name
     GP_Export(
         qw(
           Initialize
-        )
+          )
     );
 }
 
@@ -100,12 +100,12 @@ sub Initialize {
       . 'ASC_slatDriveCmdInverse:0,1 '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
-    $hash->{FW_detailFn} = \&FHEM::Automation::ShuttersControl::ShuttersInformation;
+    $hash->{FW_detailFn} =
+      \&FHEM::Automation::ShuttersControl::ShuttersInformation;
     $hash->{parseParams} = 1;
 
     return FHEM::Meta::InitMod( __FILE__, $hash );
 }
-
 
 1;
 
@@ -1061,20 +1061,20 @@ sub Initialize {
         <tr><td>WindProtectionStatus</td><td>aktueller Status der Wind Protection „protected“ oder „unprotected“</td></tr>
         <tr><td>RainProtection</td><td>Rain Protection soll aktiv sein oder nicht</td></tr>
         <tr><td>RainProtectionStatus</td><td>aktueller Status der Regen Protection „unprotected“ oder „unprotected“</td></tr>
-        <tr><td>ModeUp</td><td>aktuelle Einstellung f&uuml;r den Modus des Morgens Hochfahren</td></tr>
-        <tr><td>ModeDown</td><td>  </td></tr>
-        <tr><td>LockOut</td><td>  </td></tr>
-        <tr><td>LockOutCmd</td><td>   </td></tr>
-        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
-        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
-        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
-        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
-        <tr><td>Up</td><td>   </td></tr>
-        <tr><td>Down</td><td>   </td></tr>
-        <tr><td>TimeUpEarly</td><td>   </td></tr>
-        <tr><td>TimeUpLate</td><td>   </td></tr>
-        <tr><td>TimeDownEarly</td><td>   </td></tr>
-        <tr><td>TimeDownLate</td><td>   </td></tr>
+        <tr><td>ModeUp</td><td>aktuelle Einstellung f&uuml;r den Modus des Morgens hoch fahren</td></tr>
+        <tr><td>ModeDown</td><td>aktuelle Einstellung f&uuml;r den Modus des Abends runter fahren</td></tr>
+        <tr><td>LockOut</td><td>aktuelle Einstellung f&uuml;r den Aussperrschutz</td></tr>
+        <tr><td>LockOutCmd</td><td>Aussperrschutz Kommando am Aktor</td></tr>
+        <tr><td>AutoAstroModeMorning</td><td>aktuell engestellter Wert f&uuml;r Astro Morgens</td></tr>
+        <tr><td>AutoAstroModeEvening</td><td>aktuell engestellter Wert f&uuml;r Astro Abends</td></tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>HORIZON Wert Morgens</td></tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>HORIZON Wert Abends</td></tr>
+        <tr><td>Up</td><td>aktueller Wert f&uuml;r Morgenfahrten</td></tr>
+        <tr><td>Down</td><td>aktueller Wert f&uuml;r Abendfahrten</td></tr>
+        <tr><td>TimeUpEarly</td><td>aktueller Wert f&uuml;r fr&uuml;hste Morgenfahrt</td></tr>
+        <tr><td>TimeUpLate</td><td>aktueller Wert f&uuml;r sp&auml;teste Morgenfahrt</td></tr>
+        <tr><td>TimeDownEarly</td><td>aktueller Wert f&uuml;r fr&uuml;hste Abendfahrt</td></tr>
+        <tr><td>TimeDownLate</td><td>aktueller Wert f&uuml;r sp&auml;teste Abendfahrt</td></tr>
         <tr><td>TimeUpWeHoliday</td><td>   </td></tr>
         <tr><td>   </td><td>   </td></tr>
         <tr><td>   </td><td>   </td></tr>
