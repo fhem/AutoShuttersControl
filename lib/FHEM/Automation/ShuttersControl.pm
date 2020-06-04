@@ -50,13 +50,13 @@ use utf8;
 sub ascAPIget {
     my ( $getCommand, $shutterDev, $value ) = @_;
 
-    return AutoShuttersControl_ascAPIget( $getCommand, $shutterDev, $value );
+    return ShuttersControl_ascAPIget( $getCommand, $shutterDev, $value );
 }
 
 sub ascAPIset {
     my ( $setCommand, $shutterDev, $value ) = @_;
 
-    return AutoShuttersControl_ascAPIset( $setCommand, $shutterDev, $value );
+    return ShuttersControl_ascAPIset( $setCommand, $shutterDev, $value );
 }
 
 ## unserer packagename
