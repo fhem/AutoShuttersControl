@@ -4625,7 +4625,11 @@ sub _SetCmdFn {
         }
     }
 
-    if ( $ascDev->getSlatDriveCmdInverse ) {
+    if (    $ascDev->getSlatDriveCmdInverse
+         && $slatPos > -1
+         && $shutters->getSlatPosCmd ne 'none'
+       )
+    {
         CommandSet(
             undef,
             (
@@ -4636,9 +4640,7 @@ sub _SetCmdFn {
               . ' '
               . $shutters->getSlatPosCmd . ' '
               . $slatPos
-          )
-          if ( $slatPos > -1
-            && $shutters->getSlatPosCmd ne 'none' );
+          );
 
         InternalTimer(
             gettimeofday() + 3,
@@ -4651,9 +4653,7 @@ sub _SetCmdFn {
                       . $driveCommand );
             },
             $shuttersDev
-          )
-          if ( $slatPos > -1
-            && $shutters->getSlatPosCmd ne 'none' );
+          );
     }
     else {
         CommandSet( undef,
@@ -4679,7 +4679,9 @@ sub _SetCmdFn {
                 );
             },
             $shuttersDev
-        );
+        )
+          if ( $slatPos > -1
+            && $shutters->getSlatPosCmd ne 'none' );
     }
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
