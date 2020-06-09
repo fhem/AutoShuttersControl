@@ -47,7 +47,7 @@ use utf8;
 use FHEM::Automation::ShuttersControl::Window::Attr;
 use FHEM::Automation::ShuttersControl::Window::Readings;
 
-our @ISA = qw(FHEM::Automation::ShuttersControl::Window::Attr FHEM::Automation::ShuttersControl::Window::Readings);
-
+our @ISA =
+  qw(FHEM::Automation::ShuttersControl::Window::Attr FHEM::Automation::ShuttersControl::Window::Readings);
 
 1;

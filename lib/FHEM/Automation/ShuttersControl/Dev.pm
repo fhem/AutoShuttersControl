@@ -43,7 +43,8 @@ package FHEM::Automation::ShuttersControl::Dev;
 use FHEM::Automation::ShuttersControl::Dev::Readings;
 use FHEM::Automation::ShuttersControl::Dev::Attr;
 
-our @ISA = qw(FHEM::Automation::ShuttersControl::Dev::Readings FHEM::Automation::ShuttersControl::Dev::Attr);
+our @ISA =
+  qw(FHEM::Automation::ShuttersControl::Dev::Readings FHEM::Automation::ShuttersControl::Dev::Attr);
 
 use strict;
 use warnings;
@@ -78,6 +79,5 @@ sub getName {
     my $self = shift;
     return $self->{name};
 }
-
 
 1;

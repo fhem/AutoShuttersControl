@@ -1338,6 +1338,20 @@ sub EventProcessingRoommate {
               )
             {
                 if (
+                       $shutters->getIsDay
+                    && $shutters->getIfInShading
+                    && $shutters->getStatus != $shutters->getShadingPos
+                    && !$shutters->getShadingManualDriveStatus
+                    && !(
+                        CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                        && $shutters->getShuttersPlace eq 'terrace'
+                    )
+                    && !$shutters->getSelfDefenseState
+                  )
+                {
+                    ShadingProcessingDriveCommand( $hash, $shuttersDev );
+                }
+                elsif (
                        !$shutters->getIsDay
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeDown eq 'home'
@@ -1372,6 +1386,7 @@ sub EventProcessingRoommate {
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeUp eq 'home'
                         || $getModeUp eq 'always' )
+                    && !$shutters->getIfInShading
                   )
                 {
                     if (   $shutters->getIfInShading
@@ -4625,10 +4640,9 @@ sub _SetCmdFn {
         }
     }
 
-    if (    $ascDev->getSlatDriveCmdInverse
-         && $slatPos > -1
-         && $shutters->getSlatPosCmd ne 'none'
-       )
+    if (   $ascDev->getSlatDriveCmdInverse
+        && $slatPos > -1
+        && $shutters->getSlatPosCmd ne 'none' )
     {
         CommandSet(
             undef,
@@ -4640,7 +4654,7 @@ sub _SetCmdFn {
               . ' '
               . $shutters->getSlatPosCmd . ' '
               . $slatPos
-          );
+        );
 
         InternalTimer(
             gettimeofday() + 3,
@@ -4653,7 +4667,7 @@ sub _SetCmdFn {
                       . $driveCommand );
             },
             $shuttersDev
-          );
+        );
     }
     else {
         CommandSet( undef,
@@ -4679,7 +4693,7 @@ sub _SetCmdFn {
                 );
             },
             $shuttersDev
-        )
+          )
           if ( $slatPos > -1
             && $shutters->getSlatPosCmd ne 'none' );
     }

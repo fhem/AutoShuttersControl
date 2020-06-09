@@ -125,5 +125,4 @@ sub getWinDevReading {
     return $self->{ $self->{shuttersDev} }->{ASC_WindowRec}->{reading};
 }
 
-
 1;

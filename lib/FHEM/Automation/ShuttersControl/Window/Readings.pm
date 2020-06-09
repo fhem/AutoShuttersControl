@@ -57,9 +57,10 @@ BEGIN {
 sub getWinStatus {
     my $self = shift;
 
-    return ReadingsVal( $FHEM::Automation::ShuttersControl::shutters->_getWinDev, $FHEM::Automation::ShuttersControl::shutters->getWinDevReading,
+    return ReadingsVal(
+        $FHEM::Automation::ShuttersControl::shutters->_getWinDev,
+        $FHEM::Automation::ShuttersControl::shutters->getWinDevReading,
         'closed' );
 }
-
 
 1;

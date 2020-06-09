@@ -1166,11 +1166,11 @@ sub Initialize {
         <tr><td>BlockingTimeBeforNightClose</td><td>setzt den Wert in Sekunden zur Blockade vor der Nachtfahrt</tr>
         <tr><td>BlockingTimeBeforDayOpen</td><td>setzt den Wert in Sekunden zur Blockade vor der Tagfahrt</tr>
         <tr><td>PosCmd</td><td>setzt den Readingnamen zur Positionserkennung des Rollos</tr>
-        <tr><td>OpenPos</td><td>setzt den Wert für die offen Position</tr>
-        <tr><td>VentilatePos</td><td>   </tr>
-        <tr><td>VentilatePosAfterDayClosed</td><td>   </tr>
-        <tr><td>ClosedPos</td><td>   </tr>
-        <tr><td>SleepPos</td><td>   </tr>
+        <tr><td>OpenPos</td><td>setzt den Wert f&uuml;r die offen Position</tr>
+        <tr><td>VentilatePos</td><td>setzt den Wert f&uuml;r die ventilate Position</tr>
+        <tr><td>VentilatePosAfterDayClosed</td><td>was soll passieren wenn am Tag das Fenster geschlossen wird - open/lastManual</tr>
+        <tr><td>ClosedPos</td><td>setzt den Wert f&uuml;r die geschlossen Position</tr>
+        <tr><td>SleepPos</td><td>setzt den Wert f&uuml;r die schlafen Position</tr>
         <tr><td>VentilateOpen</td><td>   </tr>
         <tr><td>ComfortOpenPos</td><td>   </tr>
         <tr><td>PartyMode</td><td>   </tr>
@@ -1288,7 +1288,7 @@ sub Initialize {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.22",
+  "version": "v0.9.23",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],

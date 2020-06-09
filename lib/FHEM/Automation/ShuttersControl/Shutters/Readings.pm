@@ -37,7 +37,6 @@
 #
 ###############################################################################
 
-
 ## Subklasse Readings von ASC_Shutters ##
 package FHEM::Automation::ShuttersControl::Shutters::Readings;
 
@@ -59,21 +58,25 @@ BEGIN {
 sub getBrightness {
     my $self = shift;
 
-    return ReadingsNum( $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor,
-        $FHEM::Automation::ShuttersControl::shutters->getBrightnessReading, -1 );
+    return ReadingsNum(
+        $FHEM::Automation::ShuttersControl::shutters->_getBrightnessSensor,
+        $FHEM::Automation::ShuttersControl::shutters->getBrightnessReading,
+        -1 );
 }
 
 sub getWindStatus {
     my $self = shift;
 
-    return ReadingsVal( $FHEM::Automation::ShuttersControl::ascDev->_getWindSensor,
+    return ReadingsVal(
+        $FHEM::Automation::ShuttersControl::ascDev->_getWindSensor,
         $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading, -1 );
 }
 
 sub getStatus {
     my $self = shift;
 
-    return ReadingsNum( $self->{shuttersDev}, $FHEM::Automation::ShuttersControl::shutters->getPosCmd, 0 );
+    return ReadingsNum( $self->{shuttersDev},
+        $FHEM::Automation::ShuttersControl::shutters->getPosCmd, 0 );
 }
 
 sub getDelayCmd {
@@ -87,6 +90,5 @@ sub getASCenable {
 
     return ReadingsVal( $self->{shuttersDev}, 'ASC_Enable', 'on' );
 }
-
 
 1;

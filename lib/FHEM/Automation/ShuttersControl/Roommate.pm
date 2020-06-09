@@ -59,7 +59,9 @@ sub _getRoommateStatus {
 
     my $roommate = $self->{roommate};
 
-    return ReadingsVal( $roommate, $FHEM::Automation::ShuttersControl::shutters->getRoommatesReading, 'none' );
+    return ReadingsVal( $roommate,
+        $FHEM::Automation::ShuttersControl::shutters->getRoommatesReading,
+        'none' );
 }
 
 sub _getRoommateLastStatus {
@@ -71,6 +73,5 @@ sub _getRoommateLastStatus {
     $default = 'none' if ( !defined($default) );
     return ReadingsVal( $roommate, 'lastState', $default );
 }
-
 
 1;

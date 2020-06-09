@@ -111,18 +111,22 @@ sub setHardLockOut {
     my $cmd  = shift;
 
     if (   $FHEM::Automation::ShuttersControl::shutters->getLockOut eq 'hard'
-        && $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd ne 'none' )
+        && $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd ne
+        'none' )
     {
         CommandSet( undef, $self->{shuttersDev} . ' inhibit ' . $cmd )
-          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq 'inhibit' );
+          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq
+            'inhibit' );
         CommandSet( undef,
             $self->{shuttersDev} . ' '
               . ( $cmd eq 'on' ? 'blocked' : 'unblocked' ) )
-          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq 'blocked' );
+          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq
+            'blocked' );
         CommandSet( undef,
             $self->{shuttersDev} . ' '
               . ( $cmd eq 'on' ? 'protectionOn' : 'protectionOff' ) )
-          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq 'protected' );
+          if ( $FHEM::Automation::ShuttersControl::shutters->getLockOutCmd eq
+            'protected' );
     }
     return;
 }
@@ -153,19 +157,29 @@ sub setDriveCmd {
     my $offSetStart;
 
     if (
-        ( $FHEM::Automation::ShuttersControl::shutters->getPartyMode eq 'on' && $FHEM::Automation::ShuttersControl::ascDev->getPartyMode eq 'on' )
-        || (   $FHEM::Automation::ShuttersControl::shutters->getAdv
-            && !$FHEM::Automation::ShuttersControl::shutters->getQueryShuttersPos($posValue)
+        (
+            $FHEM::Automation::ShuttersControl::shutters->getPartyMode eq 'on'
+            && $FHEM::Automation::ShuttersControl::ascDev->getPartyMode eq 'on'
+        )
+        || (
+            $FHEM::Automation::ShuttersControl::shutters->getAdv
+            && !$FHEM::Automation::ShuttersControl::shutters
+            ->getQueryShuttersPos(
+                $posValue)
             && !$FHEM::Automation::ShuttersControl::shutters->getAdvDelay
-            && !$FHEM::Automation::ShuttersControl::shutters->getExternalTriggerState
-            && !$FHEM::Automation::ShuttersControl::shutters->getSelfDefenseState )
+            && !$FHEM::Automation::ShuttersControl::shutters
+            ->getExternalTriggerState
+            && !$FHEM::Automation::ShuttersControl::shutters
+            ->getSelfDefenseState
+        )
       )
     {
         $FHEM::Automation::ShuttersControl::shutters->setDelayCmd($posValue);
         $FHEM::Automation::ShuttersControl::ascDev->setDelayCmdReading;
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(0);
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerState(0)
-          if ( $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerState );
+          if ( $FHEM::Automation::ShuttersControl::shutters
+            ->getExternalTriggerState );
 
         FHEM::Automation::ShuttersControl::ASC_Debug( 'setDriveCmd: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
@@ -176,24 +190,37 @@ sub setDriveCmd {
         $FHEM::Automation::ShuttersControl::shutters->setAdvDelay(0)
           if ( $FHEM::Automation::ShuttersControl::shutters->getAdvDelay );
         $FHEM::Automation::ShuttersControl::shutters->setDelayCmd('none')
-          if ( $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne 'none' )
+          if ( $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne
+            'none' )
           ; # setzt den Wert auf none da der Rolladen nun gesteuert werden kann.
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerState(0)
-          if ( $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerState );
+          if ( $FHEM::Automation::ShuttersControl::shutters
+            ->getExternalTriggerState );
 
         ### antifreeze Routine
-        if ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreezeStatus > 0 ) {
-            if ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreezeStatus != 1 ) {
+        if ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreezeStatus >
+            0 )
+        {
+            if ( $FHEM::Automation::ShuttersControl::shutters
+                ->getAntiFreezeStatus != 1 )
+            {
 
-                $posValue = $FHEM::Automation::ShuttersControl::shutters->getStatus;
-                $FHEM::Automation::ShuttersControl::shutters->setLastDrive('no drive - antifreeze defense');
-                $FHEM::Automation::ShuttersControl::shutters->setLastDriveReading;
+                $posValue =
+                  $FHEM::Automation::ShuttersControl::shutters->getStatus;
+                $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
+                    'no drive - antifreeze defense');
+                $FHEM::Automation::ShuttersControl::shutters
+                  ->setLastDriveReading;
                 $FHEM::Automation::ShuttersControl::ascDev->setStateReading;
             }
-            elsif ( $posValue == $FHEM::Automation::ShuttersControl::shutters->getClosedPos ) {
-                $posValue = $FHEM::Automation::ShuttersControl::shutters->getAntiFreezePos;
+            elsif ( $posValue ==
+                $FHEM::Automation::ShuttersControl::shutters->getClosedPos )
+            {
+                $posValue = $FHEM::Automation::ShuttersControl::shutters
+                  ->getAntiFreezePos;
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
-                    $FHEM::Automation::ShuttersControl::shutters->getLastDrive . ' - antifreeze mode' );
+                    $FHEM::Automation::ShuttersControl::shutters->getLastDrive
+                      . ' - antifreeze mode' );
             }
         }
 
@@ -202,43 +229,67 @@ sub setDriveCmd {
             posValue    => $posValue,
         );
 
-        $offSet = $FHEM::Automation::ShuttersControl::shutters->getDelay        if ( $FHEM::Automation::ShuttersControl::shutters->getDelay > -1 );
-        $offSet = $FHEM::Automation::ShuttersControl::ascDev->getShuttersOffset if ( $FHEM::Automation::ShuttersControl::shutters->getDelay < 0 );
-        $offSetStart = $FHEM::Automation::ShuttersControl::shutters->getDelayStart;
+        $offSet = $FHEM::Automation::ShuttersControl::shutters->getDelay
+          if ( $FHEM::Automation::ShuttersControl::shutters->getDelay > -1 );
+        $offSet = $FHEM::Automation::ShuttersControl::ascDev->getShuttersOffset
+          if ( $FHEM::Automation::ShuttersControl::shutters->getDelay < 0 );
+        $offSetStart =
+          $FHEM::Automation::ShuttersControl::shutters->getDelayStart;
 
-        if (   $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseAbsent
-            && !$FHEM::Automation::ShuttersControl::shutters->getSelfDefenseAbsentTimerrun
-            && $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseMode ne 'off'
+        if ( $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseAbsent
+            && !$FHEM::Automation::ShuttersControl::shutters
+            ->getSelfDefenseAbsentTimerrun
+            && $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseMode
+            ne 'off'
             && $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseState
-            && $FHEM::Automation::ShuttersControl::ascDev->getSelfDefense eq 'on' )
+            && $FHEM::Automation::ShuttersControl::ascDev->getSelfDefense eq
+            'on' )
         {
             InternalTimer(
-                gettimeofday() + $FHEM::Automation::ShuttersControl::shutters->getSelfDefenseAbsentDelay,
-                \&FHEM::Automation::ShuttersControl::_SetCmdFn, \%h );
-            $FHEM::Automation::ShuttersControl::shutters->setSelfDefenseAbsent( 1, 0, \%h );
-        }
-        elsif ( $offSetStart > 0 && !$FHEM::Automation::ShuttersControl::shutters->getNoDelay ) {
-            InternalTimer(
                 gettimeofday() +
-                  int( rand($offSet) + $FHEM::Automation::ShuttersControl::shutters->getDelayStart ),
+                  $FHEM::Automation::ShuttersControl::shutters
+                  ->getSelfDefenseAbsentDelay,
                 \&FHEM::Automation::ShuttersControl::_SetCmdFn, \%h
+            );
+            $FHEM::Automation::ShuttersControl::shutters->setSelfDefenseAbsent(
+                1, 0, \%h );
+        }
+        elsif ( $offSetStart > 0
+            && !$FHEM::Automation::ShuttersControl::shutters->getNoDelay )
+        {
+            InternalTimer(
+                gettimeofday() + int(
+                    rand($offSet) +
+                      $FHEM::Automation::ShuttersControl::shutters
+                      ->getDelayStart
+                ),
+                \&FHEM::Automation::ShuttersControl::_SetCmdFn,
+                \%h
             );
 
             FHEM::Automation::ShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
                   . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
                   . ' - versetztes fahren' );
         }
-        elsif ( $offSetStart < 1 || $FHEM::Automation::ShuttersControl::shutters->getNoDelay ) {
+        elsif ($offSetStart < 1
+            || $FHEM::Automation::ShuttersControl::shutters->getNoDelay )
+        {
             FHEM::Automation::ShuttersControl::_SetCmdFn( \%h );
             FHEM::Automation::ShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
                   . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
                   . ' - NICHT versetztes fahren' );
         }
 
-        FHEM::Automation::ShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
+        FHEM::Automation::ShuttersControl::ASC_Debug(
+                'FnSetDriveCmd: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - NoDelay: '
-              . ( $FHEM::Automation::ShuttersControl::shutters->getNoDelay ? 'JA' : 'NEIN' ) );
+              . (
+                $FHEM::Automation::ShuttersControl::shutters->getNoDelay
+                ? 'JA'
+                : 'NEIN'
+              )
+        );
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(0);
     }
 
@@ -311,7 +362,8 @@ sub setLastDriveReading {
     );
 
     InternalTimer( gettimeofday() + 0.1,
-        \&FHEM::Automation::ShuttersControl::_setShuttersLastDriveDelayed, \%h );
+        \&FHEM::Automation::ShuttersControl::_setShuttersLastDriveDelayed,
+        \%h );
     return;
 }
 
@@ -404,7 +456,8 @@ sub setAdvDelay {
 sub getHomemode {
     my $self = shift;
 
-    my $homemode = $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
+    my $homemode =
+      $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
     $homemode = $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
       if ( $homemode eq 'none' );
     return $homemode;
@@ -473,16 +526,23 @@ sub getAntiFreezeStatus {
 #     $outTemp = $FHEM::Automation::ShuttersControl::shutters->getOutTemp if ( $FHEM::Automation::ShuttersControl::shutters->getOutTemp != -100 );        sollte raus das der Sensor im Rollo auch ein Innentemperatursensor sein kann.
 
     if (   $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze ne 'off'
-        && $outTemp <= $FHEM::Automation::ShuttersControl::ascDev->getFreezeTemp )
+        && $outTemp <=
+        $FHEM::Automation::ShuttersControl::ascDev->getFreezeTemp )
     {
 
-        if ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq 'soft' ) {
+        if ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq
+            'soft' )
+        {
             return 1;
         }
-        elsif ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq $daytime ) {
+        elsif ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq
+            $daytime )
+        {
             return 2;
         }
-        elsif ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq 'hard' ) {
+        elsif ( $FHEM::Automation::ShuttersControl::shutters->getAntiFreeze eq
+            'hard' )
+        {
             return 3;
         }
     }
@@ -492,7 +552,8 @@ sub getAntiFreezeStatus {
 sub getShuttersPosCmdValueNegate {
     my $self = shift;
 
-    return ( $FHEM::Automation::ShuttersControl::shutters->getOpenPos < $FHEM::Automation::ShuttersControl::shutters->getClosedPos ? 1 : 0 );
+    return ( $FHEM::Automation::ShuttersControl::shutters->getOpenPos <
+          $FHEM::Automation::ShuttersControl::shutters->getClosedPos ? 1 : 0 );
 }
 
 sub getQueryShuttersPos
@@ -501,7 +562,8 @@ sub getQueryShuttersPos
     my $posValue = shift; #   wenn dem so ist wird 1 zurück gegeben ansonsten 0
 
     return (
-          $FHEM::Automation::ShuttersControl::shutters->getShuttersPosCmdValueNegate
+        $FHEM::Automation::ShuttersControl::shutters
+          ->getShuttersPosCmdValueNegate
         ? $FHEM::Automation::ShuttersControl::shutters->getStatus > $posValue
         : $FHEM::Automation::ShuttersControl::shutters->getStatus < $posValue
     );
@@ -669,9 +731,16 @@ sub getRoommatesStatus {
     );
     my $minPrio = 10;
 
-    for my $ro ( split( ",", $FHEM::Automation::ShuttersControl::shutters->getRoommates ) ) {
+    for my $ro (
+        split(
+            ",", $FHEM::Automation::ShuttersControl::shutters->getRoommates
+        )
+      )
+    {
         $FHEM::Automation::ShuttersControl::shutters->setRoommate($ro);
-        my $currentPrio = $statePrio{ $FHEM::Automation::ShuttersControl::shutters->_getRoommateStatus };
+        my $currentPrio =
+          $statePrio{ $FHEM::Automation::ShuttersControl::shutters
+              ->_getRoommateStatus };
         $minPrio = $currentPrio if ( $minPrio > $currentPrio );
     }
 
@@ -695,9 +764,16 @@ sub getRoommatesLastStatus {
     );
     my $minPrio = 10;
 
-    for my $ro ( split( ",", $FHEM::Automation::ShuttersControl::shutters->getRoommates ) ) {
+    for my $ro (
+        split(
+            ",", $FHEM::Automation::ShuttersControl::shutters->getRoommates
+        )
+      )
+    {
         $FHEM::Automation::ShuttersControl::shutters->setRoommate($ro);
-        my $currentPrio = $statePrio{ $FHEM::Automation::ShuttersControl::shutters->_getRoommateLastStatus };
+        my $currentPrio =
+          $statePrio{ $FHEM::Automation::ShuttersControl::shutters
+              ->_getRoommateLastStatus };
         $minPrio = $currentPrio if ( $minPrio > $currentPrio );
     }
 
@@ -708,15 +784,20 @@ sub getRoommatesLastStatus {
 sub getOutTemp {
     my $self = shift;
 
-    return ReadingsVal( $FHEM::Automation::ShuttersControl::shutters->_getTempSensor,
-        $FHEM::Automation::ShuttersControl::shutters->getTempSensorReading, -100 );
+    return ReadingsVal(
+        $FHEM::Automation::ShuttersControl::shutters->_getTempSensor,
+        $FHEM::Automation::ShuttersControl::shutters->getTempSensorReading,
+        -100 );
 }
 
 sub getIdleDetection {
     my $self = shift;
 
-    return ReadingsVal( $self->{shuttersDev},
-        $FHEM::Automation::ShuttersControl::shutters->_getIdleDetectionReading, 'none' );
+    return ReadingsVal(
+        $self->{shuttersDev},
+        $FHEM::Automation::ShuttersControl::shutters->_getIdleDetectionReading,
+        'none'
+    );
 }
 
 ### Begin Beschattung Objekt mit Daten befüllen
@@ -729,7 +810,8 @@ sub setShadingStatus {
         && exists( $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} )
         && $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} eq $value );
 
-    $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus( ( $value eq 'in' ? 'out' : 'in' ) )
+    $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus(
+        ( $value eq 'in' ? 'out' : 'in' ) )
       if ( $value eq 'in'
         || $value eq 'out' );
 
@@ -814,7 +896,8 @@ sub setPushBrightnessInArray {
             @{
                 $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL}
             }
-        ) > $FHEM::Automation::ShuttersControl::shutters->getMaxBrightnessAverageArrayObjects
+        ) > $FHEM::Automation::ShuttersControl::shutters
+        ->getMaxBrightnessAverageArrayObjects
       );
 
     return;
@@ -878,8 +961,10 @@ sub getIfInShading {
 
     return (
         (
-                 $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
-              && $FHEM::Automation::ShuttersControl::shutters->getShadingLastStatus eq 'out'
+            $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne
+              'off'
+              && $FHEM::Automation::ShuttersControl::shutters
+              ->getShadingLastStatus eq 'out'
         ) ? 1 : 0
     );
 }
@@ -938,6 +1023,5 @@ sub getShadingLastStatusTimestamp {
     );
 }
 ### Ende Beschattung
-
 
 1;

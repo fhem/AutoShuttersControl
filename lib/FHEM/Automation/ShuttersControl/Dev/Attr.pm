@@ -223,8 +223,8 @@ sub _getResidentsDev {
         && ( gettimeofday() - $self->{ASC_residentsDev}->{LASTGETTIME} ) < 2 );
     $self->{ASC_residentsDev}->{LASTGETTIME} = int( gettimeofday() );
     my ( $device, $reading ) =
-      FHEM::Automation::ShuttersControl::GetAttrValues( $name, 'ASC_residentsDev',
-        'none' );
+      FHEM::Automation::ShuttersControl::GetAttrValues( $name,
+        'ASC_residentsDev', 'none' );
 
     $self->{ASC_residentsDev}->{device} = $device;
     $self->{ASC_residentsDev}->{reading} =
@@ -272,7 +272,9 @@ sub _getRainSensor {
         : ( $self->{ASC_rainSensor}->{triggermax} * 0 )
     );
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
-      ( $pos ne 'none' ? $pos : $FHEM::Automation::ShuttersControl::shutters->getClosedPos );
+      (   $pos ne 'none'
+        ? $pos
+        : $FHEM::Automation::ShuttersControl::shutters->getClosedPos );
     $self->{ASC_rainSensor}->{waitingTime} =
       ( $pos ne 'none' ? $wait : 900 );
 
@@ -383,6 +385,5 @@ sub getBlockAscDrivesAfterManual {
 
     return AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
 }
-
 
 1;
