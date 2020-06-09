@@ -1229,7 +1229,7 @@ sub EventProcessingWindowRec {
         elsif ($match =~ m{[Oo]pen|false}xms
             && $shutters->getSubTyp eq 'threestate' )
         {
-            my $posValue;
+            my $posValue        = $shutters->getStatus;
             my $setLastDrive;
             if (    $ascDev->getAutoShuttersControlComfort eq 'on'
                 and
@@ -1273,12 +1273,12 @@ sub EventProcessingRoommate {
 "AutoShuttersControl ($name) - EventProcessingRoommate: $shuttersDev und Events $events"
         );
 
-        my $getModeUp              = $shutters->getModeUp;
-        my $getModeDown            = $shutters->getModeDown;
-        my $getRoommatesStatus     = $shutters->getRoommatesStatus;
-        my $getRoommatesLastStatus = $shutters->getRoommatesLastStatus;
-        my $event                  = $1;
-        my $posValue;
+        my $getModeUp               = $shutters->getModeUp;
+        my $getModeDown             = $shutters->getModeDown;
+        my $getRoommatesStatus      = $shutters->getRoommatesStatus;
+        my $getRoommatesLastStatus  = $shutters->getRoommatesLastStatus;
+        my $event                   = $1;
+        my $posValue                = $shutters->getStatus;
 
         if (
             ( $event eq 'home' || $event eq 'awoken' )
@@ -2166,7 +2166,7 @@ sub EventProcessingBrightness {
                 || $shutters->getModeDown eq 'always'
               )
             {
-                my $posValue;
+                my $posValue    = $shutters->getStatus;
                 my $lastDrive;
 
                 ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 0
