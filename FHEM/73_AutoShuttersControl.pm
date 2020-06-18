@@ -1171,28 +1171,28 @@ sub Initialize {
         <tr><td>VentilatePosAfterDayClosed</td><td>was soll passieren wenn am Tag das Fenster geschlossen wird - open/lastManual</tr>
         <tr><td>ClosedPos</td><td>setzt den Wert f&uuml;r die geschlossen Position</tr>
         <tr><td>SleepPos</td><td>setzt den Wert f&uuml;r die schlafen Position</tr>
-        <tr><td>VentilateOpen</td><td>   </tr>
-        <tr><td>ComfortOpenPos</td><td>   </tr>
-        <tr><td>PartyMode</td><td>   </tr>
-        <tr><td>Roommates</td><td>   </tr>
-        <tr><td>RoommatesReading</td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
+        <tr><td>VentilateOpen</td><td>setzt den Wert f&uuml;r VentilateOpen Position</tr>
+        <tr><td>ComfortOpenPos</td><td>setzt den Wert f&uuml;r ComfortOpen Position</tr>
+        <tr><td>PartyMode</td><td>Wert f&uuml;r den PartyMode - on/off</tr>
+        <tr><td>Roommates</td><td>setzt den Wert f&uuml;r Roommates als String, mehrere Roommates durch Komma getrennt</tr>
+        <tr><td>RoommatesReading</td><td>setzt das Reading f&uuml;r die Roommates</tr>
+        <tr><td>WindProtection</td><td>setzt/&uuml;berschreibt die WindProtection - protected/unprotected</tr>
+        <tr><td>RainProtection</td><td>setzt/&uuml;berschreibt die RainProtection - protected/unprotected</tr>
+        <tr><td>ModeUp</td><td>setzt den Modus f&uuml;r die morgendliche Fahrt - absent/always/off/home</tr>
+        <tr><td>ModeDown</td><td>setzt den Modus f&uuml;r die abendliche Fahrt - absent/always/off/home</tr>
+        <tr><td>LockOut</td><td>setzt den zu ber&uuml;cksichtigen LockOut Modus - off/soft/hard</tr>
+        <tr><td>LockOutCmd</td><td>setzt das Kommando f&uuml;r den LockOut des Rollos</tr>
+        <tr><td>AutoAstroModeMorning   </td><td>   </tr>
+        <tr><td>AutoAstroModeEvening   </td><td>   </tr>
+        <tr><td>AutoAstroModeMorningHorizon   </td><td>   </tr>
+        <tr><td>AutoAstroModeEveningHorizon   </td><td>   </tr>
+        <tr><td>Up   </td><td>   </tr>
+        <tr><td>Down   </td><td>   </tr>
+        <tr><td>TimeUpEarly   </td><td>   </tr>
+        <tr><td>TimeUpLate   </td><td>   </tr>
+        <tr><td>TimeDownEarly   </td><td>   </tr>
+        <tr><td>TimeDownLate   </td><td>   </tr>
+        <tr><td>TimeUpWeHoliday   </td><td>   </tr>
         <tr><td>   </td><td>   </tr>
         <tr><td>   </td><td>   </tr>
         <tr><td>   </td><td>   </tr>
