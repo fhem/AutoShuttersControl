@@ -3034,7 +3034,8 @@ sub ShuttersCommandSet {
 ## Sub welche die InternalTimer nach entsprechenden Sunset oder Sunrise zusammen stellt
 sub CreateSunRiseSetShuttersTimer {
     my $hash        = shift;
-    my $shuttersDev = shift;
+    my $shuttersDev = shift // return Log3( $hash->{NAME}, 1,
+"AutoShuttersControl ($hash->{NAME}) - Error in function  CreateSunRiseSetShuttersTimer. No shuttersDev given");
 
     my $name            = $hash->{NAME};
     my $shuttersDevHash = $defs{$shuttersDev};
