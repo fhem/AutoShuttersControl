@@ -884,7 +884,7 @@ sub Initialize {
             <a name="ASC_freezeTemp"></a>
             <li><strong>ASC_freezeTemp</strong> - Temperatur, ab welcher der Frostschutz greifen soll und der Rollladen nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
             <a name="ASC_rainSensor"></a>
-            <li><strong>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS]</strong> - der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben werden soll und der "wegen Regen geschlossen Position".</li>
+            <li><strong>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS:[WAITINGTIME]]</strong> - der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben werden soll und der "wegen Regen geschlossen Position", sowie der Wartezeit bis dann tats&auml;chlich die aktion ausgeführt wird.</li>
             <a name="ASC_residentsDev"></a>
             <li><strong>ASC_residentsDev - DEVICENAME[:READINGNAME]</strong> - der Inhalt ist eine Kombination aus Devicenamen und Readingnamen des Residents-Device der obersten Ebene (z.B. rgr_Residents:state)</li>
             <a name="ASC_shuttersDriveDelay"></a>
@@ -987,7 +987,7 @@ sub Initialize {
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device Getter</u>
     <ul>
-        <code>{ ascAPIget('Getter','ROLLODEVICENAME') }</code><br>
+        <code>{ ascAPIget('GETTER','ROLLODEVICENAME') }</code><br>
     </ul>
     <table>
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
@@ -1131,7 +1131,7 @@ sub Initialize {
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe Getter</u>
     <ul>
-        <code>{ ascAPIget('Getter','ROLLODEVICENAME',VALUE) }</code><br>
+        <code>{ ascAPIget('GETTER','ROLLODEVICENAME',VALUE) }</code><br>
     </ul>
     <table>
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
@@ -1140,7 +1140,7 @@ sub Initialize {
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device Setter</u>
     <ul>
-        <code>{ ascAPIset('Setter','ROLLODEVICENAME') }</code><br>
+        <code>{ ascAPIset('SETTER','ROLLODEVICENAME') }</code><br>
     </ul>
     <table>
         <tr><th>Setter</th><th>Erl&auml;uterung</th></tr>
@@ -1182,58 +1182,25 @@ sub Initialize {
         <tr><td>ModeDown</td><td>setzt den Modus f&uuml;r die abendliche Fahrt - absent/always/off/home</tr>
         <tr><td>LockOut</td><td>setzt den zu ber&uuml;cksichtigen LockOut Modus - off/soft/hard</tr>
         <tr><td>LockOutCmd</td><td>setzt das Kommando f&uuml;r den LockOut des Rollos</tr>
-        <tr><td>AutoAstroModeMorning   </td><td>   </tr>
-        <tr><td>AutoAstroModeEvening   </td><td>   </tr>
-        <tr><td>AutoAstroModeMorningHorizon   </td><td>   </tr>
-        <tr><td>AutoAstroModeEveningHorizon   </td><td>   </tr>
-        <tr><td>Up   </td><td>   </tr>
-        <tr><td>Down   </td><td>   </tr>
-        <tr><td>TimeUpEarly   </td><td>   </tr>
-        <tr><td>TimeUpLate   </td><td>   </tr>
-        <tr><td>TimeDownEarly   </td><td>   </tr>
-        <tr><td>TimeDownLate   </td><td>   </tr>
-        <tr><td>TimeUpWeHoliday   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
-        <tr><td>   </td><td>   </tr>
+        <tr><td>AutoAstroModeMorning</td><td>   </tr>
+        <tr><td>AutoAstroModeEvening</td><td>   </tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>   </tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>   </tr>
+        <tr><td>Up</td><td>   </tr>
+        <tr><td>Down</td><td>   </tr>
+        <tr><td>TimeUpEarly</td><td>   </tr>
+        <tr><td>TimeUpLate</td><td>   </tr>
+        <tr><td>TimeDownEarly</td><td>   </tr>
+        <tr><td>TimeDownLate</td><td>   </tr>
+        <tr><td>TimeUpWeHoliday</td><td>   </tr>
+        <tr><td>DriveUpMaxDuration</td><td>   </tr>
+        <tr><td>SubTyp</td><td>   </tr>
+        <tr><td>WinDev</td><td>   </tr>
     </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device Getter</u>
     <ul>
-        <code>{ ascAPIget('Getter') }</code><br>
+        <code>{ ascAPIget('GETTER') }</code><br>
     </ul>
     <table>
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
@@ -1265,6 +1232,23 @@ sub Initialize {
         <tr><td>RainWaitingTime</td><td>   </td></tr>
         <tr><td>BlockAscDrivesAfterManual</td><td>   </td></tr>
     </table>
+    </p>
+    <u>&Uuml;bersicht f&uuml;r das ASC Device Setter</u>
+    <ul>
+        <code>{ ascAPIget('SETTER') }</code><br>
+    </ul>
+    <table>
+        <tr><th>Setter</th><th>Erl&auml;uterung</th></tr>
+        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlMorning</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlEvening</td><td>   </td></tr>
+        <tr><td>AutoShuttersControlComfort</td><td>   </td></tr>
+        <tr><td>FreezeTemp</td><td>   </td></tr>
+        <tr><td>BlockAscDrivesAfterManual</td><td>   0,1</td></tr>
+    </table>
 </ul>
 
 =end html_DE
@@ -1288,7 +1272,7 @@ sub Initialize {
   ],
   "release_status": "testing",
   "license": "GPL_2",
-  "version": "v0.9.23",
+  "version": "v0.9.25",
   "author": [
     "Marko Oldenburg <leongaultier@gmail.com>"
   ],
