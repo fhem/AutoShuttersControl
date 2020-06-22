@@ -1145,57 +1145,57 @@ sub Initialize {
     <table>
         <tr><th>Setter</th><th>Erl&auml;uterung</th></tr>
         <tr><td>AntiFreezePos</td><td>setzt die Position f&uuml;r Antifreeze</td></tr>
-        <tr><td>AntiFreeze</td><td>setzt den Wert f&uuml;r Antifreeze - off/soft/hard/am/pm</tr>
-        <tr><td>ShuttersPlace</td><td>setzt den Standort des Rollos - window/terrace</tr>
-        <tr><td>SlatPosCmd</td><td>setzt Command f&uuml;r das fahren der Lamellen</tr>
-        <tr><td>PrivacyUpTime</td><td>setzt die Zeit f&uuml;r die morgendliche privacy Fahrt</tr>
-        <tr><td>PrivacyDownTime</td><td>etzt die Zeit f&uuml;r die abendliche privacy Fahrt</tr>
-        <tr><td>PrivacyDownPos</td><td>setzt die Position f&uuml;r eine abendliche privacy Fahrt</tr>
-        <tr><td>PrivacyUpPos</td><td>setzt die Position f&uuml;r eine morgendliche privacy Fahrt</tr>
-        <tr><td>SelfDefenseMode</td><td>setzt den Modus f&uuml;r SelfDefense</tr>
-        <tr><td>SelfDefenseAbsentDelay</td><td>setzt den Verz&ouml;gerungswert f&uuml;r SelfDefense</tr>
-        <tr><td>WiggleValue</td><td>setzen der Werte f&uuml;r Wiggle</tr>
-        <tr><td>Adv</td><td>setzt die Unterst&uuml;tzung f&uuml;r Weihnachten - on/off</tr>
-        <tr><td>ShadingPos</td><td>setzt den Wert der Beschattungsposition</tr>
-        <tr><td>ShadingMode</td><td>setzt den Modus der Beschattung - absent/always/off/home</tr>
-        <tr><td>ShadingMinOutsideTemperature</td><td>setzt den mininmal Temperaturwert zur Beschattung</tr>
-        <tr><td>ShadingWaitingPeriod</td><td>setzt den Wert der Beschattungswartezeit</tr>
-        <tr><td>Delay</td><td>setzt den Zufallswert zur verz&ouml;gerten Fahrt</tr>
-        <tr><td>DelayStart</td><td>setzen den festen Wert zur verz&ouml;gerten Fahrt</tr>
-        <tr><td>BlockingTimeAfterManual</td><td>setzt den Wert in Sekunden zur Blockade nach einer manuellen Fahrt</tr>
-        <tr><td>BlockingTimeBeforNightClose</td><td>setzt den Wert in Sekunden zur Blockade vor der Nachtfahrt</tr>
-        <tr><td>BlockingTimeBeforDayOpen</td><td>setzt den Wert in Sekunden zur Blockade vor der Tagfahrt</tr>
-        <tr><td>PosCmd</td><td>setzt den Readingnamen zur Positionserkennung des Rollos</tr>
-        <tr><td>OpenPos</td><td>setzt den Wert f&uuml;r die offen Position</tr>
-        <tr><td>VentilatePos</td><td>setzt den Wert f&uuml;r die ventilate Position</tr>
-        <tr><td>VentilatePosAfterDayClosed</td><td>was soll passieren wenn am Tag das Fenster geschlossen wird - open/lastManual</tr>
-        <tr><td>ClosedPos</td><td>setzt den Wert f&uuml;r die geschlossen Position</tr>
-        <tr><td>SleepPos</td><td>setzt den Wert f&uuml;r die schlafen Position</tr>
-        <tr><td>VentilateOpen</td><td>setzt den Wert f&uuml;r VentilateOpen Position</tr>
-        <tr><td>ComfortOpenPos</td><td>setzt den Wert f&uuml;r ComfortOpen Position</tr>
-        <tr><td>PartyMode</td><td>Wert f&uuml;r den PartyMode - on/off</tr>
-        <tr><td>Roommates</td><td>setzt den Wert f&uuml;r Roommates als String, mehrere Roommates durch Komma getrennt</tr>
-        <tr><td>RoommatesReading</td><td>setzt das Reading f&uuml;r die Roommates</tr>
-        <tr><td>WindProtection</td><td>setzt/&uuml;berschreibt die WindProtection - protected/unprotected</tr>
-        <tr><td>RainProtection</td><td>setzt/&uuml;berschreibt die RainProtection - protected/unprotected</tr>
-        <tr><td>ModeUp</td><td>setzt den Modus f&uuml;r die morgendliche Fahrt - absent/always/off/home</tr>
-        <tr><td>ModeDown</td><td>setzt den Modus f&uuml;r die abendliche Fahrt - absent/always/off/home</tr>
-        <tr><td>LockOut</td><td>setzt den zu ber&uuml;cksichtigen LockOut Modus - off/soft/hard</tr>
-        <tr><td>LockOutCmd</td><td>setzt das Kommando f&uuml;r den LockOut des Rollos</tr>
-        <tr><td>AutoAstroModeMorning</td><td>   </tr>
-        <tr><td>AutoAstroModeEvening</td><td>   </tr>
-        <tr><td>AutoAstroModeMorningHorizon</td><td>   </tr>
-        <tr><td>AutoAstroModeEveningHorizon</td><td>   </tr>
-        <tr><td>Up</td><td>   </tr>
-        <tr><td>Down</td><td>   </tr>
-        <tr><td>TimeUpEarly</td><td>   </tr>
-        <tr><td>TimeUpLate</td><td>   </tr>
-        <tr><td>TimeDownEarly</td><td>   </tr>
-        <tr><td>TimeDownLate</td><td>   </tr>
-        <tr><td>TimeUpWeHoliday</td><td>   </tr>
-        <tr><td>DriveUpMaxDuration</td><td>   </tr>
-        <tr><td>SubTyp</td><td>   </tr>
-        <tr><td>WinDev</td><td>   </tr>
+        <tr><td>AntiFreeze</td><td>setzt den Wert f&uuml;r Antifreeze - off/soft/hard/am/pm</td></tr>
+        <tr><td>ShuttersPlace</td><td>setzt den Standort des Rollos - window/terrace</td></tr>
+        <tr><td>SlatPosCmd</td><td>setzt Command f&uuml;r das fahren der Lamellen</td></tr>
+        <tr><td>PrivacyUpTime</td><td>setzt die Zeit f&uuml;r die morgendliche privacy Fahrt</td></tr>
+        <tr><td>PrivacyDownTime</td><td>etzt die Zeit f&uuml;r die abendliche privacy Fahrt</td></tr>
+        <tr><td>PrivacyDownPos</td><td>setzt die Position f&uuml;r eine abendliche privacy Fahrt</td></tr>
+        <tr><td>PrivacyUpPos</td><td>setzt die Position f&uuml;r eine morgendliche privacy Fahrt</td></tr>
+        <tr><td>SelfDefenseMode</td><td>setzt den Modus f&uuml;r SelfDefense</td></tr>
+        <tr><td>SelfDefenseAbsentDelay</td><td>setzt den Verz&ouml;gerungswert f&uuml;r SelfDefense</td></tr>
+        <tr><td>WiggleValue</td><td>setzen der Werte f&uuml;r Wiggle</td></tr>
+        <tr><td>Adv</td><td>setzt die Unterst&uuml;tzung f&uuml;r Weihnachten - on/off</td></tr>
+        <tr><td>ShadingPos</td><td>setzt den Wert der Beschattungsposition</td></tr>
+        <tr><td>ShadingMode</td><td>setzt den Modus der Beschattung - absent/always/off/home</td></tr>
+        <tr><td>ShadingMinOutsideTemperature</td><td>setzt den mininmal Temperaturwert zur Beschattung</td></tr>
+        <tr><td>ShadingWaitingPeriod</td><td>setzt den Wert der Beschattungswartezeit</td></tr>
+        <tr><td>Delay</td><td>setzt den Zufallswert zur verz&ouml;gerten Fahrt</td></tr>
+        <tr><td>DelayStart</td><td>setzen den festen Wert zur verz&ouml;gerten Fahrt</td></tr>
+        <tr><td>BlockingTimeAfterManual</td><td>setzt den Wert in Sekunden zur Blockade nach einer manuellen Fahrt</td></tr>
+        <tr><td>BlockingTimeBeforNightClose</td><td>setzt den Wert in Sekunden zur Blockade vor der Nachtfahrt</td></tr>
+        <tr><td>BlockingTimeBeforDayOpen</td><td>setzt den Wert in Sekunden zur Blockade vor der Tagfahrt</td></tr>
+        <tr><td>PosCmd</td><td>setzt den Readingnamen zur Positionserkennung des Rollos</td></tr>
+        <tr><td>OpenPos</td><td>setzt den Wert f&uuml;r die offen Position</td></tr>
+        <tr><td>VentilatePos</td><td>setzt den Wert f&uuml;r die ventilate Position</td></tr>
+        <tr><td>VentilatePosAfterDayClosed</td><td>was soll passieren wenn am Tag das Fenster geschlossen wird - open/lastManual</td></tr>
+        <tr><td>ClosedPos</td><td>setzt den Wert f&uuml;r die geschlossen Position</td></tr>
+        <tr><td>SleepPos</td><td>setzt den Wert f&uuml;r die schlafen Position</td></tr>
+        <tr><td>VentilateOpen</td><td>setzt den Wert f&uuml;r VentilateOpen Position</td></tr>
+        <tr><td>ComfortOpenPos</td><td>setzt den Wert f&uuml;r ComfortOpen Position</td></tr>
+        <tr><td>PartyMode</td><td>Wert f&uuml;r den PartyMode - on/off</td></tr>
+        <tr><td>Roommates</td><td>setzt den Wert f&uuml;r Roommates als String, mehrere Roommates durch Komma getrennt</td></tr>
+        <tr><td>RoommatesReading</td><td>setzt das Reading f&uuml;r die Roommates</td></tr>
+        <tr><td>WindProtection</td><td>setzt/&uuml;berschreibt die WindProtection - protected/unprotected</td></tr>
+        <tr><td>RainProtection</td><td>setzt/&uuml;berschreibt die RainProtection - protected/unprotected</td></tr>
+        <tr><td>ModeUp</td><td>setzt den Modus f&uuml;r die morgendliche Fahrt - absent/always/off/home</td></tr>
+        <tr><td>ModeDown</td><td>setzt den Modus f&uuml;r die abendliche Fahrt - absent/always/off/home</td></tr>
+        <tr><td>LockOut</td><td>setzt den zu ber&uuml;cksichtigen LockOut Modus - off/soft/hard</td></tr>
+        <tr><td>LockOutCmd</td><td>setzt das Kommando f&uuml;r den LockOut des Rollos</td></tr>
+        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
+        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
+        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
+        <tr><td>Up</td><td>   </td></tr>
+        <tr><td>Down</td><td>   </td></tr>
+        <tr><td>TimeUpEarly</td><td>   </td></tr>
+        <tr><td>TimeUpLate</td><td>   </td></tr>
+        <tr><td>TimeDownEarly</td><td>   </td></tr>
+        <tr><td>TimeDownLate</td><td>   </td></tr>
+        <tr><td>TimeUpWeHoliday</td><td>   </td></tr>
+        <tr><td>DriveUpMaxDuration</td><td>   </td></tr>
+        <tr><td>SubTyp</td><td>   </td></tr>
+        <tr><td>WinDev</td><td>   </td></tr>
     </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device Getter</u>
