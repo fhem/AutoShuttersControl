@@ -2909,13 +2909,13 @@ sub EventProcessingExternalTriggerDevice {
         if ( $1 eq $triggerValActive2 ) {
             $shutters->setLastDrive('external trigger2 device active');
             $shutters->setNoDelay(1);
-            $shutters->setExternalTriggerState(1);
+            $shutters->setExternalTriggerStatus(1);
             ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive2 );
         }
         else {
             $shutters->setLastDrive('external trigger device active');
             $shutters->setNoDelay(1);
-            $shutters->setExternalTriggerState(1);
+            $shutters->setExternalTriggerStatus(1);
             ShuttersCommandSet( $hash, $shuttersDev, $triggerPosActive );
         }
     }
@@ -2933,7 +2933,7 @@ sub EventProcessingExternalTriggerDevice {
 
         $shutters->setLastDrive('external trigger device inactive');
         $shutters->setNoDelay(1);
-        $shutters->setExternalTriggerState(1);
+        $shutters->setExternalTriggerStatus(1);
         ShuttersCommandSet(
             $hash,
             $shuttersDev,

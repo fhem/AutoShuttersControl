@@ -1198,20 +1198,6 @@ sub getExternalTriggerPosInactive {
       ->{posinactive};
 }
 
-sub getExternalTriggerState {
-    my $self = shift;
-
-    return (
-        (
-            defined(
-                $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event}
-              )
-              and
-              $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event}
-        ) ? 1 : 0
-    );
-}
-
 sub setDelay {
     my $self    = shift;
     my $attrVal = shift;
