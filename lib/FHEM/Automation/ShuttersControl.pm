@@ -3017,7 +3017,6 @@ sub ShuttersCommandSet {
 
     if (
         (
-            #                $posValue == $shutters->getShadingPos &&
             CheckIfShuttersWindowRecOpen($shuttersDev) == 2
             && $shutters->getShuttersPlace eq 'terrace'
             && (   $shutters->getLockOut eq 'soft'
@@ -3025,8 +3024,6 @@ sub ShuttersCommandSet {
             && !$shutters->getQueryShuttersPos($posValue)
         )
         || (
-            #             $posValue != $shutters->getShadingPos
-            #             && (
             (
                    $shutters->getPartyMode eq 'on'
                 && $ascDev->getPartyMode eq 'on'
@@ -3056,9 +3053,7 @@ sub ShuttersCommandSet {
                 && $shutters->getShuttersPlace eq 'terrace'
                 && !$shutters->getQueryShuttersPos($posValue) )
             || (   $shutters->getRainProtectionStatus eq 'protected'
-                && $shutters->getWindProtectionStatus eq 'protected' )
-
-            #             )
+                || $shutters->getWindProtectionStatus eq 'protected' )
         )
       )
     {
