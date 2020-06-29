@@ -4700,63 +4700,32 @@ sub _SetCmdFn {
         }
     }
 
-    if (   $ascDev->getSlatDriveCmdInverse
-        && $slatPos > -1
-        && $shutters->getSlatPosCmd ne 'none' )
-    {
-        CommandSet(
-            undef,
-            (
-                  $shutters->getSlatDevice ne 'none'
-                ? $shutters->getSlatDevice
-                : $shuttersDev
-              )
-              . ' '
-              . $shutters->getSlatPosCmd . ' '
-              . $slatPos
-        );
-
-        InternalTimer(
-            gettimeofday() + 3,
-            sub() {
-                CommandSet( undef,
-                        $shuttersDev
-                      . ':FILTER='
-                      . $shutters->getPosCmd . '!='
-                      . $posValue . ' '
-                      . $driveCommand );
-            },
+    CommandSet( undef,
             $shuttersDev
-        );
-    }
-    else {
-        CommandSet( undef,
-                $shuttersDev
-              . ':FILTER='
-              . $shutters->getPosCmd . '!='
-              . $posValue . ' '
-              . $driveCommand );
+            . ':FILTER='
+            . $shutters->getPosCmd . '!='
+            . $posValue . ' '
+            . $driveCommand );
 
-        InternalTimer(
-            gettimeofday() + 3,
-            sub() {
-                CommandSet(
-                    undef,
-                    (
-                          $shutters->getSlatDevice ne 'none'
-                        ? $shutters->getSlatDevice
-                        : $shuttersDev
-                      )
-                      . ' '
-                      . $shutters->getSlatPosCmd . ' '
-                      . $slatPos
-                );
-            },
-            $shuttersDev
-          )
-          if ( $slatPos > -1
-            && $shutters->getSlatPosCmd ne 'none' );
-    }
+    InternalTimer(
+        gettimeofday() + 3,
+        sub() {
+            CommandSet(
+                undef,
+                (
+                        $shutters->getSlatDevice ne 'none'
+                    ? $shutters->getSlatDevice
+                    : $shuttersDev
+                    )
+                    . ' '
+                    . $shutters->getSlatPosCmd . ' '
+                    . $slatPos
+            );
+        },
+        $shuttersDev
+        )
+        if ( $slatPos > -1
+        && $shutters->getSlatPosCmd ne 'none' );
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
