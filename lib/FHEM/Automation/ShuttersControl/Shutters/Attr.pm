@@ -110,9 +110,10 @@ sub _getPosition {
         );
 
         $posAssignment = (
-              $posAssignment =~ m{\A\d+(\.\d+)?\z}xms
-            ? $posAssignment
-            : 'none'
+                defined($posAssignment)
+            &&  $posAssignment =~ m{\A\d+(\.\d+)?\z}xms
+              ? $posAssignment
+              : 'none'
         );
     }
     else {

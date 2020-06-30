@@ -6,7 +6,7 @@ UPD 2020-06-29_09:05:05 30157 lib/FHEM/Automation/ShuttersControl/Shutters.pm
 UPD 2020-06-22_09:41:40 2175 lib/FHEM/Automation/ShuttersControl/Window.pm
 UPD 2020-06-22_09:41:40 11454 lib/FHEM/Automation/ShuttersControl/Dev/Attr.pm
 UPD 2020-06-22_09:41:40 7251 lib/FHEM/Automation/ShuttersControl/Dev/Readings.pm
-UPD 2020-06-29_09:05:05 52344 lib/FHEM/Automation/ShuttersControl/Shutters/Attr.pm
+UPD 2020-06-30_12:34:40 52390 lib/FHEM/Automation/ShuttersControl/Shutters/Attr.pm
 UPD 2020-06-22_09:41:40 2903 lib/FHEM/Automation/ShuttersControl/Shutters/Readings.pm
 UPD 2020-06-22_09:41:40 3972 lib/FHEM/Automation/ShuttersControl/Window/Attr.pm
 UPD 2020-06-22_09:41:40 2288 lib/FHEM/Automation/ShuttersControl/Window/Readings.pm
