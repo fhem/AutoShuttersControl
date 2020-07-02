@@ -318,8 +318,7 @@ sub ascAPIset {
 
     if (   defined($shutterDev)
         && $shutterDev
-        && defined($value)
-        && $value )
+        && defined($value) )
     {
         $shutters->setShuttersDev($shutterDev);
         $shutters->$setter($value);
