@@ -1138,7 +1138,7 @@ sub Initialize {
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device Setter</u>
     <ul>
-        <code>{ ascAPIset('SETTER','ROLLODEVICENAME') }</code><br>
+        <code>{ ascAPIset('SETTER','ROLLODEVICENAME','VALUE') }</code><br>
     </ul>
     <table>
         <tr><th>Setter</th><th>Erl&auml;uterung</th></tr>
@@ -1229,23 +1229,6 @@ sub Initialize {
         <tr><td>RainSensorShuttersClosedPos</td><td>   </td></tr>
         <tr><td>RainWaitingTime</td><td>   </td></tr>
         <tr><td>BlockAscDrivesAfterManual</td><td>   </td></tr>
-    </table>
-    </p>
-    <u>&Uuml;bersicht f&uuml;r das ASC Device Setter</u>
-    <ul>
-        <code>{ ascAPIget('SETTER') }</code><br>
-    </ul>
-    <table>
-        <tr><th>Setter</th><th>Erl&auml;uterung</th></tr>
-        <tr><td>AutoAstroModeEvening</td><td>   </td></tr>
-        <tr><td>AutoAstroModeEveningHorizon</td><td>   </td></tr>
-        <tr><td>AutoAstroModeMorning</td><td>   </td></tr>
-        <tr><td>AutoAstroModeMorningHorizon</td><td>   </td></tr>
-        <tr><td>AutoShuttersControlMorning</td><td>   </td></tr>
-        <tr><td>AutoShuttersControlEvening</td><td>   </td></tr>
-        <tr><td>AutoShuttersControlComfort</td><td>   </td></tr>
-        <tr><td>FreezeTemp</td><td>   </td></tr>
-        <tr><td>BlockAscDrivesAfterManual</td><td>   0,1</td></tr>
     </table>
 </ul>
 
