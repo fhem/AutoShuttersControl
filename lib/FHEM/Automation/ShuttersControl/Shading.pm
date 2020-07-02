@@ -56,6 +56,7 @@ BEGIN {
           readingsBeginUpdate
           readingsBulkUpdate
           readingsEndUpdate
+          defs
         )
     );
 }
@@ -73,7 +74,7 @@ sub ShadingProcessing {
     $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
     my $brightness = $FHEM::Automation::ShuttersControl::shutters->getBrightnessAverage;
 
-    \&FHEM::Automation::ShuttersControl::ASC_Debug(
+    FHEM::Automation::ShuttersControl::ASC_Debug(
             'ShadingProcessing: '
           . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
           . ' - Übergebende Werte - Azimuth:'
@@ -89,7 +90,7 @@ sub ShadingProcessing {
           . ', Azimut Endschattung: '
           . $azimuthRight
           . ', Ist es nach der Zeitblockadezeit: '
-          . ( IsAfterShuttersTimeBlocking($shuttersDev) ? 'JA' : 'NEIN' )
+          . ( FHEM::Automation::ShuttersControl::IsAfterShuttersTimeBlocking($shuttersDev) ? 'JA' : 'NEIN' )
           . ', Das Rollo ist in der Beschattung und wurde manuell gefahren: '
           . ( $FHEM::Automation::ShuttersControl::shutters->getShadingManualDriveStatus ? 'JA' : 'NEIN' )
           . ', Ist es nach der Hälfte der Beschattungswartezeit: '
@@ -133,7 +134,7 @@ sub ShadingProcessing {
     my $getModeUp = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
     my $homemode  = $FHEM::Automation::ShuttersControl::shutters->getHomemode;
 
-    \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
+    FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
           . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
           . ' - Alle Werte für die weitere Verarbeitung sind korrekt vorhanden und es wird nun mit der Beschattungsverarbeitung begonnen'
     );
@@ -151,7 +152,7 @@ sub ShadingProcessing {
         #         $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus('in');
         $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
 
-        \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
+        FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Es ist Nacht oder die Aussentemperatur unterhalb der Shading Temperatur. Die Beschattung wird Zwangsbeendet'
         );
@@ -193,7 +194,7 @@ sub ShadingProcessing {
               . ", Zeitstempel: "
               . $FHEM::Automation::ShuttersControl::shutters->getShadingStatusTimestamp );
 
-        \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
+        FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Einer der Beschattungsbedingungen wird nicht mehr erfüllt und somit wird der Beschattungsstatus um eine Stufe reduziert. Alter Status: '
               . $oldShadingStatus
@@ -233,7 +234,7 @@ sub ShadingProcessing {
               . ", Zeitstempel: "
               . $FHEM::Automation::ShuttersControl::shutters->getShadingStatusTimestamp );
 
-        \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
+        FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Alle Beschattungsbedingungen wurden erfüllt und somit wird der Beschattungsstatus um eine Stufe angehoben. Alter Status: '
               . $oldShadingStatus
@@ -243,7 +244,7 @@ sub ShadingProcessing {
 
     ShadingProcessingDriveCommand( $hash, $shuttersDev )
       if (
-           \&FHEM::Automation::ShuttersControl::IsAfterShuttersTimeBlocking($shuttersDev)
+           FHEM::Automation::ShuttersControl::IsAfterShuttersTimeBlocking($shuttersDev)
         && !$FHEM::Automation::ShuttersControl::shutters->getShadingManualDriveStatus
         && $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus ne 'gotosleep'
         && $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus ne 'asleep'
@@ -319,14 +320,14 @@ sub ShadingProcessingDriveCommand {
     if (
            $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq 'in'
         && $getShadingPos != $getStatus
-        && ( \&FHEM::Automation::ShuttersControl::CheckIfShuttersWindowRecOpen($shuttersDev) != 2
+        && (   FHEM::Automation::ShuttersControl::CheckIfShuttersWindowRecOpen($shuttersDev) != 2
             || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace ne 'terrace' )
       )
     {
         $FHEM::Automation::ShuttersControl::shutters->setLastDrive('shading in');
-        ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
+        FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash, $shuttersDev, $getShadingPos );
 
-        \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessingDriveCommand: '
+        FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessingDriveCommand: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Der aktuelle Beschattungsstatus ist: '
               . $FHEM::Automation::ShuttersControl::shutters->getShadingStatus
@@ -339,7 +340,7 @@ sub ShadingProcessingDriveCommand {
     {
         $FHEM::Automation::ShuttersControl::shutters->setLastDrive('shading out');
 
-        \&FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
             $hash,
             $shuttersDev,
             (
@@ -357,7 +358,7 @@ sub ShadingProcessingDriveCommand {
             )
         );
 
-        \&FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessingDriveCommand: '
+        FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessingDriveCommand: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Der aktuelle Beschattungsstatus ist: '
               . $FHEM::Automation::ShuttersControl::shutters->getShadingStatus
@@ -370,7 +371,7 @@ sub ShadingProcessingDriveCommand {
 "AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
           . $FHEM::Automation::ShuttersControl::shutters->getShadingStatus );
 
-    \&FHEM::Automation::ShuttersControl::ASC_Debug(
+    FHEM::Automation::ShuttersControl::ASC_Debug(
             'ShadingProcessingDriveCommand: '
           . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
           . ' - Der aktuelle Beschattungsstatus ist: '

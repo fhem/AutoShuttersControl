@@ -1348,7 +1348,7 @@ sub EventProcessingRoommate {
                     && !$shutters->getSelfDefenseState
                   )
                 {
-                    \&FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
+                    FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
                 }
                 elsif (
                        !$shutters->getIsDay
@@ -1560,7 +1560,7 @@ sub EventProcessingResidents {
                     && $shutters->getShadingMode eq 'absent'
                     && $shutters->getRoommatesStatus eq 'none' )
                 {
-                    \&FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
+                    FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
                 }
                 elsif (
                        $shutters->getShadingMode eq 'home'
@@ -1657,7 +1657,7 @@ sub EventProcessingResidents {
                 && !$shutters->getSelfDefenseState
               )
             {
-                \&FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
+                FHEM::Automation::ShuttersControl::Shading::ShadingProcessingDriveCommand( $hash, $shuttersDev );
             }
             elsif (
                    $shutters->getShadingMode eq 'absent'
@@ -2373,7 +2373,7 @@ sub EventProcessingShadingBrightness {
             && $shutters->getRainProtectionStatus eq 'unprotected'
             && $shutters->getWindProtectionStatus eq 'unprotected' )
         {
-            \&FHEM::Automation::ShuttersControl::Shading::ShadingProcessing(
+            FHEM::Automation::ShuttersControl::Shading::ShadingProcessing(
                 $hash,
                 $shuttersDev,
                 $ascDev->getAzimuth,
@@ -2446,7 +2446,7 @@ sub EventProcessingTwilightDevice {
                 && $shutters->getRainProtectionStatus eq 'unprotected'
                 && $shutters->getWindProtectionStatus eq 'unprotected' )
             {
-                \&FHEM::Automation::ShuttersControl::Shading::ShadingProcessing(
+                FHEM::Automation::ShuttersControl::Shading::ShadingProcessing(
                     $hash,
                     $shuttersDev,
                     $azimuth,
