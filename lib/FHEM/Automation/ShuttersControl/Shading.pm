@@ -149,7 +149,6 @@ sub ShadingProcessing {
         && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus ne 'out'
       )
     {
-        #         $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus('in');
         $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
 
         FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessing: '
@@ -181,9 +180,6 @@ sub ShadingProcessing {
           )
         {
             $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
-
-            #             $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus('in')
-            #               if ( $FHEM::Automation::ShuttersControl::shutters->getShadingLastStatus eq 'out' );
         }
 
         Log3( $name, 4,
@@ -221,9 +217,6 @@ sub ShadingProcessing {
             ( $FHEM::Automation::ShuttersControl::shutters->getShadingWaitingPeriod / 2 ) )
         {
             $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('in');
-
-            #             $FHEM::Automation::ShuttersControl::shutters->setShadingLastStatus('out')
-            #               if ( $FHEM::Automation::ShuttersControl::shutters->getShadingLastStatus eq 'in' );
         }
 
         Log3( $name, 4,
@@ -360,7 +353,8 @@ sub ShadingProcessingDriveCommand {
                     : $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 )
             )
-        );
+        )
+          if ( $FHEM::Automation::ShuttersControl::shutters->getIsDay );
 
         FHEM::Automation::ShuttersControl::ASC_Debug( 'ShadingProcessingDriveCommand: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
