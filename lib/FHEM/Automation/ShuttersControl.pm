@@ -392,7 +392,7 @@ sub Delete {
     my $hash = shift;
     my $name = shift;
 
-    RemoveShuttersTimer();
+    RemoveShuttersTimer($hash);
 
     return;
 }
@@ -400,7 +400,7 @@ sub Delete {
 sub Shutdown {
     my $hash = shift;
 
-    RemoveShuttersTimer();
+    RemoveShuttersTimer($hash);
 
     return;
 }
@@ -4736,6 +4736,8 @@ sub _CheckShuttersConditionsForShadingFn {
 }
 
 sub RemoveShuttersTimer {
+    my $hash    = shift;
+
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
 
