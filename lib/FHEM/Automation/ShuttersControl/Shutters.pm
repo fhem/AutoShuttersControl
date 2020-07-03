@@ -453,6 +453,35 @@ sub setAdvDelay {
     return;
 }
 
+sub setWindProtectionStatus {    # Werte protected, unprotected
+    my $self  = shift;
+    my $value = shift;
+
+    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
+      if ( defined($value) );
+
+    return;
+}
+
+sub setRainProtectionStatus {    # Werte protected, unprotected
+    my $self  = shift;
+    my $value = shift;
+
+    $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
+      if ( defined($value) );
+    return;
+}
+
+sub setExternalTriggerStatus {
+    my $self  = shift;
+    my $value = shift;
+
+    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event} = $value
+      if ( defined($value) );
+
+    return;
+}
+
 sub getExternalTriggerStatus {
     my $self = shift;
 
@@ -697,6 +726,36 @@ sub getInTimerFuncHash {
     return $self->{ $self->{shuttersDev} }{inTimerFuncHash};
 }
 
+sub getWindProtectionStatus {    # Werte protected, unprotected
+    my $self = shift;
+
+    return (
+        (
+            defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters} )
+              && defined(
+                $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
+              )
+        )
+        ? $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
+        : 'unprotected'
+    );
+}
+
+sub getRainProtectionStatus {    # Werte protected, unprotected
+    my $self = shift;
+
+    return (
+        (
+            defined( $self->{ $self->{shuttersDev} }->{RainProtection} )
+              && defined(
+                $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
+              )
+        )
+        ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
+        : 'unprotected'
+    );
+}
+
 sub getSunsetUnixTime {
     my $self = shift;
 
@@ -867,30 +926,11 @@ sub setShadingManualDriveStatus {
     return;
 }
 
-sub setWindProtectionStatus {    # Werte protected, unprotected
+sub setShadingLastPos {
     my $self  = shift;
     my $value = shift;
 
-    $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL} = $value
-      if ( defined($value) );
-
-    return;
-}
-
-sub setRainProtectionStatus {    # Werte protected, unprotected
-    my $self  = shift;
-    my $value = shift;
-
-    $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL} = $value
-      if ( defined($value) );
-    return;
-}
-
-sub setExternalTriggerStatus {
-    my $self  = shift;
-    my $value = shift;
-
-    $self->{ $self->{shuttersDev} }->{ASC_ExternalTrigger}->{event} = $value
+    $self->{ $self->{shuttersDev} }{ShadingLastPos}{VAL} = $value
       if ( defined($value) );
 
     return;
@@ -983,36 +1023,6 @@ sub getIfInShading {
     );
 }
 
-sub getWindProtectionStatus {    # Werte protected, unprotected
-    my $self = shift;
-
-    return (
-        (
-            defined( $self->{ $self->{shuttersDev} }->{ASC_WindParameters} )
-              && defined(
-                $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
-              )
-        )
-        ? $self->{ $self->{shuttersDev} }->{ASC_WindParameters}->{VAL}
-        : 'unprotected'
-    );
-}
-
-sub getRainProtectionStatus {    # Werte protected, unprotected
-    my $self = shift;
-
-    return (
-        (
-            defined( $self->{ $self->{shuttersDev} }->{RainProtection} )
-              && defined(
-                $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
-              )
-        )
-        ? $self->{ $self->{shuttersDev} }->{RainProtection}->{VAL}
-        : 'unprotected'
-    );
-}
-
 sub getShadingStatusTimestamp {
     my $self = shift;
 
@@ -1036,6 +1046,20 @@ sub getShadingLastStatusTimestamp {
         : 0
     );
 }
+
+sub getShadingLastPos {
+    my $self = shift;
+
+    return (
+        defined( $self->{ $self->{shuttersDev} }{ShadingLastPos} )
+          && defined(
+            $self->{ $self->{shuttersDev} }{ShadingLastPos}{VAL}
+          )
+        ? $self->{ $self->{shuttersDev} }{ShadingLastPos}{VAL}
+        : $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+    );
+}
+
 ### Ende Beschattung
 
 1;

@@ -334,6 +334,9 @@ sub ShadingProcessingDriveCommand {
               . ' und somit wird nun in die Position: '
               . $getShadingPos
               . ' zum Beschatten gefahren' );
+        
+        $FHEM::Automation::ShuttersControl::shutters
+      ->setShadingLastPos($getShadingPos);
     }
     elsif ($FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq 'out'
         && $getShadingPos == $getStatus )
@@ -344,7 +347,8 @@ sub ShadingProcessingDriveCommand {
             $hash,
             $shuttersDev,
             (
-                  $getShadingPos == $FHEM::Automation::ShuttersControl::shutters->getLastPos
+                    ($getShadingPos == $FHEM::Automation::ShuttersControl::shutters->getLastPos
+                  || $getShadingPos == $FHEM::Automation::ShuttersControl::shutters->getShadingLastPos)
                 ? $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 : (
                     $FHEM::Automation::ShuttersControl::shutters->getQueryShuttersPos( $FHEM::Automation::ShuttersControl::shutters->getLastPos )
