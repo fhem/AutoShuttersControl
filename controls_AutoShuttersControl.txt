@@ -1,5 +1,5 @@
-UPD 2020-07-03_11:29:10 96885 FHEM/73_AutoShuttersControl.pm
-UPD 2020-07-03_11:30:01 177284 lib/FHEM/Automation/ShuttersControl.pm
+UPD 2020-07-03_13:18:05 97041 FHEM/73_AutoShuttersControl.pm
+UPD 2020-07-03_13:26:42 177740 lib/FHEM/Automation/ShuttersControl.pm
 UPD 2020-06-22_09:41:40 2657 lib/FHEM/Automation/ShuttersControl/Dev.pm
 UPD 2020-07-03_11:29:10 2496 lib/FHEM/Automation/ShuttersControl/Roommate.pm
 UPD 2020-07-03_11:29:10 30710 lib/FHEM/Automation/ShuttersControl/Shutters.pm

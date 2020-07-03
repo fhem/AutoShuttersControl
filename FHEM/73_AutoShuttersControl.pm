@@ -73,12 +73,14 @@ sub Initialize {
 
 ## Da ich mit package arbeite müssen in die Initialize für die jeweiligen hash Fn Funktionen der Funktionsname
     #  und davor mit :: getrennt der eigentliche package Name des Modules
-    $hash->{SetFn}    = \&FHEM::Automation::ShuttersControl::Set;
-    $hash->{GetFn}    = \&FHEM::Automation::ShuttersControl::Get;
-    $hash->{DefFn}    = \&FHEM::Automation::ShuttersControl::Define;
-    $hash->{NotifyFn} = \&FHEM::Automation::ShuttersControl::Notify;
-    $hash->{UndefFn}  = \&FHEM::Automation::ShuttersControl::Undef;
-    $hash->{AttrList} =
+    $hash->{SetFn}      = \&FHEM::Automation::ShuttersControl::Set;
+    $hash->{GetFn}      = \&FHEM::Automation::ShuttersControl::Get;
+    $hash->{DefFn}      = \&FHEM::Automation::ShuttersControl::Define;
+    $hash->{NotifyFn}   = \&FHEM::Automation::ShuttersControl::Notify;
+    $hash->{UndefFn}    = \&FHEM::Automation::ShuttersControl::Undef;
+    $hash->{DeleteFn}   = \&FHEM::Automation::ShuttersControl::Delete;
+    $hash->{ShutdownFn} = \&FHEM::Automation::ShuttersControl::Shutdown;
+    $hash->{AttrList}   =
         'ASC_tempSensor '
       . 'ASC_brightnessDriveUpDown '
       . 'ASC_autoShuttersControlMorning:on,off '

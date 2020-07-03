@@ -388,6 +388,23 @@ sub Undef {
     return;
 }
 
+sub Delete {
+    my $hash = shift;
+    my $name = shift;
+
+    RemoveShuttersTimer();
+
+    return;
+}
+
+sub Shutdown {
+    my $hash = shift;
+
+    RemoveShuttersTimer();
+
+    return;
+}
+
 sub Notify {
     my $hash = shift // return;
     my $dev  = shift // return;
@@ -4717,5 +4734,19 @@ sub _CheckShuttersConditionsForShadingFn {
         '<html>' . $message . ' </html>' );
     readingsEndUpdate( $shuttersDevHash, 1 );
 }
+
+sub RemoveShuttersTimer {
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        $shutters->setShuttersDev($shuttersDev);
+
+        RemoveInternalTimer( $shutters->getInTimerFuncHash );
+        $shutters->setInTimerFuncHash(undef);
+    }
+
+    return;
+}
+
+
+
 
 1;
