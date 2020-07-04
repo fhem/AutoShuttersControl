@@ -4307,10 +4307,9 @@ sub _SetCmdFn {
 
     return
       if (
-           $shutters->getASCenable eq 'off'
-        && $ascDev->getASCenable eq 'off'
-        && (   $idleDetection !~ m{^$idleDetectionValue$}xms
-            || $idleDetection ne 'none' )
+              $shutters->getASCenable eq 'off'
+           || $ascDev->getASCenable eq 'off'
+           || $idleDetection !~ m{^$idleDetectionValue$}xms
       );
 
     if ( $shutters->getStatus != $posValue ) {
