@@ -549,6 +549,7 @@ sub EventProcessingGeneral {
                 EventProcessingWind( $hash, $device, $events )
                   if (  $deviceAttr eq 'ASC_windSensor'
                     and $events =~ m{$windReading}xms );
+
                 EventProcessingTwilightDevice( $hash, $device, $events )
                   if ( $deviceAttr eq 'ASC_twilightDevice' );
             }
