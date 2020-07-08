@@ -265,16 +265,18 @@ sub _getRainSensor {
     $self->{ASC_rainSensor}->{device} = $device;
     $self->{ASC_rainSensor}->{reading} =
       ( $reading ne 'none' ? $reading : 'state' );
-    $self->{ASC_rainSensor}->{triggermax} = ( $max ne 'none' ? $max : 1000 );
+    $self->{ASC_rainSensor}->{triggermax} = (
+         (   $max ne 'none'
+          && $max =~ m{\A(-?\d+(\.\d+)?)\z}xms )
+        ? $max
+        : 1000 );
+
     $self->{ASC_rainSensor}->{triggerhyst} = (
-          $max =~ m{\A[A-Za-z]+\z}xms
-        ? 1000
-        : (
-            $hyst ne 'none'
-            ? $max - $hyst
-            : ( $self->{ASC_rainSensor}->{triggermax} * 0 )
-        )
+          $hyst ne 'none'
+        ? $self->{ASC_rainSensor}->{triggermax} - $hyst
+        : ( $self->{ASC_rainSensor}->{triggermax} * 0 )
     );
+
     $self->{ASC_rainSensor}->{shuttersClosedPos} =
       (   $pos ne 'none'
         ? $pos
