@@ -544,11 +544,9 @@ sub EventProcessingGeneral {
                 EventProcessingResidents( $hash, $device, $events )
                   if ( $deviceAttr eq 'ASC_residentsDev' );
                 EventProcessingRain( $hash, $device, $events )
-                  if (  $deviceAttr eq 'ASC_rainSensor'
-                    and $events =~ m{$rainReading}xms );
+                  if ( $events =~ m{$rainReading}xms );
                 EventProcessingWind( $hash, $device, $events )
-                  if (  $deviceAttr eq 'ASC_windSensor'
-                    and $events =~ m{$windReading}xms );
+                  if ( $events =~ m{$windReading}xms );
 
                 EventProcessingTwilightDevice( $hash, $device, $events )
                   if ( $deviceAttr eq 'ASC_twilightDevice' );
