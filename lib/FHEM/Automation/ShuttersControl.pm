@@ -1789,17 +1789,17 @@ sub EventProcessingRain {
         my $closedPos  = $ascDev->getRainSensorShuttersClosedPos;
 
         if    ( $1 eq 'rain' ) { $val = $triggerMax + 1 }
-        elsif ( $1 eq 'dry' )  { $val = $triggerMin - 1 }
+        elsif ( $1 eq 'dry' )  { $val = $triggerMin }
         else                   { $val = $1 }
 
-        RainProtection( $hash, $val, $triggerMax, $closedPos );
+        RainProtection( $hash, $val, $triggerMax, $triggerMin, $closedPos );
     }
 
     return;
 }
 
 sub RainProtection {
-    my ( $hash, $val, $triggerMax, $closedPos ) = @_;
+    my ( $hash, $val, $triggerMax, $triggerMin, $closedPos ) = @_;
 
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         $shutters->setShuttersDev($shuttersDev);
@@ -1816,7 +1816,7 @@ sub RainProtection {
             $shutters->setDriveCmd($closedPos);
             $shutters->setRainProtectionStatus('protected');
         }
-        elsif (( $val == 0 || $val < $shutters->getWindMin )
+        elsif (( $val == 0 || $val < $triggerMin )
             && $shutters->getStatus == $closedPos
             && IsAfterShuttersManualBlocking($shuttersDev)
             && $shutters->getRainProtectionStatus eq 'protected' )
