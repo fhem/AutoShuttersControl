@@ -148,7 +148,8 @@ sub _CheckShuttersConditionsForShadingFn {
     );
 
     $errorMessage .= (
-        $FHEM::Automation::ShuttersControl::shutters->getBrightness == -1 && $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
+             $FHEM::Automation::ShuttersControl::shutters->getBrightness == -1
+          && $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
         ? ' no brightness sensor found, please set ASC_BrightnessSensor attribut'
         : ''
     );
