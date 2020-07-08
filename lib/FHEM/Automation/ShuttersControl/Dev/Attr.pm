@@ -268,7 +268,7 @@ sub _getRainSensor {
     $self->{ASC_rainSensor}->{triggermax} = ( $max ne 'none' ? $max : 1000 );
     $self->{ASC_rainSensor}->{triggerhyst} = (
           $max =~ m{\A[A-Za-z]+\z}xms
-        ? $self->{ASC_rainSensor}->{triggermax}
+        ? 1000
         : (
             $hyst ne 'none'
             ? $max - $hyst
