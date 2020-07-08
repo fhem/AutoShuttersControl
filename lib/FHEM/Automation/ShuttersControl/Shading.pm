@@ -45,22 +45,133 @@ use warnings;
 use POSIX qw(strftime);
 use utf8;
 
-use GPUtils qw(GP_Import);
+require Exporter;
+our @ISA            = qw(Exporter);
+our @EXPORT_OK      = qw(
+                            CheckASC_ConditionsForShadingFn
+                            ShadingProcessing
+                            ShadingProcessingDriveCommand
+);
+our %EXPORT_TAGS    = (
+    ALL => [
+        qw(
+            CheckASC_ConditionsForShadingFn
+            ShadingProcessing
+            ShadingProcessingDriveCommand
+        )
+    ],
+);
 
+use GPUtils qw(GP_Import);
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
         qw(
           Log3
           gettimeofday
+          InternalTimer
           readingsBeginUpdate
           readingsBulkUpdate
+          readingsBulkUpdateIfChanged
           readingsEndUpdate
           defs
         )
     );
 }
 
+sub CheckASC_ConditionsForShadingFn {
+    my $hash = shift;
+
+    my $error;
+
+    $error .=
+' no valid data from the ASC temperature sensor, is ASC_tempSensor attribut set?'
+      if ( $FHEM::Automation::ShuttersControl::ascDev->getOutTemp == -100 );
+    $error .= ' no twilight device found'
+      if ( $FHEM::Automation::ShuttersControl::ascDev->_getTwilightDevice eq 'none' );
+
+    my $count = 1;
+    for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
+        InternalTimer(
+            gettimeofday() + $count,
+'FHEM::Automation::ShuttersControl::Shading::_CheckShuttersConditionsForShadingFn',
+            $shuttersDev
+        );
+
+        $count++;
+    }
+
+    return (
+        defined($error)
+        ? $error
+        : 'none'
+    );
+}
+
+sub _CheckShuttersConditionsForShadingFn {
+    my $shuttersDev = shift;
+
+    $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
+    my $shuttersDevHash = $defs{$shuttersDev};
+    my $message         = '';
+    my $errorMessage;
+    my $warnMessage;
+    my $infoMessage;
+
+    $infoMessage .= (
+        $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
+          && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlShading eq 'on'
+          && $FHEM::Automation::ShuttersControl::shutters->getOutTemp == -100
+        ? ' shading active, global temp sensor is set, but shutters temperature sensor is not set'
+        : ''
+    );
+
+    $warnMessage .= (
+        $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq 'off'
+          && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlShading eq 'on'
+        ? ' global shading active but ASC_Shading_Mode attribut is not set or off'
+        : ''
+    );
+
+    $errorMessage .= (
+        $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
+          && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlShading ne 'on'
+          && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlShading ne 'off'
+        ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device '
+          . '<a href="'
+          . '/fhem?detail='
+          . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+          . $::FW_CSRF . '">'
+          . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+          . '</a>'
+        : ''
+    );
+
+    $errorMessage .= (
+        $FHEM::Automation::ShuttersControl::shutters->getBrightness == -1 && $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
+        ? ' no brightness sensor found, please set ASC_BrightnessSensor attribut'
+        : ''
+    );
+
+    $message .= ' ERROR: ' . $errorMessage
+      if ( defined($errorMessage)
+        && $errorMessage ne '' );
+
+    $message .= ' WARN: ' . $warnMessage
+      if ( defined($warnMessage)
+        && $warnMessage ne ''
+        && $errorMessage eq '' );
+
+    $message .= ' INFO: ' . $infoMessage
+      if ( defined($infoMessage)
+        && $infoMessage ne ''
+        && $errorMessage eq '' );
+
+    readingsBeginUpdate($shuttersDevHash);
+    readingsBulkUpdateIfChanged( $shuttersDevHash, 'ASC_ShadingMessage',
+        '<html>' . $message . ' </html>' );
+    readingsEndUpdate( $shuttersDevHash, 1 );
+}
 
 sub ShadingProcessing {
 ### angleMinus ist $FHEM::Automation::ShuttersControl::shutters->getShadingAzimuthLeft

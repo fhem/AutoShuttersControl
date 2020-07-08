@@ -264,7 +264,7 @@ sub _getRainSensor {
     return $device if ( $device eq 'none' );
     $self->{ASC_rainSensor}->{device} = $device;
     $self->{ASC_rainSensor}->{reading} =
-      ( $reading ne 'none' ? $reading : 'state' );
+      ( $reading ne 'none' ? $reading : 'rain' );
     $self->{ASC_rainSensor}->{triggermax} = (
          (   $max ne 'none'
           && $max =~ m{\A(-?\d+(\.\d+)?)\z}xms )

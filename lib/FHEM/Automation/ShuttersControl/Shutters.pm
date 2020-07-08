@@ -552,7 +552,7 @@ sub getAttrUpdateChanges {
 sub getIsDay {
     my $self = shift;
 
-    return FHEM::Automation::ShuttersControl::_IsDay( $self->{shuttersDev} );
+    return FHEM::Automation::ShuttersControl::Helper::_IsDay( $self->{shuttersDev} );
 }
 
 sub getAntiFreezeStatus {
