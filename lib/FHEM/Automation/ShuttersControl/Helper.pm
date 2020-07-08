@@ -61,6 +61,7 @@ our @EXPORT_OK      = qw(
                             IsAfterShuttersManualBlocking
                             AverageBrightness
                             PerlCodeCheck
+                            IsAdv
 );
 our %EXPORT_TAGS    = (
     ALL => [
@@ -78,6 +79,7 @@ our %EXPORT_TAGS    = (
             IsAfterShuttersManualBlocking
             AverageBrightness
             PerlCodeCheck
+            IsAdv
         )
     ],
 );
