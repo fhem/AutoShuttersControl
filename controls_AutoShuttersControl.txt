@@ -5,7 +5,7 @@ UPD 2020-07-07_14:49:19 2496 lib/FHEM/Automation/ShuttersControl/Roommate.pm
 UPD 2020-07-07_14:49:19 30710 lib/FHEM/Automation/ShuttersControl/Shutters.pm
 UPD 2020-07-07_14:49:19 17908 lib/FHEM/Automation/ShuttersControl/Shading.pm
 UPD 2020-06-22_09:41:40 2175 lib/FHEM/Automation/ShuttersControl/Window.pm
-UPD 2020-07-08_10:07:51 11573 lib/FHEM/Automation/ShuttersControl/Dev/Attr.pm
+UPD 2020-07-08_10:11:41 11572 lib/FHEM/Automation/ShuttersControl/Dev/Attr.pm
 UPD 2020-07-03_11:29:10 7251 lib/FHEM/Automation/ShuttersControl/Dev/Readings.pm
 UPD 2020-07-03_11:29:10 52390 lib/FHEM/Automation/ShuttersControl/Shutters/Attr.pm
 UPD 2020-06-22_09:41:40 2903 lib/FHEM/Automation/ShuttersControl/Shutters/Readings.pm
