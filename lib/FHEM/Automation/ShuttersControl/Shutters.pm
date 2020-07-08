@@ -958,9 +958,11 @@ sub setPushBrightnessInArray {
 }
 
 sub getBrightnessAverage {
+    use FHEM::Automation::ShuttersControl::Helper qw (AverageBrightness);
+
     my $self = shift;
 
-    return FHEM::Automation::ShuttersControl::_averageBrightness(
+    return AverageBrightness(
         @{ $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} } )
       if (
         ref( $self->{ $self->{shuttersDev} }->{BrightnessAverageArray}->{VAL} )

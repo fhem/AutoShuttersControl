@@ -59,6 +59,8 @@ our @EXPORT_OK      = qw(
                             IsWe
                             IsAfterShuttersTimeBlocking
                             IsAfterShuttersManualBlocking
+                            AverageBrightness
+                            PerlCodeCheck
 );
 our %EXPORT_TAGS    = (
     ALL => [
@@ -74,6 +76,8 @@ our %EXPORT_TAGS    = (
             IsWe
             IsAfterShuttersTimeBlocking
             IsAfterShuttersManualBlocking
+            AverageBrightness
+            PerlCodeCheck
         )
     ],
 );
@@ -927,6 +931,46 @@ sub makeReadingName {
 
 sub IsWe {
     return main::IsWe( shift, shift );
+}
+
+sub AverageBrightness {
+    my @input = @_;
+    use List::Util qw(sum);
+
+    return int( sum(@input) / @input );
+}
+
+sub PerlCodeCheck {
+    my $exec = shift;
+    my $val  = undef;
+
+    if ( $exec =~ m{\A\{(.+)\}\z}xms ) {
+        $val = main::AnalyzePerlCommand( undef, $1 );
+    }
+
+    return $val;
+}
+
+sub IsAdv {
+    my ( undef, undef, undef, $monthday, $month, $year, undef, undef, undef ) =
+      localtime( gettimeofday() );
+    my $adv = 0;
+    $year += 1900;
+
+    if ( $month < 1 ) {
+        if ( $monthday < 7 ) {
+            $adv = 1;
+        }
+    }
+    else {
+        my $time = HTTP::Date::str2time( $year . '-12-25' );
+        my $wday = ( localtime($time) )[6];
+        $wday = $wday ? $wday : 7;
+        $time -= ( $wday + 21 ) * 86400;
+        $adv = 1 if ( $time < time );
+    }
+
+    return $adv;
 }
 
 

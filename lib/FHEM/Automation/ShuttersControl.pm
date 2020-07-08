@@ -3463,15 +3463,6 @@ sub GetMonitoredDevs {
     return $ret;
 }
 
-#################################
-## my little helper
-#################################
-
-
-
-# Hilfsfunktion welche meinen ReadingString zum finden der getriggerten Devices und der Zurdnung was das Device überhaupt ist und zu welchen Rolladen es gehört aus liest und das Device extraiert
-
-
 sub _DetermineSlatCmd {
     my $value    = shift;
     my $posValue = shift;
@@ -3653,24 +3644,6 @@ sub ASC_Debug {
     return;
 }
 
-sub _averageBrightness {
-    my @input = @_;
-    use List::Util qw(sum);
-
-    return int( sum(@input) / @input );
-}
-
-sub _perlCodeCheck {
-    my $exec = shift;
-    my $val  = undef;
-
-    if ( $exec =~ m{\A\{(.+)\}\z}xms ) {
-        $val = main::AnalyzePerlCommand( undef, $1 );
-    }
-
-    return $val;
-}
-
 sub PrivacyUpTime {
     my $shuttersDevHash         = shift;
     my $shuttersSunriseUnixtime = shift;
@@ -3756,28 +3729,6 @@ sub PrivacyDownTime {
     }
 
     return $shuttersSunsetUnixtime;
-}
-
-sub _IsAdv {
-    my ( undef, undef, undef, $monthday, $month, $year, undef, undef, undef ) =
-      localtime( gettimeofday() );
-    my $adv = 0;
-    $year += 1900;
-
-    if ( $month < 1 ) {
-        if ( $monthday < 7 ) {
-            $adv = 1;
-        }
-    }
-    else {
-        my $time = HTTP::Date::str2time( $year . '-12-25' );
-        my $wday = ( localtime($time) )[6];
-        $wday = $wday ? $wday : 7;
-        $time -= ( $wday + 21 ) * 86400;
-        $adv = 1 if ( $time < time );
-    }
-
-    return $adv;
 }
 
 sub DevStateIcon {
