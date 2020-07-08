@@ -1789,7 +1789,7 @@ sub EventProcessingRain {
         my $closedPos  = $ascDev->getRainSensorShuttersClosedPos;
 
         if    ( $1 eq 'rain' ) { $val = $triggerMax + 1 }
-        elsif ( $1 eq 'dry' )  { $val = $triggerMin }
+        elsif ( $1 eq 'dry' )  { $val = $triggerMin - 1 }
         else                   { $val = $1 }
 
         RainProtection( $hash, $val, $triggerMax, $closedPos );
