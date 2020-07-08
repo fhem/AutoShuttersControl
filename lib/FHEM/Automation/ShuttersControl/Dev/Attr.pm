@@ -392,4 +392,7 @@ sub getBlockAscDrivesAfterManual {
     return AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
 }
 
+
+
+
 1;

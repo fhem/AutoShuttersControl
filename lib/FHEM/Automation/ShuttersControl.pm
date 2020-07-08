@@ -286,7 +286,9 @@ our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
 our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
 
 sub ascAPIget {
-    my ( $getCommand, $shutterDev, $value ) = @_;
+    my $getCommand  = shift;
+    my $shutterDev  = shift;
+    my $value       = shift;
 
     my $getter = 'get' . $getCommand;
 
@@ -306,7 +308,9 @@ sub ascAPIget {
 }
 
 sub ascAPIset {
-    my ( $setCommand, $shutterDev, $value ) = @_;
+    my $setCommand  = shift;
+    my $shutterDev  = shift;
+    my $value       = shift;
 
     my $setter = 'set' . $setCommand;
 
@@ -523,7 +527,10 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
 }
 
 sub EventProcessingGeneral {
-    my ( $hash, $devname, $events ) = @_;
+    my $hash    = shift;
+    my $devname = shift;
+    my $events  = shift;
+
     my $name = $hash->{NAME};
 
     if ( defined($devname) && ($devname) )
@@ -1053,7 +1060,9 @@ sub AddNotifyDev {
 
 ## entfernt aus dem NOTIFYDEV Hash Devices welche als Wert in Attributen steckten
 sub DeleteNotifyDev {
-    my ( $hash, $shuttersDev, $shuttersAttr ) = @_;
+    my $hash            = shift;
+    my $shuttersDev     = shift;
+    my $shuttersAttr    = shift;
 
     my $name = $hash->{NAME};
 
@@ -1086,7 +1095,9 @@ sub DeleteNotifyDev {
 
 ## Sub zum steuern der Rolläden bei einem Fenster Event
 sub EventProcessingWindowRec {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
 
@@ -1275,7 +1286,9 @@ sub EventProcessingWindowRec {
 
 ## Sub zum steuern der Rolladen bei einem Bewohner/Roommate Event
 sub EventProcessingRoommate {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
 
@@ -1533,7 +1546,9 @@ sub EventProcessingRoommate {
 }
 
 sub EventProcessingResidents {
-    my ( $hash, $device, $events ) = @_;
+    my $hash    = shift;
+    my $device  = shift;
+    my $events  = shift;
 
     my $name                   = $device;
     my $reading                = $ascDev->getResidentsReading;
@@ -1769,7 +1784,9 @@ sub EventProcessingRain {
 
     #### Ist noch nicht fertig, es fehlt noch das verzögerte Prüfen auf erhalten bleiben des getriggerten Wertes.
 
-    my ( $hash, $device, $events ) = @_;
+    my $hash    = shift;
+    my $device  = shift;
+    my $events  = shift;
 
     my $name    = $device;
     my $reading = $ascDev->getRainSensorReading // 'none';
@@ -1831,7 +1848,9 @@ sub RainProtection {
 }
 
 sub EventProcessingWind {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
@@ -1907,7 +1926,9 @@ sub EventProcessingWind {
 ##########
 
 sub EventProcessingBrightness {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
@@ -2347,7 +2368,9 @@ sub EventProcessingBrightness {
 }
 
 sub EventProcessingShadingBrightness {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
@@ -2411,7 +2434,9 @@ sub EventProcessingShadingBrightness {
 }
 
 sub EventProcessingTwilightDevice {
-    my ( $hash, $device, $events ) = @_;
+    my $hash    = shift;
+    my $device  = shift;
+    my $events  = shift;
 
     #     Twilight
     #     azimuth = azimuth = Sonnenwinkel
@@ -2565,7 +2590,9 @@ sub EventProcessingAdvShuttersClose {
 }
 
 sub EventProcessingShutters {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
 
@@ -2628,7 +2655,9 @@ sub EventProcessingShutters {
 }
 
 sub EventProcessingExternalTriggerDevice {
-    my ( $hash, $shuttersDev, $events ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $events      = shift;
 
     my $name = $hash->{NAME};
 
@@ -2705,7 +2734,9 @@ sub EventProcessingExternalTriggerDevice {
 
 # Sub für das Zusammensetzen der Rolläden Steuerbefehle
 sub ShuttersCommandSet {
-    my ( $hash, $shuttersDev, $posValue ) = @_;
+    my $hash        = shift;
+    my $shuttersDev = shift;
+    my $posValue    = shift;
 
     my $name = $hash->{NAME};
     $shutters->setShuttersDev($shuttersDev);
