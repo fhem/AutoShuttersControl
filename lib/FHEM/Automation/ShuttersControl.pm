@@ -1809,7 +1809,6 @@ sub RainProtection {
 
         if (   $val > $triggerMax
             && $shutters->getStatus != $closedPos
-            && IsAfterShuttersManualBlocking($shuttersDev)
             && $shutters->getRainProtectionStatus eq 'unprotected' )
         {
             $shutters->setLastDrive('rain protected');
