@@ -70,6 +70,7 @@ BEGIN {
           Log3
           gettimeofday
           InternalTimer
+          ReadingsVal
           readingsBeginUpdate
           readingsBulkUpdate
           readingsBulkUpdateIfChanged
