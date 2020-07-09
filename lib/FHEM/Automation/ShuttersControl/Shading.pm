@@ -45,6 +45,8 @@ use warnings;
 use POSIX qw(strftime);
 use utf8;
 
+use FHEM::Automation::ShuttersControl::Helper qw (IsInTime);
+
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
