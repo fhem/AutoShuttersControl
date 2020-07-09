@@ -101,6 +101,7 @@ BEGIN {
           sunset_abs
           sunrise
           sunrise_abs
+          cmdFromAnalyze
           )
     );
 }
