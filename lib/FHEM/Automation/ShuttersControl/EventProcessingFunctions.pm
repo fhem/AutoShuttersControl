@@ -45,6 +45,8 @@ use warnings;
 use POSIX qw(strftime);
 use utf8;
 
+use Data::Dumper;    #only for Debugging
+
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
 
@@ -75,6 +77,9 @@ BEGIN {
            Log3
            gettimeofday
            computeAlignTime
+           CommandSet
+           ReadingsVal
+           RemoveInternalTimer
           )
     );
 }
@@ -141,7 +146,7 @@ sub EventProcessingGeneral {
              \s(.*)$}xms
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
-            AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
+            FHEM::Automation::ShuttersControl::AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
             Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
@@ -156,7 +161,7 @@ sub EventProcessingGeneral {
         {    # wurde das Attribut unserer Rolläden gelöscht ?
             Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: DELETEATTR" );
-            DeleteNotifyDev( $hash, $1, $2 );
+            FHEM::Automation::ShuttersControl::DeleteNotifyDev( $hash, $1, $2 );
         }
         elsif (
             $events =~ m{^(DELETEATTR|ATTR)
@@ -183,7 +188,7 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
-            RenewSunRiseSetShuttersTimer($hash);
+            FHEM::Automation::ShuttersControl::RenewSunRiseSetShuttersTimer($hash);
         }
 
         if (
@@ -2130,17 +2135,17 @@ sub EventProcessingTwilightDevice {
                   . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
                   . ' RainProtection: '
                   . $FHEM::Automation::ShuttersControl::shutters
-                  ->getRainProtectionStatus
+                    ->getRainProtectionStatus
                   . ' WindProtection: '
                   . $FHEM::Automation::ShuttersControl::shutters
-                  ->getWindProtectionStatus );
+                    ->getWindProtectionStatus );
 
-            if ( $FHEM::Automation::ShuttersControl::ascDev
-                ->getAutoShuttersControlShading eq 'on'
+            if (   $FHEM::Automation::ShuttersControl::ascDev
+                   ->getAutoShuttersControlShading eq 'on'
                 && $FHEM::Automation::ShuttersControl::shutters
-                ->getRainProtectionStatus eq 'unprotected'
+                   ->getRainProtectionStatus eq 'unprotected'
                 && $FHEM::Automation::ShuttersControl::shutters
-                ->getWindProtectionStatus eq 'unprotected' )
+                   ->getWindProtectionStatus eq 'unprotected' )
             {
                 ShadingProcessing(
                     $hash,
@@ -2218,7 +2223,7 @@ sub EventProcessingPartyMode {
             }
         }
         elsif (
-            $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne 'none'
+               $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne 'none'
             && $FHEM::Automation::ShuttersControl::shutters->getIsDay
             && IsAfterShuttersManualBlocking($shuttersDev) )
         {
