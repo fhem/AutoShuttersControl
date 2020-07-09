@@ -50,17 +50,18 @@ use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
-  CheckASC_ConditionsForShadingFn
-  ShadingProcessing
-  ShadingProcessingDriveCommand
+                    EventProcessingPartyMode
+                    EventProcessingGeneral
+                    EventProcessingShutters
+                    EventProcessingAdvShuttersClose
 );
 our %EXPORT_TAGS = (
     ALL => [
         qw(
-          EventProcessingPartyMode
-          EventProcessingGeneral
-          EventProcessingShutters
-          EventProcessingAdvShuttersClose
+           EventProcessingPartyMode
+           EventProcessingGeneral
+           EventProcessingShutters
+           EventProcessingAdvShuttersClose
           )
     ],
 );
@@ -70,10 +71,9 @@ use GPUtils qw(GP_Import);
 BEGIN {
     GP_Import(
         qw(
-          EventProcessingPartyMode
-          EventProcessingGeneral
-          EventProcessingShutters
-          EventProcessingAdvShuttersClose
+           Log3
+           gettimeofday
+           computeAlignTime
           )
     );
 }
