@@ -169,7 +169,7 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
-            CreateSunRiseSetShuttersTimer( $hash, $2 )
+            FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer( $hash, $2 )
               if (
                 $3 ne 'ASC_Time_Up_WE_Holiday'
                 || (   $3 eq 'ASC_Time_Up_WE_Holiday'
@@ -1760,7 +1760,7 @@ sub EventProcessingBrightness {
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
 
-                        CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
+                        FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
                     }
                     else {
                         $FHEM::Automation::ShuttersControl::shutters
