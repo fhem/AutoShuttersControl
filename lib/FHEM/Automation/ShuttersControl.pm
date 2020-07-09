@@ -76,6 +76,7 @@ use Date::Parse;
 use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
+use FHEM::Automation::ShuttersControl::Shading qw (CheckASC_ConditionsForShadingFn);
 use FHEM::Automation::ShuttersControl::EventProcessingFunctions qw (:ALL);
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 
