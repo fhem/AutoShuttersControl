@@ -553,10 +553,10 @@ sub ShadingProcessingDriveCommand {
             (
                 (
                     $getShadingPos ==
-                      $FHEM::Automation::ShuttersControl::shutters->getLastPos
+                         $FHEM::Automation::ShuttersControl::shutters->getLastPos
                       || $getShadingPos ==
-                      $FHEM::Automation::ShuttersControl::shutters
-                      ->getShadingLastPos
+                         $FHEM::Automation::ShuttersControl::shutters
+                         ->getShadingLastPos
                 )
                 ? $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 : (
@@ -577,7 +577,8 @@ sub ShadingProcessingDriveCommand {
                     : $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 )
             )
-        ) if ( $FHEM::Automation::ShuttersControl::shutters->getIsDay );
+        ) if (    $FHEM::Automation::ShuttersControl::shutters->getIsDay
+               || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace eq 'awning' );
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'ShadingProcessingDriveCommand: '

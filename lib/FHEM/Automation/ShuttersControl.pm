@@ -245,7 +245,7 @@ our %userAttrList = (
     'ASC_WindowRec'                                        => '-',
     'ASC_WindowRec_subType:twostate,threestate'            => '-',
     'ASC_WindowRec_PosAfterDayClosed:open,lastManual'      => '-',
-    'ASC_ShuttersPlace:window,terrace'                     => '-',
+    'ASC_ShuttersPlace:window,terrace,awning'              => '-',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'     => [ '', 70, 30 ],
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'                                 => '-',
@@ -696,9 +696,9 @@ sub ShuttersDeviceScan {
             ) == 0
           )
         {
-#             $shutters->setAttrUpdateChanges( 'ASC_Up',
-#                 AttrVal( $shuttersDev, 'ASC_Up', 'none' ) );
-#             delFromDevAttrList( $shuttersDev, 'ASC_Up' );
+            $shutters->setAttrUpdateChanges( 'ASC_ShuttersPlace',
+                AttrVal( $shuttersDev, 'ASC_ShuttersPlace', 'none' ) );
+            delFromDevAttrList( $shuttersDev, 'ASC_ShuttersPlace' );
 #             $shutters->setAttrUpdateChanges( 'ASC_Down',
 #                 AttrVal( $shuttersDev, 'ASC_Down', 'none' ) );
 #             delFromDevAttrList( $shuttersDev, 'ASC_Down' );
@@ -1194,8 +1194,8 @@ sub RenewSunRiseSetShuttersTimer {
             ) == 0
           )
         {
-#             $attr{$shuttersDev}{'ASC_Up'} = $shutters->getAttrUpdateChanges('ASC_Up')
-#               if ( $shutters->getAttrUpdateChanges('ASC_Up') ne 'none' );
+            $attr{$shuttersDev}{'ASC_ShuttersPlace'} = $shutters->getAttrUpdateChanges('ASC_ShuttersPlace')
+              if ( $shutters->getAttrUpdateChanges('ASC_ShuttersPlace') ne 'none' );
 #             $attr{$shuttersDev}{'ASC_Down'} =
 #               $shutters->getAttrUpdateChanges('ASC_Down')
 #               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
