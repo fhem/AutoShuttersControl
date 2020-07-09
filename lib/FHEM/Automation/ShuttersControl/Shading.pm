@@ -475,7 +475,7 @@ sub ShadingProcessing {
                 && $FHEM::Automation::ShuttersControl::shutters->getStatus ==
                 $FHEM::Automation::ShuttersControl::shutters->getShadingPos
             )
-            || (   $FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTimeSuspend
+            || (   !$FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTimeSuspend
                 && $FHEM::Automation::ShuttersControl::shutters->getStatus !=
                 $FHEM::Automation::ShuttersControl::shutters->getShadingPos )
         )

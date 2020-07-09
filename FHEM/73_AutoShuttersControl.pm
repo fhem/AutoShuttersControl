@@ -1198,7 +1198,7 @@ sub Initialize {
         <tr><td>DriveUpMaxDuration</td><td>   </td></tr>
         <tr><td>SubTyp</td><td>   </td></tr>
         <tr><td>WinDev</td><td>   </td></tr>
-        <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung, Beispiel: 09:00-13:00</td></tr>
+        <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung, Beispiel: 09:00-13:00 WICHTIG!!!! Immer bei einstelligen Stunden die 0 davor setzen</td></tr>
     </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device Getter</u>
