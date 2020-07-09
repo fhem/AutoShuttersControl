@@ -47,14 +47,33 @@ use utf8;
 
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 
+require Exporter;
+our @ISA       = qw(Exporter);
+our @EXPORT_OK = qw(
+  CheckASC_ConditionsForShadingFn
+  ShadingProcessing
+  ShadingProcessingDriveCommand
+);
+our %EXPORT_TAGS = (
+    ALL => [
+        qw(
+          EventProcessingPartyMode
+          EventProcessingGeneral
+          EventProcessingShutters
+          EventProcessingAdvShuttersClose
+          )
+    ],
+);
+
 use GPUtils qw(GP_Import);
 ## Import der FHEM Funktionen
 BEGIN {
     GP_Import(
         qw(
-          Log3
-          gettimeofday
-          computeAlignTime
+          EventProcessingPartyMode
+          EventProcessingGeneral
+          EventProcessingShutters
+          EventProcessingAdvShuttersClose
           )
     );
 }
@@ -68,8 +87,8 @@ sub EventProcessingGeneral {
 
     if ( defined($devname) && ($devname) )
     { # es wird lediglich der Devicename der Funktion mitgegeben wenn es sich nicht um global handelt daher hier die Unterscheidung
-        my $windReading = $ascDev->getWindSensorReading // 'none';
-        my $rainReading = $ascDev->getRainSensorReading // 'none';
+        my $windReading = $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading // 'none';
+        my $rainReading = $FHEM::Automation::ShuttersControl::ascDev->getRainSensorReading // 'none';
 
         while ( my ( $device, $deviceAttr ) =
             each %{ $hash->{monitoredDevs}{$devname} } )
@@ -96,13 +115,13 @@ sub EventProcessingGeneral {
             EventProcessingExternalTriggerDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_ExternalTrigger' );
 
-            $shutters->setShuttersDev($device)
+            $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($device)
               if ( $deviceAttr eq 'ASC_BrightnessSensor' );
 
             if (
                 $deviceAttr eq 'ASC_BrightnessSensor'
-                && (   $shutters->getDown eq 'brightness'
-                    || $shutters->getUp eq 'brightness' )
+                && (   $FHEM::Automation::ShuttersControl::shutters->getDown eq 'brightness'
+                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq 'brightness' )
               )
             {
                 EventProcessingBrightness( $hash, $device, $events );
@@ -153,7 +172,7 @@ sub EventProcessingGeneral {
               if (
                 $3 ne 'ASC_Time_Up_WE_Holiday'
                 || (   $3 eq 'ASC_Time_Up_WE_Holiday'
-                    && $ascDev->getSunriseTimeWeHoliday eq 'on' )
+                    && $FHEM::Automation::ShuttersControl::ascDev->getSunriseTimeWeHoliday eq 'on' )
               );
         }
         elsif (

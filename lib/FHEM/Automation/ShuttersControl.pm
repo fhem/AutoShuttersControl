@@ -76,6 +76,7 @@ use Date::Parse;
 use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
+use FHEM::Automation::ShuttersControl::EventProcessingFunctions qw (:ALL);
 use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 
@@ -494,8 +495,7 @@ sub Notify {
             }
         }
         elsif ( grep m{^partyMode:.off$}xms, @{$events} ) {
-            FHEM::Automation::ShuttersControl::EventProcessingFunctions::EventProcessingPartyMode(
-                $hash);
+            EventProcessingPartyMode($hash);
         }
         elsif ( grep m{^sunriseTimeWeHoliday:.(on|off)$}xms, @{$events} ) {
             RenewSunRiseSetShuttersTimer($hash);
@@ -509,8 +509,7 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
             @{$events}
           )
         {
-            FHEM::Automation::ShuttersControl::EventProcessingFunctions::EventProcessingGeneral(
-                $hash, undef, join( ' ', @{$events} ) );
+            EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
     elsif ( grep m{^($posReading):\s\d{1,3}$}xms, @{$events} ) {
@@ -518,12 +517,10 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
               . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
               . ' - RECEIVED EVENT: '
               . Dumper $events);
-        FHEM::Automation::ShuttersControl::EventProcessingFunctions::EventProcessingShutters(
-            $hash, $devname, join( ' ', @{$events} ) );
+        EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
     }
     else {
-        FHEM::Automation::ShuttersControl::EventProcessingFunctions::EventProcessingGeneral(
-            $hash, $devname, join( ' ', @{$events} ) )
+        EventProcessingGeneral( $hash, $devname, join( ' ', @{$events} ) )
           ; # bei allen anderen Events wird die entsprechende Funktion zur Verarbeitung aufgerufen
     }
 
@@ -594,8 +591,7 @@ sub Set {
     }
     elsif ( lc $cmd eq 'advdrivedown' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
-        FHEM::Automation::ShuttersControl::EventProcessingFunctions::EventProcessingAdvShuttersClose(
-            $hash);
+        EventProcessingAdvShuttersClose($hash);
     }
     elsif ( lc $cmd eq 'shutterascenabletoggle' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
