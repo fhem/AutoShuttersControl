@@ -512,8 +512,8 @@ sub ShadingProcessingDriveCommand {
     $FHEM::Automation::ShuttersControl::shutters->setShadingStatus(
         $FHEM::Automation::ShuttersControl::shutters->getShadingStatus );
 
-    if (
-        $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq 'in'
+    if (   IsInTime($FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTime)
+        && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq 'in'
         && $getShadingPos != $getStatus
         && (
             FHEM::Automation::ShuttersControl::CheckIfShuttersWindowRecOpen(

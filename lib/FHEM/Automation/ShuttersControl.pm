@@ -239,6 +239,7 @@ our %userAttrList = (
     'ASC_Shading_MinMax_Elevation'                         => '-',
     'ASC_Shading_Min_OutsideTemperature'                   => '-',
     'ASC_Shading_WaitingPeriod'                            => '-',
+    'ASC_Shading_BetweenTheTime'                           => '-',
     'ASC_Drive_Delay'                                      => '-',
     'ASC_Drive_DelayStart'                                 => '-',
     'ASC_Shutter_IdleDetection'                            => '-',

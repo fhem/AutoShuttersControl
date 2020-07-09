@@ -964,6 +964,7 @@ sub Initialize {
                 <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 80/20) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
                 <li><strong>ASC_Shading_StateChange_SunnyCloudy</strong> - Brightness Wert ab welchen die Beschattung stattfinden und aufgehoben werden soll, immer in Abh&auml;ngigkeit der anderen einbezogenen Sensorwerte. Ein optionaler dritter Wert gibt an wie, viele Brightnesswerte für den aktuellen Brightness-Durchschnitt berücksichtigt werden. Standard ist 3, es sollten nicht mehr als 5 ber&uuml;cksichtigt werden. (default: 35000:20000 [3])</li>
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
+                <li><strong>ASC_Shading_BetweenTheTime</strong> - das fahren in die Beschattung erfolgt bei Angabe nur innerhalb des Zeitraumes, Bsp: 9:00-13:00 11:25-15:30</li>
             </ul></p>
             <li><strong>ASC_ShuttersPlace - window/terrace/awning</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen. awning steht für Markise und wirkt sich auf die Beschattungssteuerung aus. (default: window)</li>
             <li><strong>ASC_Time_Down_Early</strong> - Sonnenuntergang fr&uuml;hste Zeit zum Runterfahren (default: 16:00) !!!Verwendung von Perlcode ist möglich, dieser muss in {} eingeschlossen sein. Rückgabewert muss ein Zeitformat in Form HH:MM[:SS] sein!!!</li>
@@ -1127,6 +1128,7 @@ sub Initialize {
         <tr><td>IsDay</td><td>Abfrage ob das Rollo im Tag oder Nachtmodus ist. Also nach Sunset oder nach Sunrise</td></tr>
         <tr><td>PrivacyDownStatus</td><td>Abfrage ob das Rollo aktuell im PrivacyDown Status steht</td></tr>
         <tr><td>OutTemp</td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
+        <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung</td></tr>
     </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe Getter</u>
@@ -1196,6 +1198,7 @@ sub Initialize {
         <tr><td>DriveUpMaxDuration</td><td>   </td></tr>
         <tr><td>SubTyp</td><td>   </td></tr>
         <tr><td>WinDev</td><td>   </td></tr>
+        <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung, Beispiel: 09:00-13:00</td></tr>
     </table>
     </p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device Getter</u>

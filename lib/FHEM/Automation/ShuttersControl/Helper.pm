@@ -62,6 +62,7 @@ our @EXPORT_OK = qw(
   AverageBrightness
   PerlCodeCheck
   IsAdv
+  IsInTime
 );
 our %EXPORT_TAGS = (
     ALL => [
@@ -80,6 +81,7 @@ our %EXPORT_TAGS = (
           AverageBrightness
           PerlCodeCheck
           IsAdv
+          IsInTime
           )
     ],
 );
@@ -1154,6 +1156,24 @@ sub IsAdv {
     }
 
     return $adv;
+}
+
+sub IsInTime {
+    my $dfi = shift;
+
+    $dfi =~ s/{([^\x7d]*)}/$cmdFromAnalyze=$1; eval $1/ge; # Forum #69787
+    my ($sec,$min,$hour,$mday,$month,$year,$wday,$yday,$isdst) = localtime(gettimeofday());
+    my $dhms = sprintf("%s\@%02d:%02d:%02d", $wday, $hour, $min, $sec);
+    foreach my $ft (split(" ", $dfi)) {
+        my ($from, $to) = split("-", $ft);
+        if(defined($from) && defined($to)) {
+            $from = "$wday\@$from" if(index($from,"@") < 0);
+            $to   = "$wday\@$to"   if(index($to,  "@") < 0);
+            return 1 if($from le $dhms && $dhms le $to);
+        }
+    }
+    
+    return 0;
 }
 
 1;

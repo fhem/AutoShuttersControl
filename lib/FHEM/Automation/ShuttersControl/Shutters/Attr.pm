@@ -1781,6 +1781,21 @@ sub getDown {
     return AttrVal( $self->{shuttersDev}, 'ASC_Down', 'astro' );
 }
 
+sub setShadingBetweenTheTime {
+    my $self    = shift;
+    my $attrVal = shift;
+
+    _setAttributs( $self->{shuttersDev}, 'ASC_Shading_BetweenTheTime', $attrVal );
+
+    return;
+}
+
+sub getShadingBetweenTheTime {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_Shading_BetweenTheTime', '00:00-24:00' );
+}
+
 sub setTimeUpEarly {
     my $self    = shift;
     my $attrVal = shift;
