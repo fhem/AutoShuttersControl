@@ -195,6 +195,12 @@ sub ShadingProcessing {
     $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
     my $brightness =
       $FHEM::Automation::ShuttersControl::shutters->getBrightnessAverage;
+      
+    $FHEM::Automation::ShuttersControl::shutters->setShadingBetweenTheTimeSuspend(
+          ( IsInTime($FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTime)
+        ? 0
+        : 1 )
+    );
 
     FHEM::Automation::ShuttersControl::ASC_Debug(
             'ShadingProcessing: '
@@ -465,8 +471,12 @@ sub ShadingProcessing {
                 )
                 && $FHEM::Automation::ShuttersControl::shutters->getIfInShading
             )
-            || (  !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
+            || (   !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+            )
+            || (   $FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTimeSuspend
+                && $FHEM::Automation::ShuttersControl::shutters->getStatus !=
                 $FHEM::Automation::ShuttersControl::shutters->getShadingPos )
         )
       );

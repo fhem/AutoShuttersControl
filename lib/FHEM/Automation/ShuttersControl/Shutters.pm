@@ -936,6 +936,16 @@ sub setShadingLastPos {
     return;
 }
 
+sub setShadingBetweenTheTimeSuspend {       # Werte für value = 0, 1
+    my $self  = shift;
+    my $value = shift;
+
+    $self->{ $self->{shuttersDev} }{ShadingBetweenTheTimeSuspend}{VAL} = $value
+      if ( defined($value) );
+
+    return;
+}
+
 sub setPushBrightnessInArray {
     my $self  = shift;
     my $value = shift;
@@ -985,6 +995,17 @@ sub getShadingStatus {   # Werte für value = in, out, in reserved, out reserved
           && defined( $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL} )
         ? $self->{ $self->{shuttersDev} }{ShadingStatus}{VAL}
         : 'out'
+    );
+}
+
+sub getShadingBetweenTheTimeSuspend {   # Werte für value = 0, 1
+    my $self = shift;
+
+    return (
+        defined( $self->{ $self->{shuttersDev} }{ShadingBetweenTheTimeSuspend} )
+          && defined( $self->{ $self->{shuttersDev} }{ShadingBetweenTheTimeSuspend}{VAL} )
+        ? $self->{ $self->{shuttersDev} }{ShadingBetweenTheTimeSuspend}{VAL}
+        : 0
     );
 }
 
