@@ -46,6 +46,7 @@ use POSIX qw(strftime);
 use utf8;
 
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
+use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
 
 require Exporter;
 our @ISA       = qw(Exporter);

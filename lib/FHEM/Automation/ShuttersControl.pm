@@ -77,7 +77,6 @@ use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
 use FHEM::Automation::ShuttersControl::EventProcessingFunctions qw (:ALL);
-use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 
 # try to use JSON::MaybeXS wrapper
