@@ -515,7 +515,9 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
     }
     elsif ( grep m{^($posReading):\s\d{1,3}$}xms, @{$events} ) {
         ASC_Debug( 'Notify: '
-              . ' ASC_Pos_Reading Event vom Rollo wurde erkannt '
+              . ' ASC_Pos_Reading Event vom Rollo ' 
+              . $devname
+              . ' wurde erkannt '
               . ' - RECEIVED EVENT: '
               . Dumper $events);
         EventProcessingShutters( $hash, $devname, join( ' ', @{$events} ) );
