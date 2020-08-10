@@ -1077,7 +1077,7 @@ sub CreateSunRiseSetShuttersTimer {
             $ascDev->getAutoShuttersControlEvening eq 'on'
             ? (
                 $shutters->getDown eq 'roommate' ? 'roommate only' : strftime(
-                    "%e.%m.%Y - %H:%M",
+                    "%d.%m.%Y - %H:%M",
                     localtime($shuttersSunsetUnixtime)
                 )
               )
@@ -1091,7 +1091,7 @@ sub CreateSunRiseSetShuttersTimer {
             $ascDev->getAutoShuttersControlMorning eq 'on'
             ? (
                 $shutters->getUp eq 'roommate' ? 'roommate only' : strftime(
-                    "%e.%m.%Y - %H:%M",
+                    "%d.%m.%Y - %H:%M",
                     localtime($shuttersSunriseUnixtime)
                 )
               )
@@ -1106,10 +1106,10 @@ sub CreateSunRiseSetShuttersTimer {
         $shuttersDev . '_nextAstroTimeEvent',
         (
             $shuttersSunriseUnixtime < $shuttersSunsetUnixtime
-            ? strftime( "%e.%m.%Y - %H:%M",
+            ? strftime( "%d.%m.%Y - %H:%M",
                 localtime($shuttersSunriseUnixtime) )
             : strftime(
-                "%e.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime)
+                "%d.%m.%Y - %H:%M", localtime($shuttersSunsetUnixtime)
             )
         )
     );
@@ -1613,12 +1613,12 @@ sub ShuttersInformation {
         $ret .= "<td>$shuttersDev</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
-          . strftime( "%e.%m.%Y - %H:%M:%S",
+          . strftime( "%d.%m.%Y - %H:%M:%S",
             localtime( $shutters->getSunriseUnixTime ) )
           . "</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
-          . strftime( "%e.%m.%Y - %H:%M:%S",
+          . strftime( "%d.%m.%Y - %H:%M:%S",
             localtime( $shutters->getSunsetUnixTime ) )
           . "</td>";
         $ret .= "<td> </td>";
@@ -1869,7 +1869,7 @@ sub ASC_Debug {
       if ( !AttrVal( $ascDev->getName, 'ASC_debug', 0 ) );
 
     my $debugMsg = shift;
-    my $debugTimestamp = strftime( "%Y.%m.%e %T", localtime(time) );
+    my $debugTimestamp = strftime( "%Y.%m.%d %T", localtime(time) );
 
     print(
         encode_utf8(
@@ -1897,7 +1897,7 @@ sub PrivacyUpTime {
           if ( $shutters->getPrivacyUpStatus == 2 );
 
         readingsSingleUpdate( $shuttersDevHash, 'ASC_Time_PrivacyDriveUp',
-            strftime( "%e.%m.%Y - %H:%M", localtime($privacyUpUnixtime) ), 1 );
+            strftime( "%d.%m.%Y - %H:%M", localtime($privacyUpUnixtime) ), 1 );
         ## Setzt den PrivacyUp Modus für die Sichtschutzfahrt auf den Status 1
         ## und gibt die Unixtime für die nächste Fahrt korrekt zurück
         if ( $shutters->getPrivacyUpStatus != 2 ) {
@@ -1910,7 +1910,7 @@ sub PrivacyUpTime {
             $shuttersDevHash,
             'ASC_Time_PrivacyDriveUp',
             strftime(
-                "%e.%m.%Y - %H:%M",
+                "%d.%m.%Y - %H:%M",
                 localtime(
                     ( $shuttersSunriseUnixtime - $shutters->getPrivacyUpTime )
                     + 86400
@@ -1940,7 +1940,7 @@ sub PrivacyDownTime {
           if ( $shutters->getPrivacyDownStatus == 2 );
 
         readingsSingleUpdate( $shuttersDevHash, 'ASC_Time_PrivacyDriveDown',
-            strftime( "%e.%m.%Y - %H:%M", localtime($privacyDownUnixtime) ),
+            strftime( "%d.%m.%Y - %H:%M", localtime($privacyDownUnixtime) ),
             1 );
         ## Setzt den PrivacyDown Modus für die Sichtschutzfahrt auf den Status 1
         ## und gibt die Unixtime für die nächste Fahrt korrekt zurück
@@ -1954,7 +1954,7 @@ sub PrivacyDownTime {
             $shuttersDevHash,
             'ASC_Time_PrivacyDriveDown',
             strftime(
-                "%e.%m.%Y - %H:%M",
+                "%d.%m.%Y - %H:%M",
                 localtime(
                     ( $shuttersSunsetUnixtime - $shutters->getPrivacyDownTime )
                     + 86400
