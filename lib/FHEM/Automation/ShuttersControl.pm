@@ -985,8 +985,6 @@ sub ShuttersCommandSet {
         (
                CheckIfShuttersWindowRecOpen($shuttersDev) == 2
             && $shutters->getShuttersPlace eq 'terrace'
-            && (   $shutters->getLockOut eq 'soft'
-                || $shutters->getLockOut eq 'hard' )
             && !$shutters->getQueryShuttersPos($posValue)
         )
         || (
@@ -1017,7 +1015,9 @@ sub ShuttersCommandSet {
             )
             || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 && $shutters->getShuttersPlace eq 'terrace'
-                && !$shutters->getQueryShuttersPos($posValue) )
+                && !$shutters->getQueryShuttersPos($posValue)
+                && (   $shutters->getLockOut eq 'soft'
+                    || $shutters->getLockOut eq 'hard' ) )
             || (   $shutters->getRainProtectionStatus eq 'protected'
                 || $shutters->getWindProtectionStatus eq 'protected' )
         )
