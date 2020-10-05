@@ -209,8 +209,21 @@ m{^(DELETEATTR|ATTR)         #global ATTR myASC ASC_tempSensor Cellar
                 (.*)?}xms
           )
         {
-            CommandSet( undef, $name . ' controlShading on' )
-              if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
+#             ATTR RolloKinZimSteven_F1 ASC_Shading_Mode off
+            if ( $events =~ m{^ATTR\s(.*)\sASC_Shading_Mode\s(off)}xms ) {
+                my %funcHash = (
+                    hash            => $hash,
+                    shuttersdevice  => $1,
+                    value           => $2,
+                    attrEvent       => 1,
+                );
+
+                FHEM::Automation::ShuttersControl::Shading::_CheckShuttersConditionsForShadingFn(\%funcHash);
+            }
+            else {
+                CommandSet( undef, $name . ' controlShading on' )
+                if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
+            }
         }
     }
 

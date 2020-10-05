@@ -101,6 +101,7 @@ sub CheckASC_ConditionsForShadingFn {
             hash            => $hash,
             shuttersdevice  => $shuttersDev,
             value           => $value,
+            attrEvent       => 0,
         );
 
         InternalTimer(
@@ -135,9 +136,10 @@ sub _CheckShuttersConditionsForShadingFn {
     
     if ( $value eq 'off' ) {
         $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
-        $infoMessage .= ' shading was deactivated globally';
+        $infoMessage .= ' shading was deactivated in' . ($funcHash->{attrEvent} ? 'the device' : 'globally');
         ShadingProcessingDriveCommand( $hash, $shuttersDev );
-    } else {
+    }
+    else {
         $infoMessage .= (
             $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
             && $FHEM::Automation::ShuttersControl::ascDev
