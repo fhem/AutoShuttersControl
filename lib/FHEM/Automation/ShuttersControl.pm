@@ -571,7 +571,7 @@ sub Set {
     elsif ( lc $cmd eq 'controlshading' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
 
-        my $response = CheckASC_ConditionsForShadingFn($hash);
+        my $response = CheckASC_ConditionsForShadingFn($hash,$aArg->[0]);
         readingsSingleUpdate(
             $hash, $cmd,
             (
