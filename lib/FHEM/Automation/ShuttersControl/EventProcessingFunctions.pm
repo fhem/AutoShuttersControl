@@ -1594,7 +1594,7 @@ sub EventProcessingBrightness {
     if ( $events =~ m{$reading:\s(\d+(\.\d+)?)}xms ) {
         my $brightnessMinVal;
         if ( $FHEM::Automation::ShuttersControl::shutters->getBrightnessMinVal >
-            -1 )
+            -2 )
         {
             $brightnessMinVal =
               $FHEM::Automation::ShuttersControl::shutters->getBrightnessMinVal;
@@ -1606,7 +1606,7 @@ sub EventProcessingBrightness {
 
         my $brightnessMaxVal;
         if ( $FHEM::Automation::ShuttersControl::shutters->getBrightnessMaxVal >
-            -1 )
+            -2 )
         {
             $brightnessMaxVal =
               $FHEM::Automation::ShuttersControl::shutters->getBrightnessMaxVal;
