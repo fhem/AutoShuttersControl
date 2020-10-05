@@ -136,7 +136,7 @@ sub _CheckShuttersConditionsForShadingFn {
     
     if ( $value eq 'off' ) {
         $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
-        $infoMessage    .= ' shading was deactivated in ' . ($funcHash->{attrEvent} ? 'the device' : 'globally');
+        $infoMessage    .= ' shading was deactivated ' . ($funcHash->{attrEvent} ? 'in the device' : 'globally');
         $errorMessage   .= '';
         ShadingProcessingDriveCommand( $hash, $shuttersDev );
     }
