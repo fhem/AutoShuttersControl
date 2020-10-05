@@ -472,6 +472,8 @@ sub ShadingProcessing {
             || $FHEM::Automation::ShuttersControl::shutters->getModeUp eq 'off'
             || $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
             'absent'
+            || $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
+            'gone'
             || ( $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
                 'home'
                 && $homemode ne 'asleep' )
