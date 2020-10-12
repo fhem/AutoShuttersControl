@@ -284,7 +284,15 @@ sub _IsDay {
                             $FHEM::Automation::ShuttersControl::shutters
                               ->getTimeUpEarly ) / 86400
                     )
-                    && !IsWe()
+                    && ( !IsWe()
+                      || ( IsWe()
+                        && ( $FHEM::Automation::ShuttersControl::ascDev
+                          ->getSunriseTimeWeHoliday eq 'off'
+                          || $FHEM::Automation::ShuttersControl::shutters
+                            ->getTimeUpWeHoliday eq '01:25'
+                           )
+                         )
+                        )
                 )
                 || (
                     int( gettimeofday() / 86400 ) != int(
