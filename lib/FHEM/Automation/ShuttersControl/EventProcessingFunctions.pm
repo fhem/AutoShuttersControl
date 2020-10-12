@@ -926,11 +926,13 @@ sub EventProcessingResidents {
         for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
             $FHEM::Automation::ShuttersControl::shutters->setShuttersDev(
                 $shuttersDev);
+
             my $getModeUp =
               $FHEM::Automation::ShuttersControl::shutters->getModeUp;
             my $getModeDown =
               $FHEM::Automation::ShuttersControl::shutters->getModeDown;
             $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('off');
+
             if (
                 $FHEM::Automation::ShuttersControl::ascDev->getSelfDefense eq
                 'on'
