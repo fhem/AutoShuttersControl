@@ -41,17 +41,12 @@
 # !!!!! - Innerhalb einer Shutterschleife kein CommandAttr verwenden. Bring Fehler!!! Kommen Raumnamen in die Shutterliste !!!!!!
 #
 
-package main;
-
-use Meta;
-
-
-
 package FHEM::AutoShuttersControl;
 
 use strict;
 use warnings;
 use utf8;
+use FHEM::Meta;
 
 use FHEM::Automation::ShuttersControl;
 use GPUtils qw(GP_Import GP_Export);
