@@ -786,6 +786,8 @@ sub EventProcessingRoommate {
         }
         elsif (
             ( $event eq 'gotosleep' || $event eq 'asleep' )
+            && $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
+                'absent'
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlEvening eq 'on'
                 || $FHEM::Automation::ShuttersControl::shutters->getDown eq
