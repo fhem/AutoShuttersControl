@@ -1015,7 +1015,7 @@ sub EventProcessingResidents {
                         $FHEM::Automation::ShuttersControl::shutters
                           ->getLastPos );
                 }
-                elsif (( $getModeDown eq 'absent' || $getModeDown eq 'always' )
+                elsif ( $getModeDown eq 'absent'        # || $getModeDown eq 'always' )   Wird zu Testzwecken auskommentiert, siehe #90 Github
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && $FHEM::Automation::ShuttersControl::shutters
