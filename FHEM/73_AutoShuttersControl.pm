@@ -312,6 +312,9 @@ sub Initialize {
             <li><strong>ASC_freezeTemp</strong> - Temperature threshold for the freeze protection. The freeze protection
                 prevents the shutter to be operated by <abbr>ASC</abbr>. Last operating order will be kept.
             </li>
+            <a name="ASC_advDate"></a>
+            <li><strong>ASC_advDate</strong> - Advent Season, selected FirstAdvent or DeadSunday.
+            </li>
             <a name="ASC_rainSensor"></a>
             <li><strong>ASC_rainSensor DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS]</strong> - Contains
                 settings for the rain protection. <em>DEVICNAME</em> specifies a rain sensor, the optional
@@ -886,6 +889,8 @@ sub Initialize {
             <li><strong>ASC_expert</strong> - ist der Wert 1, so werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
             <a name="ASC_freezeTemp"></a>
             <li><strong>ASC_freezeTemp</strong> - Temperatur, ab welcher der Frostschutz greifen soll und der Rollladen nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
+            <a name="ASC_advDate"></a>
+            <li><strong>ASC_advDate</strong> - Adventszeit, Auswahl ab wann die Adventszeit beginnen soll.</li>
             <a name="ASC_rainSensor"></a>
             <li><strong>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS:[WAITINGTIME]]</strong> - der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben werden soll und der "wegen Regen geschlossen Position", sowie der Wartezeit bis dann tats&auml;chlich die aktion ausgeführt wird.</li>
             <a name="ASC_residentsDev"></a>
