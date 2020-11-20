@@ -392,6 +392,14 @@ sub getBlockAscDrivesAfterManual {
     return AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
 }
 
+sub getAdvDate {
+    my $self = shift;
+
+    my $name = $self->{name};
+
+    return AttrVal( $name, 'ASC_advDate', 'FirstAdvent' );
+}
+
 
 
 

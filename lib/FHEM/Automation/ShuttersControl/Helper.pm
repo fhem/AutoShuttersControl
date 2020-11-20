@@ -1173,7 +1173,11 @@ sub IsAdv {
         my $time = HTTP::Date::str2time( $year . '-12-25' );
         my $wday = ( localtime($time) )[6];
         $wday = $wday ? $wday : 7;
-        $time -= ( $wday + 21 ) * 86400;
+        $time -= ( $FHEM::Automation::ShuttersControl::ascDev
+            ->getAdvDate eq 'DeadSunday'
+              ? ($wday + 27) * 86400
+              : ($wday + 21) * 86400
+          );
         $adv = 1 if ( $time < time );
     }
 

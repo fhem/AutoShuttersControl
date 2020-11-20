@@ -100,6 +100,7 @@ sub Initialize {
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
+      . 'ASC_advDate:DeadSunday,FirstAdvent '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{FW_detailFn} =
