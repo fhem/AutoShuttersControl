@@ -1159,6 +1159,7 @@ sub PerlCodeCheck {
 }
 
 sub IsAdv {
+    use HTTP::Date;
     my ( undef, undef, undef, $monthday, $month, $year, undef, undef, undef ) =
       localtime( gettimeofday() );
     my $adv = 0;
@@ -1170,7 +1171,7 @@ sub IsAdv {
         }
     }
     else {
-        my $time = HTTP::Date::str2time( $year . '-12-25' );
+        my $time = str2time( $year . '-12-25' );
         my $wday = ( localtime($time) )[6];
         $wday = $wday ? $wday : 7;
         $time -= ( $FHEM::Automation::ShuttersControl::ascDev
