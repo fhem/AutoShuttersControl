@@ -938,8 +938,8 @@ sub EventProcessingResidents {
                 'on'
                 && $FHEM::Automation::ShuttersControl::shutters
                 ->getSelfDefenseMode ne 'off'
-                || (   $getModeDown eq 'absent'
-                    || $getModeDown eq 'always' )
+                || (   $getModeDown eq 'absent' )
+#                    || $getModeDown eq 'always' )
                 || ( $FHEM::Automation::ShuttersControl::shutters
                     ->getShadingMode eq 'absent'
                     && $FHEM::Automation::ShuttersControl::shutters
