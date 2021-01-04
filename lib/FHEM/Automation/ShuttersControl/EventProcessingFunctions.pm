@@ -2258,8 +2258,12 @@ sub EventProcessingPartyMode {
                     $shuttersDev,
                     (
                         CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                        ? $FHEM::Automation::ShuttersControl::shutters
-                          ->getClosedPos
+                        ? ($FHEM::Automation::ShuttersControl::shutters
+                              ->getSleepPos > 0
+                            ? $FHEM::Automation::ShuttersControl::shutters
+                                ->getSleepPos
+                            : $FHEM::Automation::ShuttersControl::shutters
+                                ->getClosedPos)
                         : $FHEM::Automation::ShuttersControl::shutters
                           ->getVentilatePos
                     )
