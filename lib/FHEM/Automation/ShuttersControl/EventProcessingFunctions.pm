@@ -49,7 +49,7 @@ use Data::Dumper;    #only for Debugging
 
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
-use FHEM::Automation::ShuttersControl::Rain qw (:ALL);
+use FHEM::Automation::ShuttersControl::Rainprotection qw (:ALL);
 
 require Exporter;
 our @ISA       = qw(Exporter);
