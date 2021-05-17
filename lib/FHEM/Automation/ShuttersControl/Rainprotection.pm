@@ -92,9 +92,9 @@ sub RainProcessing {
                 shuttersdevice => $shuttersDev,
             );
 
-            InternalTimer( InternalTimer( ::gettimeofday() + $FHEM::Automation::ShuttersControl::shutters->getRainWaitingTime
+            InternalTimer(InternalTimer( ::gettimeofday() + $FHEM::Automation::ShuttersControl::shutters->getRainWaitingTime
                 , \&_RainUnprotected
-                , \%funcHash );
+                , \%funcHash ));
         }
     }
 
