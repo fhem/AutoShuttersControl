@@ -1276,7 +1276,7 @@ sub EventProcessingRain {
         elsif ( $1 eq 'dry' )  { $val = $triggerMin }
         else                   { $val = $1 }
 
-        RainProtection( $hash, $val, $triggerMax, $triggerMin );
+        RainProcessing( $hash, $val, $triggerMax, $triggerMin );
     }
 
     return;
