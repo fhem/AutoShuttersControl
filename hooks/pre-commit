@@ -18,7 +18,8 @@ my @filenames = (   'FHEM/73_AutoShuttersControl.pm',
                     'lib/FHEM/Automation/ShuttersControl/Shutters/Attr.pm',
                     'lib/FHEM/Automation/ShuttersControl/Shutters/Readings.pm',
                     'lib/FHEM/Automation/ShuttersControl/Window/Attr.pm',
-                    'lib/FHEM/Automation/ShuttersControl/Window/Readings.pm'
+                    'lib/FHEM/Automation/ShuttersControl/Window/Readings.pm',
+		    'lib/FHEM/Automation/ShuttersControl/Rainprotection.pm'
     );
 
 my $controlsfile    = 'controls_AutoShuttersControl.txt';
