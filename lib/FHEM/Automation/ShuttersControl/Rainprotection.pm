@@ -88,7 +88,7 @@ sub RainProcessing {
             && $FHEM::Automation::ShuttersControl::shutters
             ->getRainProtectionStatus eq 'protected' )
         {
-            %funcHash = (
+            my %funcHash = (
                 shuttersdevice => $shuttersDev,
             );
 
