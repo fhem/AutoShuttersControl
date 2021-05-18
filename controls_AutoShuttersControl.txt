@@ -13,4 +13,4 @@ UPD 2021-01-29_10:06:33 52525 lib/FHEM/Automation/ShuttersControl/Shutters/Attr.
 UPD 2020-06-22_09:41:40 2903 lib/FHEM/Automation/ShuttersControl/Shutters/Readings.pm
 UPD 2021-01-29_10:06:33 3980 lib/FHEM/Automation/ShuttersControl/Window/Attr.pm
 UPD 2020-06-22_09:41:40 2288 lib/FHEM/Automation/ShuttersControl/Window/Readings.pm
-UPD 2021-05-18_08:54:21 5829 lib/FHEM/Automation/ShuttersControl/Rainprotection.pm
+UPD 2021-05-18_09:31:52 5957 lib/FHEM/Automation/ShuttersControl/Rainprotection.pm

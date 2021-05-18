@@ -103,6 +103,9 @@ sub RainProcessing {
             ::InternalTimer( ::gettimeofday() + $FHEM::Automation::ShuttersControl::ascDev->getRainWaitingTime
                 , \&_RainUnprotected
                 , \%funcHash );
+            
+            $FHEM::Automation::ShuttersControl::shutters
+                ->setRainProtectionStatus('unprotected');
         }
     }
 
