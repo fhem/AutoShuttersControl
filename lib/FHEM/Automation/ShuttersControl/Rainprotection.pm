@@ -129,20 +129,26 @@ sub _RainUnprotected {
 
     $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
             'rain un-protected');
-        $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
-            (
-                    $FHEM::Automation::ShuttersControl::shutters->getIsDay
-                ? $FHEM::Automation::ShuttersControl::shutters->getLastPos
-                : (
-                    $FHEM::Automation::ShuttersControl::shutters
-                        ->getPrivacyDownStatus == 2
-                    ? $FHEM::Automation::ShuttersControl::shutters
-                        ->getPrivacyDownPos
-                    : $FHEM::Automation::ShuttersControl::shutters
-                        ->getClosedPos
-                )
+
+    if ( $shutters->getRainUnprotectionDelayObj ne 'none' ) {
+        ::Remove::InternalTimer($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj);
+        $FHEM::Automation::ShuttersControl::shutters->setRainUnprotectionDelayObj('none');
+    }
+
+    $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
+        (
+                $FHEM::Automation::ShuttersControl::shutters->getIsDay
+            ? $FHEM::Automation::ShuttersControl::shutters->getLastPos
+            : (
+                $FHEM::Automation::ShuttersControl::shutters
+                    ->getPrivacyDownStatus == 2
+                ? $FHEM::Automation::ShuttersControl::shutters
+                    ->getPrivacyDownPos
+                : $FHEM::Automation::ShuttersControl::shutters
+                    ->getClosedPos
             )
-        );
+        )
+    );
 
         $FHEM::Automation::ShuttersControl::shutters
             ->setRainProtectionStatus('unprotected');

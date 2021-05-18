@@ -207,12 +207,6 @@ sub setDriveCmd {
                       . ' - antifreeze mode' );
             }
         }
-        
-        ### Rainprotection unprotected Delay Routine
-        if ( $shutters->getRainUnprotectionDelayObj ne 'none' ) {
-            ::Remove::InternalTimer($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj);
-            $FHEM::Automation::ShuttersControl::shutters->setRainUnprotectionDelayObj('none');
-        }
 
         my %h = (
             shuttersDev => $self->{shuttersDev},
