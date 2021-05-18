@@ -97,7 +97,7 @@ sub RainProcessing {
             ::RemoveInternalTimer($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj)
               if($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj ne 'none');
             
-            $FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj
+            $FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj;
             $FHEM::Automation::ShuttersControl::shutters->setRainUnprotectionDelayObj(\%funcHash);
 
             ::InternalTimer( ::gettimeofday() + $FHEM::Automation::ShuttersControl::ascDev->getRainWaitingTime
