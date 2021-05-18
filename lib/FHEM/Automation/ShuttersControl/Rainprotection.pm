@@ -131,7 +131,7 @@ sub _RainUnprotected {
             'rain un-protected');
 
     if ( $FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj ne 'none' ) {
-        ::Remove::InternalTimer($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj);
+        ::RemoveInternalTimer($FHEM::Automation::ShuttersControl::shutters->getRainUnprotectionDelayObj);
         $FHEM::Automation::ShuttersControl::shutters->setRainUnprotectionDelayObj('none');
     }
 

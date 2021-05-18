@@ -7,10 +7,10 @@ UPD 2021-05-17_14:30:37 25329 lib/FHEM/Automation/ShuttersControl/Shading.pm
 UPD 2021-05-17_14:34:49 108472 lib/FHEM/Automation/ShuttersControl/EventProcessingFunctions.pm
 UPD 2021-02-26_14:36:10 40628 lib/FHEM/Automation/ShuttersControl/Helper.pm
 UPD 2020-06-22_09:41:40 2175 lib/FHEM/Automation/ShuttersControl/Window.pm
-UPD 2021-04-27_07:52:31 11742 lib/FHEM/Automation/ShuttersControl/Dev/Attr.pm
+UPD 2021-05-18_09:00:42 11741 lib/FHEM/Automation/ShuttersControl/Dev/Attr.pm
 UPD 2020-07-03_11:29:10 7251 lib/FHEM/Automation/ShuttersControl/Dev/Readings.pm
 UPD 2021-01-29_10:06:33 52525 lib/FHEM/Automation/ShuttersControl/Shutters/Attr.pm
 UPD 2020-06-22_09:41:40 2903 lib/FHEM/Automation/ShuttersControl/Shutters/Readings.pm
 UPD 2021-01-29_10:06:33 3980 lib/FHEM/Automation/ShuttersControl/Window/Attr.pm
 UPD 2020-06-22_09:41:40 2288 lib/FHEM/Automation/ShuttersControl/Window/Readings.pm
-UPD 2021-05-18_08:49:58 5831 lib/FHEM/Automation/ShuttersControl/Rainprotection.pm
+UPD 2021-05-18_08:54:21 5829 lib/FHEM/Automation/ShuttersControl/Rainprotection.pm
