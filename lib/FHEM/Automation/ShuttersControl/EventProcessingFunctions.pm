@@ -282,12 +282,12 @@ sub EventProcessingWindowRec {
               . $homemode
               . ' QueryShuttersPosWinRecTilted:'
               . $FHEM::Automation::ShuttersControl::shutters
-              ->getQueryShuttersPos(
+                  ->getQueryShuttersPos(
                 $FHEM::Automation::ShuttersControl::shutters->getVentilatePos
               )
               . ' QueryShuttersPosWinRecComfort: '
               . $FHEM::Automation::ShuttersControl::shutters
-              ->getQueryShuttersPos(
+                  ->getQueryShuttersPos(
                 $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
               )
         );
@@ -310,15 +310,21 @@ sub EventProcessingWindowRec {
                       eq 'on' )
                 || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
                     $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownPos
+                      ->getPrivacyDownPos
                     && $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownStatus != 2
+                      ->getPrivacyDownStatus != 2
+                    && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
+                || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                    $FHEM::Automation::ShuttersControl::shutters
+                      ->getOpenPos
+                    && $FHEM::Automation::ShuttersControl::shutters
+                      ->getLockOut ne 'off'
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
             )
             && ( $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
                 eq 'on'
                 || $FHEM::Automation::ShuttersControl::ascDev
-                ->getAutoShuttersControlComfort eq 'on' )
+                     ->getAutoShuttersControlComfort eq 'on' )
           )
         {
             FHEM::Automation::ShuttersControl::ASC_Debug(
