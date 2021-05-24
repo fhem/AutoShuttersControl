@@ -312,7 +312,7 @@ sub EventProcessingWindowRec {
                     $FHEM::Automation::ShuttersControl::shutters
                     ->getPrivacyDownPos
                     && $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownStatus == 1
+                    ->getPrivacyDownStatus != 2
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
             )
             && ( $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
