@@ -273,6 +273,7 @@ my %posSetCmds = (
     Siro        => 'pct',
     CUL_HM      => 'pct',
     ROLLO       => 'pct',
+    Shelly      => 'pct',
     SOMFY       => 'position',
     tahoma      => 'dim',
     KLF200Node  => 'pct',
