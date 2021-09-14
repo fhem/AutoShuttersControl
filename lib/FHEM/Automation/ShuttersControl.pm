@@ -33,7 +33,7 @@
 #  GNU General Public License for more details.
 #
 #
-# $Id: ShuttersControl.pm 24460 2021-05-17 12:51:14Z CoolTux $
+# $Id$
 #
 ###############################################################################
 

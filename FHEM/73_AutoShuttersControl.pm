@@ -33,7 +33,7 @@
 #  GNU General Public License for more details.
 #
 #
-# $Id: 73_AutoShuttersControl.pm 24586 2021-06-05 02:59:22Z CoolTux $
+# $Id$
 #
 ###############################################################################
 
