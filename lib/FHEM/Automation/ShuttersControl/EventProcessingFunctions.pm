@@ -977,8 +977,10 @@ sub EventProcessingResidents {
                         || ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                             && $FHEM::Automation::ShuttersControl::shutters
                             ->getSelfDefenseMode eq 'gone'
-                            && $FHEM::Automation::ShuttersControl::shutters
-                            ->getShuttersPlace eq 'terrace'
+                            && ( $FHEM::Automation::ShuttersControl::shutters
+                                ->getShuttersPlace eq 'terrace'
+                              || $FHEM::Automation::ShuttersControl::shutters
+                                ->getShuttersPlace eq 'EG_window' )
                             && $FHEM::Automation::ShuttersControl::shutters
                             ->getSelfDefenseMode ne 'off' )
                     )
