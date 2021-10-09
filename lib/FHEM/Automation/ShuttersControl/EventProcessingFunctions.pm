@@ -2440,7 +2440,7 @@ sub EventProcessingExternalTriggerDevice {
             'external trigger device inactive');
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerStatus(
-            1);
+            0);
         FHEM::Automation::ShuttersControl::ShuttersCommandSet(
             $hash,
             $shuttersDev,
