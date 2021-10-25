@@ -1769,7 +1769,7 @@ sub _SetCmdFn {
           . $shutters->getLastDrive );
 
     my $driveCommand    = $shutters->getPosSetCmd . ' ' . $posValue;
-    my $commandTemplate = $shutters->getCommandTemplte;
+    my $commandTemplate = $shutters->getCommandTemplate;
     my $slatPos         = -1;
 
     if (   $shutters->getShadingPositionAssignment ne 'none'
