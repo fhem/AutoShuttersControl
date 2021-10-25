@@ -184,9 +184,7 @@ BEGIN {
           delFromAttrList
           gettimeofday
           InternalTimer
-          RemoveInternalTimer
-          computeAlignTime
-          ReplaceEventMap)
+          RemoveInternalTimer)
     );
 
     #-- Export to main context with different name
@@ -265,6 +263,7 @@ our %userAttrList = (
     'ASC_RainProtection:on,off'             => '-',
     'ASC_ExternalTrigger'                   => '-',
     'ASC_Adv:on,off'                        => '-',
+    'ASC_CommandTemplate'                   => '-',
     'ASC_SlatPosCmd_SlatDevice'             => '-',
 );
 
@@ -1769,8 +1768,9 @@ sub _SetCmdFn {
           . '. Grund der Fahrt: '
           . $shutters->getLastDrive );
 
-    my $driveCommand = $shutters->getPosSetCmd . ' ' . $posValue;
-    my $slatPos      = -1;
+    my $driveCommand    = $shutters->getPosSetCmd . ' ' . $posValue;
+    my $commandTemplate = $shutters->getCommandTemplte;
+    my $slatPos         = -1;
 
     if (   $shutters->getShadingPositionAssignment ne 'none'
         || $shutters->getOpenPositionAssignment ne 'none'
@@ -1822,32 +1822,47 @@ sub _SetCmdFn {
         }
     }
 
-    CommandSet( undef,
-            $shuttersDev
-          . ':FILTER='
-          . $shutters->getPosCmd . '!='
-          . $posValue . ' '
-          . $driveCommand );
+    if ( $commandTemplate ne 'none' ) {     # Patch von Beta-User Forum https://forum.fhem.de/index.php/topic,123659.0.html
+        # Nutzervariablen setzen
+        my %specials = (
+             '$name'        => $shuttersDev,
+             '$level'       => $posValue,
+             '$slatLevel'   => $slatPos
+        );
+        
+        $commandTemplate  = ::EvalSpecials($commandTemplate, %specials);
+        # CMD ausführen
+        ::AnalyzeCommandChain( $h, $commandTemplate );
+    }
+    else {
+        CommandSet( undef,
+                $shuttersDev
+            . ':FILTER='
+            . $shutters->getPosCmd . '!='
+            . $posValue . ' '
+            . $driveCommand );
 
-    InternalTimer(
-        gettimeofday() + 3,
-        sub() {
-            CommandSet(
-                undef,
-                (
-                      $shutters->getSlatDevice ne 'none'
-                    ? $shutters->getSlatDevice
-                    : $shuttersDev
-                  )
-                  . ' '
-                  . $shutters->getSlatPosCmd . ' '
-                  . $slatPos
-            );
-        },
-        $shuttersDev
-      )
-      if ( $slatPos > -1
-        && $shutters->getSlatPosCmd ne 'none' );
+        InternalTimer(
+            gettimeofday() + 3,
+            sub() {
+                CommandSet(
+                    undef,
+                    (
+                        $shutters->getSlatDevice ne 'none'
+                        ? $shutters->getSlatDevice
+                        : $shuttersDev
+                    )
+                    . ' '
+                    . $shutters->getSlatPosCmd . ' '
+                    . $slatPos
+                );
+            },
+            $shuttersDev
+        )
+        if ( $slatPos > -1
+            && $shutters->getSlatPosCmd ne 'none' );
+    
+    }
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent
