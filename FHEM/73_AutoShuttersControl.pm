@@ -644,6 +644,7 @@ __END__
             Examples: 
             <ul>
             <li><i>attr ROLLO ASC_CommandTemplate set $name $level</i> - Address the position command directly to the main switch of the device</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name pct $level</i> - Address the position command directly to the main switch of the device</li>
             <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatLevel 4.LEVEL $level</i> - combined positioning command, e.g. appropriate for HM-IP-venetian blind type actors</li>
             <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($level+1024)).";set $name 0")}</i> - positioning command with Perl calculation and additional "execute" command, e.g. for an SPS type blind</li>
             </ul>
@@ -1172,6 +1173,8 @@ __END__
             Beispiele: 
             <ul>
             <li><i>attr ROLLO ASC_CommandTemplate set $name $level</i> - Positionsbefehl direkt an Gerät
+            setzen</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name pct $level</i> - Positionsbefehl direkt an Gerät
             setzen</li>
             <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatLevel 4.LEVEL $level</i> - Positionsbefehl und Lamellen-Ansteuerung für HM-IP-Jalousieaktoren</li>
             <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($level+1024)).";set $name 0")}</i> - Positionsbefehl für eine SPS in Perl umrechnen</li>
