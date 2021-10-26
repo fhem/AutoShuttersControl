@@ -1827,7 +1827,8 @@ sub _SetCmdFn {
         my %specials = (
              '$name'        => $shuttersDev,
              '$level'       => $posValue,
-             '$slatLevel'   => $slatPos
+             '$slatLevel'   => $slatPos,
+             '$reason'      => $shutters->getLastDrive
         );
         
         $commandTemplate  = ::EvalSpecials($commandTemplate, %specials);
