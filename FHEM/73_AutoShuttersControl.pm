@@ -647,6 +647,7 @@ __END__
             <li><i>attr ROLLO ASC_CommandTemplate set $name pct $level</i> - Address the position command directly to the main switch of the device</li>
             <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatLevel 4.LEVEL $level</i> - combined positioning command, e.g. appropriate for HM-IP-venetian blind type actors</li>
             <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($level+1024)).";set $name 0")}</i> - positioning command with Perl calculation and additional "execute" command, e.g. for an SPS type blind</li>
+            <li><i>attr ROLLO ASC_CommandTemplate myPerlCode("$name", $level, $slatLevel)</i> - positioning command from perlfunction</li>
             </ul>
             <strong>Note: ASC_CommandTemplate</strong> is meant for some rare and special cases. In most cases there's <strong>no need</strong> to set this attribute!
             </li>
@@ -1178,6 +1179,7 @@ __END__
             setzen</li>
             <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatLevel 4.LEVEL $level</i> - Positionsbefehl und Lamellen-Ansteuerung für HM-IP-Jalousieaktoren</li>
             <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($level+1024)).";set $name 0")}</i> - Positionsbefehl für eine SPS in Perl umrechnen</li>
+            <li><i>attr ROLLO ASC_CommandTemplate myPerlCode("$name", $level, $slatLevel)</i> - Positionsbefehl aus eigener Perlfunktion</li>
             </ul>
             <strong>Hinweis: ASC_CommandTemplate</strong> ist für seltene und spezielle Fälle gedacht. In der Regel ist es nicht erforderlich, dieses Attribut zu setzen!
             </li>
