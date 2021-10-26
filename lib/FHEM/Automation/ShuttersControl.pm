@@ -227,8 +227,8 @@ our %userAttrList = (
     'ASC_LockOut:soft,hard,off'                  => '-',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
     'ASC_BlockingTime_afterManual'               => '-',
-    'ASC_BlockingTime_beforNightClose'           => '-',
-    'ASC_BlockingTime_beforDayOpen'              => '-',
+    'ASC_BlockingTime_beforeNightClose'           => '-',
+    'ASC_BlockingTime_beforeDayOpen'              => '-',
     'ASC_BrightnessSensor'                       => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
@@ -1226,15 +1226,15 @@ sub RenewSunRiseSetShuttersTimer {
                 1, 0 );
         }
 
-#         $attr{$shuttersDev}{ASC_Drive_Delay} =
-#           AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' )
-#           if ( AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' ) ne 'none' );
-#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_Offset' );
-#
-#         $attr{$shuttersDev}{ASC_Drive_DelayStart} =
-#           AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' )
-#           if ( AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
-#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_OffsetStart' );
+        $attr{$shuttersDev}{ASC_BlockingTime_beforeNightClose} =
+          AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' )
+          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' ) ne 'none' );
+        delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforNightClose' );
+
+        $attr{$shuttersDev}{ASC_BlockingTime_beforeDayOpen} =
+          AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' )
+          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' ) ne 'none' );
+        delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforDayOpen' );
 #
 #         $attr{$shuttersDev}{ASC_Shading_StateChange_SunnyCloudy} =
 #             AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'

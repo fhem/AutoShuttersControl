@@ -416,11 +416,11 @@ __END__
                 after the last manual operation in seconds. Defaults to 1200 (20 minutes).
             </li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforDayOpen"></a>
-            <li><strong>ASC_BlockingTime_beforDayOpen</strong> - Time in which no closing operation is made by
+            <li><strong>ASC_BlockingTime_beforeDayOpen</strong> - Time in which no closing operation is made by
                 <abbr>ASC</abbr> after opening at the morning in seconds. Defaults to 3600 (one hour).
             </li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforNightClose"></a>
-            <li><strong>ASC_BlockingTime_beforNightClose</strong> - Time in which no closing operation is made by
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeNightClose"></a>
+            <li><strong>ASC_BlockingTime_beforeNightClose</strong> - Time in which no closing operation is made by
                 <abbr>ASC</abbr> before closing at the evening in seconds. Defaults to 3600 (one hour).
             </li>
             <a id="AutoShuttersControl-attr-ASC_BrightnessSensor"></a>
@@ -1040,10 +1040,10 @@ __END__
             <li><strong>ASC_AutoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber Horizont,a wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_afterManual"></a>
             <li><strong>ASC_BlockingTime_afterManual</strong> - wie viel Sekunden soll die Automatik nach einer manuellen Fahrt aussetzen. (default: 1200)</li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforDayOpen"></a>
-            <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforNightClose"></a>
-            <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeDayOpen"></a>
+            <li><strong>ASC_BlockingTime_beforeDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeNightClose"></a>
+            <li><strong>ASC_BlockingTime_beforeNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
             <a id="AutoShuttersControl-attr-ASC_BrightnessSensor"></a>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_Down"></a>
