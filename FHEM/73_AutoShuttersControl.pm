@@ -1171,6 +1171,7 @@ __END__
             <a id="AutoShuttersControl-attr-ASC_SlatPosCmd_SlatDevice"></a>
             <li><strong>ASC_SlatPosCmd_SlatDevice</strong> - Angaben zu einem Slat (Lamellen) CMD und - sofern diese Lamellen &uuml;ber ein anderes Device gesteuert werden - zum Slat Device. Beispiele: <i>attr ROLLO ASC_SlatPosCmd_SlatDevice slatPct</i> oder <i>attr ROLLO ASC_SlatPosCmd_SlatDevice dim:ROLLOSLATDEVICE</i>. Die Angabe des Devices ist nur erforderlich, wenn zur Steuerung der Lamellen ein anderes Device verwendet wird. Damit das ganze dann auch greift, muss in den 6 Positionsangaben ASC_Open_Pos, ASC_Closed_Pos, ASC_Ventilate_Pos, ASC_ComfortOpen_Pos, ASC_Shading_Pos und ASC_Sleep_Pos ein weiterer Parameter f&uuml;r die Lamellenstellung mit angegeben werden.</li>
             <a id="AutoShuttersControl-attr-ASC_CommandTemplate"></a>
+            <a id="AutoShuttersControl-attr-ASC_CommandTemplate"></a>
             <li><strong>ASC_CommandTemplate</strong> - <strong>FHEM-Kommando(s) oder Perl-Anweisung</strong> (in geschweiften Klammern unter Beachtung der üblichen Regeln für das escapen von Semicolons etc.).<br>
             Dieses Attribut übersteuert das sonst intern ermittelte Fahrkommando und ist <strong>für seltene und spezielle Fälle</strong> gedacht. In der Regel ist es nicht erforderlich, dieses Attribut zu setzen!<br>
             Die Variablen <i>$name</i> (der Name des Rollladen-Devices), <i>$pos</i> (die Zielposition des Fahrbefehls), <i>$slatPos</i> (die Zielposition des Fahrbefehls für eventuelle Lamellen) und <i>$cause</i> (die interne Benennung des Fahranlasses) werden durch die ermittelten Werte ersetzt, es muss selbst dafür gesorgt werden, dass eventuell unnötige Fahrbefehle aussortiert werden.
@@ -1183,7 +1184,6 @@ __END__
             <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($pos+1024)).";set $name 0")}</i> - Positionsbefehl für eine SPS in Perl umrechnen</li>
             <li><i>attr ROLLO ASC_CommandTemplate { myPerlFn("$name",$pos,$slatPos,"$cause")}</i> - eigene Perl-Funktion (z.B. in 99_myUtils.pm) aufrufen</li>
             </ul>
-            </li>
             <strong>Hinweis: ASC_CommandTemplate</strong> ist für seltene und spezielle Fälle gedacht. In der Regel ist es nicht erforderlich, dieses Attribut zu setzen!
             </li>
         </ul>
