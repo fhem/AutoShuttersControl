@@ -416,11 +416,11 @@ __END__
                 after the last manual operation in seconds. Defaults to 1200 (20 minutes).
             </li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforDayOpen"></a>
-            <li><strong>ASC_BlockingTime_beforDayOpen</strong> - Time in which no closing operation is made by
+            <li><strong>ASC_BlockingTime_beforeDayOpen</strong> - Time in which no closing operation is made by
                 <abbr>ASC</abbr> after opening at the morning in seconds. Defaults to 3600 (one hour).
             </li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforNightClose"></a>
-            <li><strong>ASC_BlockingTime_beforNightClose</strong> - Time in which no closing operation is made by
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeNightClose"></a>
+            <li><strong>ASC_BlockingTime_beforeNightClose</strong> - Time in which no closing operation is made by
                 <abbr>ASC</abbr> before closing at the evening in seconds. Defaults to 3600 (one hour).
             </li>
             <a id="AutoShuttersControl-attr-ASC_BrightnessSensor"></a>
@@ -639,6 +639,19 @@ __END__
             </li>
             <a id="AutoShuttersControl-attr-ASC_SlatPosCmd_SlatDevice"></a>
             <li><strong>ASC_SlatPosCmd_SlatDevice</strong> - If your shutter is "venetian blind" type (with turnable slats, lamellas or similar), this is the place to set additional command and/or device info to control the slat level. Examples: <i>attr ROLLO ASC_SlatPosCmd_SlatDevice slatPct</i> or <i>attr ROLLO ASC_SlatPosCmd_SlatDevice dim:ROLLOSLATDEVICE</i>. Providing a device name for the slat device is only needed in case it's different to the shutter itself. If attribute is set, additional positioning values for the respective slat levels can be set in attributes <i>ASC_Open_Pos</i>, <i>ASC_Closed_Pos</i>, <i>ASC_Ventilate_Pos</i>, <i>ASC_ComfortOpen_Pos</i>, <i>ASC_Shading_Pos</i> and <i>ASC_Sleep_Pos</i>.</li>
+            <a id="AutoShuttersControl-attr-ASC_CommandTemplate"></a>
+            <li><strong>ASC_CommandTemplate</strong> - <strong>FHEM or Perl command</strong> (Perl in braces as usual needs escaping semicolons etc.).<br>
+            This optional attribute will override the internally determined command to drive this shutter. Setting it, is only recommended in <strong>some rare and special cases,</strong>, in most cases there's <strong>no need</strong> to set this attribute!
+            The parameters <i>$name</i> (name of the shutter device), <i>$pos</i> (target position for the respective drive command), <i>$slatPos</i> (target position for the (turnable) lammellas in venetion blinds) and <i>$cause</i> (internal label for the cause of the driving command) will be replaced by the appropirate values. You may have to take care to avoid unneeded driving commands.
+            Examples:
+            <ul>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name $pos</i> - Address the position command directly to the main switch of the device</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name pct $pos</i> - Address the setter <i>pct</i> for positioning commands</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatPos 4.LEVEL $pos</i> - combined positioning command, e.g. appropriate for HM-IP-venetian blind type actors</li>
+            <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($pos+1024)).";set $name 0")}</i> - positioning command with Perl calculation and additional "execute" command, e.g. for an SPS type blind</li>
+            <li><i>attr ROLLO ASC_CommandTemplate { myPerlFn("$name",$pos,$slatPos,"$cause")}</i> - call own Perl function (e.g. from 99_myUtils.pm)</li>
+            </ul>
+            </li>
             <a id="AutoShuttersControl-attr-ASC_WindowRec_PosAfterDayClosed"></a>
             <li><strong>ASC_WindowRec_PosAfterDayClosed</strong> - open,lastManual / auf welche Position soll das Rollo nach dem schlie&szlig;en am Tag fahren. Open Position oder letzte gespeicherte manuelle Position (default: open)</li>
             <blockquote>
@@ -1028,10 +1041,10 @@ __END__
             <li><strong>ASC_AutoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber Horizont,a wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_afterManual"></a>
             <li><strong>ASC_BlockingTime_afterManual</strong> - wie viel Sekunden soll die Automatik nach einer manuellen Fahrt aussetzen. (default: 1200)</li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforDayOpen"></a>
-            <li><strong>ASC_BlockingTime_beforDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
-            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforNightClose"></a>
-            <li><strong>ASC_BlockingTime_beforNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeDayOpen"></a>
+            <li><strong>ASC_BlockingTime_beforeDayOpen</strong> - wie viel Sekunden vor dem morgendlichen &ouml;ffnen soll keine schlie&szlig;en Fahrt mehr stattfinden. (default: 3600)</li>
+            <a id="AutoShuttersControl-attr-ASC_BlockingTime_beforeNightClose"></a>
+            <li><strong>ASC_BlockingTime_beforeNightClose</strong> - wie viel Sekunden vor dem n&auml;chtlichen schlie&szlig;en soll keine &ouml;ffnen Fahrt mehr stattfinden. (default: 3600)</li>
             <a id="AutoShuttersControl-attr-ASC_BrightnessSensor"></a>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_Down"></a>
@@ -1157,6 +1170,22 @@ __END__
             <li><strong>ASC_WindowRec_subType</strong> - Typ des verwendeten Fensterkontaktes: twostate (optisch oder magnetisch) oder threestate (Drehgriffkontakt) (default: twostate)</li>
             <a id="AutoShuttersControl-attr-ASC_SlatPosCmd_SlatDevice"></a>
             <li><strong>ASC_SlatPosCmd_SlatDevice</strong> - Angaben zu einem Slat (Lamellen) CMD und - sofern diese Lamellen &uuml;ber ein anderes Device gesteuert werden - zum Slat Device. Beispiele: <i>attr ROLLO ASC_SlatPosCmd_SlatDevice slatPct</i> oder <i>attr ROLLO ASC_SlatPosCmd_SlatDevice dim:ROLLOSLATDEVICE</i>. Die Angabe des Devices ist nur erforderlich, wenn zur Steuerung der Lamellen ein anderes Device verwendet wird. Damit das ganze dann auch greift, muss in den 6 Positionsangaben ASC_Open_Pos, ASC_Closed_Pos, ASC_Ventilate_Pos, ASC_ComfortOpen_Pos, ASC_Shading_Pos und ASC_Sleep_Pos ein weiterer Parameter f&uuml;r die Lamellenstellung mit angegeben werden.</li>
+            <a id="AutoShuttersControl-attr-ASC_CommandTemplate"></a>
+            <a id="AutoShuttersControl-attr-ASC_CommandTemplate"></a>
+            <li><strong>ASC_CommandTemplate</strong> - <strong>FHEM-Kommando(s) oder Perl-Anweisung</strong> (in geschweiften Klammern unter Beachtung der üblichen Regeln für das escapen von Semicolons etc.).<br>
+            Dieses Attribut übersteuert das sonst intern ermittelte Fahrkommando und ist <strong>für seltene und spezielle Fälle</strong> gedacht. In der Regel ist es nicht erforderlich, dieses Attribut zu setzen!<br>
+            Die Variablen <i>$name</i> (der Name des Rollladen-Devices), <i>$pos</i> (die Zielposition des Fahrbefehls), <i>$slatPos</i> (die Zielposition des Fahrbefehls für eventuelle Lamellen) und <i>$cause</i> (die interne Benennung des Fahranlasses) werden durch die ermittelten Werte ersetzt, es muss selbst dafür gesorgt werden, dass eventuell unnötige Fahrbefehle aussortiert werden.
+            Beispiele:
+            <ul>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name $pos</i> - Positionsbefehl direkt an Gerät
+            setzen</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name pct $pos</i> - Positionsbefehl auf den setter <i>pct</i> absetzen</li>
+            <li><i>attr ROLLO ASC_CommandTemplate set $name datapoint 4.LEVEL_2 $slatPos 4.LEVEL $pos</i> - Positionsbefehl und Lamellen-Ansteuerung für HM-IP-Jalousieaktoren</li>
+            <li><i>attr ROLLO ASC_CommandTemplate { fhem("set $name ".($pos+1024)).";set $name 0")}</i> - Positionsbefehl für eine SPS in Perl umrechnen</li>
+            <li><i>attr ROLLO ASC_CommandTemplate { myPerlFn("$name",$pos,$slatPos,"$cause")}</i> - eigene Perl-Funktion (z.B. in 99_myUtils.pm) aufrufen</li>
+            </ul>
+            <strong>Hinweis: ASC_CommandTemplate</strong> ist für seltene und spezielle Fälle gedacht. In der Regel ist es nicht erforderlich, dieses Attribut zu setzen!
+            </li>
         </ul>
     </ul>
     </p>
@@ -1436,7 +1465,7 @@ __END__
   ],
   "release_status": "stable",
   "license": "GPL_2",
-  "version": "v0.10.15",
+  "version": "v0.10.19",
   "author": [
     "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],

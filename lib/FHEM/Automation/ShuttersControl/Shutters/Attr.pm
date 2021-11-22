@@ -2,7 +2,7 @@
 #
 # Developed with Kate
 #
-#  (c) 2018-2021 Copyright: Marko Oldenburg (leongaultier at gmail dot com)
+#  (c) 2018-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -514,6 +514,12 @@ sub getSelfDefenseAbsentDelay {
     my $self = shift;
 
     return AttrVal( $self->{shuttersDev}, 'ASC_Self_Defense_AbsentDelay', 300 );
+}
+
+sub getCommandTemplate {
+    my $self = shift;
+
+    return AttrVal( $self->{shuttersDev}, 'ASC_CommandTemplate', 'none' );
 }
 
 sub setWiggleValue {

@@ -184,9 +184,7 @@ BEGIN {
           delFromAttrList
           gettimeofday
           InternalTimer
-          RemoveInternalTimer
-          computeAlignTime
-          ReplaceEventMap)
+          RemoveInternalTimer)
     );
 
     #-- Export to main context with different name
@@ -229,8 +227,8 @@ our %userAttrList = (
     'ASC_LockOut:soft,hard,off'                  => '-',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
     'ASC_BlockingTime_afterManual'               => '-',
-    'ASC_BlockingTime_beforNightClose'           => '-',
-    'ASC_BlockingTime_beforDayOpen'              => '-',
+    'ASC_BlockingTime_beforeNightClose'           => '-',
+    'ASC_BlockingTime_beforeDayOpen'              => '-',
     'ASC_BrightnessSensor'                       => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
@@ -246,7 +244,7 @@ our %userAttrList = (
     'ASC_WindowRec'                                        => '-',
     'ASC_WindowRec_subType:twostate,threestate'            => '-',
     'ASC_WindowRec_PosAfterDayClosed:open,lastManual'      => '-',
-    'ASC_ShuttersPlace:window,terrace,awning'              => '-',
+    'ASC_ShuttersPlace:window,terrace,awning,EG_window'    => '-',
     'ASC_Ventilate_Pos:10,20,30,40,50,60,70,80,90,100'     => [ '', 70, 30 ],
     'ASC_ComfortOpen_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 20, 80 ],
     'ASC_GuestRoom:on,off'                                 => '-',
@@ -265,6 +263,7 @@ our %userAttrList = (
     'ASC_RainProtection:on,off'             => '-',
     'ASC_ExternalTrigger'                   => '-',
     'ASC_Adv:on,off'                        => '-',
+    'ASC_CommandTemplate'                   => '-',
     'ASC_SlatPosCmd_SlatDevice'             => '-',
 );
 
@@ -515,7 +514,7 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( grep m{^($posReading):\s\d{1,3}$}xms, @{$events} ) {
+    elsif ( grep m{^($posReading):\s\d{1,3}(\.\d{1,3})?$}xms, @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo ' 
               . $devname
@@ -776,11 +775,11 @@ sub WriteReadingsShuttersList {
         readingsBulkUpdate(
             $hash,
             'room_'
-              . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+              . ::makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             ReadingsVal(
                 $name,
                 'room_'
-                  . makeReadingName(
+                  . ::makeReadingName(
                     AttrVal( $shuttersDev, 'room', 'unsorted' )
                   ),
                 ''
@@ -792,7 +791,7 @@ sub WriteReadingsShuttersList {
             ReadingsVal(
                 $name,
                 'room_'
-                  . makeReadingName(
+                  . ::makeReadingName(
                     AttrVal( $shuttersDev, 'room', 'unsorted' )
                   ),
                 'none'
@@ -802,14 +801,14 @@ sub WriteReadingsShuttersList {
         readingsBulkUpdate(
             $hash,
             'room_'
-              . makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+              . ::makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             $shuttersDev
           )
           if (
             ReadingsVal(
                 $name,
                 'room_'
-                  . makeReadingName(
+                  . ::makeReadingName(
                     AttrVal( $shuttersDev, 'room', 'unsorted' )
                   ),
                 'none'
@@ -1227,15 +1226,15 @@ sub RenewSunRiseSetShuttersTimer {
                 1, 0 );
         }
 
-#         $attr{$shuttersDev}{ASC_Drive_Delay} =
-#           AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' )
-#           if ( AttrVal( $shuttersDev, 'ASC_Drive_Offset', 'none' ) ne 'none' );
-#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_Offset' );
-#
-#         $attr{$shuttersDev}{ASC_Drive_DelayStart} =
-#           AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' )
-#           if ( AttrVal( $shuttersDev, 'ASC_Drive_OffsetStart', 'none' ) ne 'none' );
-#         delFromDevAttrList( $shuttersDev, 'ASC_Drive_OffsetStart' );
+        $attr{$shuttersDev}{ASC_BlockingTime_beforeNightClose} =
+          AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' )
+          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' ) ne 'none' );
+        delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforNightClose' );
+
+        $attr{$shuttersDev}{ASC_BlockingTime_beforeDayOpen} =
+          AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' )
+          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' ) ne 'none' );
+        delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforDayOpen' );
 #
 #         $attr{$shuttersDev}{ASC_Shading_StateChange_SunnyCloudy} =
 #             AttrVal( $shuttersDev, 'ASC_Shading_StateChange_Sunny', 'none' ) . ':'
@@ -1769,8 +1768,9 @@ sub _SetCmdFn {
           . '. Grund der Fahrt: '
           . $shutters->getLastDrive );
 
-    my $driveCommand = $shutters->getPosSetCmd . ' ' . $posValue;
-    my $slatPos      = -1;
+    my $driveCommand    = $shutters->getPosSetCmd . ' ' . $posValue;
+    my $commandTemplate = $shutters->getCommandTemplate;
+    my $slatPos         = -1;
 
     if (   $shutters->getShadingPositionAssignment ne 'none'
         || $shutters->getOpenPositionAssignment ne 'none'
@@ -1822,32 +1822,48 @@ sub _SetCmdFn {
         }
     }
 
-    CommandSet( undef,
-            $shuttersDev
-          . ':FILTER='
-          . $shutters->getPosCmd . '!='
-          . $posValue . ' '
-          . $driveCommand );
+    if ( $commandTemplate ne 'none' ) {     # Patch von Beta-User Forum https://forum.fhem.de/index.php/topic,123659.0.html
+        # Nutzervariablen setzen
+        my %specials = (
+             '$name'        => $shuttersDev,
+             '$pos'       => $posValue,
+             '$slatPos'   => $slatPos,
+             '$cause'      => $shutters->getLastDrive
+        );
+        
+        $commandTemplate  = ::EvalSpecials($commandTemplate, %specials);
+        # CMD ausführen
+        ::AnalyzeCommandChain( $h, $commandTemplate );
+    }
+    else {
+        CommandSet( undef,
+                $shuttersDev
+            . ':FILTER='
+            . $shutters->getPosCmd . '!='
+            . $posValue . ' '
+            . $driveCommand );
 
-    InternalTimer(
-        gettimeofday() + 3,
-        sub() {
-            CommandSet(
-                undef,
-                (
-                      $shutters->getSlatDevice ne 'none'
-                    ? $shutters->getSlatDevice
-                    : $shuttersDev
-                  )
-                  . ' '
-                  . $shutters->getSlatPosCmd . ' '
-                  . $slatPos
-            );
-        },
-        $shuttersDev
-      )
-      if ( $slatPos > -1
-        && $shutters->getSlatPosCmd ne 'none' );
+        InternalTimer(
+            gettimeofday() + 3,
+            sub() {
+                CommandSet(
+                    undef,
+                    (
+                        $shutters->getSlatDevice ne 'none'
+                        ? $shutters->getSlatDevice
+                        : $shuttersDev
+                    )
+                    . ' '
+                    . $shutters->getSlatPosCmd . ' '
+                    . $slatPos
+                );
+            },
+            $shuttersDev
+        )
+        if ( $slatPos > -1
+            && $shutters->getSlatPosCmd ne 'none' );
+    
+    }
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
       if (!$shutters->getSelfDefenseAbsent

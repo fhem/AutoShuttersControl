@@ -324,6 +324,13 @@ sub EventProcessingWindowRec {
                              ->getShuttersPlace eq 'terrace'
                        )
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
+                || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                      $FHEM::Automation::ShuttersControl::shutters
+                         ->getOpenPos
+                    && $FHEM::Automation::ShuttersControl::shutters
+                         ->getDelayCmd ne 'none'
+                    && $FHEM::Automation::ShuttersControl::shutters
+                         ->getShuttersPlace eq 'terrace' )
             )
             && ( $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
                 eq 'on'
@@ -370,7 +377,12 @@ sub EventProcessingWindowRec {
                         || $FHEM::Automation::ShuttersControl::shutters
                         ->getStatus !=
                         $FHEM::Automation::ShuttersControl::shutters
-                        ->getLastManPos )
+                        ->getLastManPos
+                        || (   $FHEM::Automation::ShuttersControl::shutters
+                                 ->getDelayCmd ne 'none'
+                            && $FHEM::Automation::ShuttersControl::shutters
+                                 ->getShuttersPlace eq 'terrace' )
+                        )
                   )
                 {
                     if ( $FHEM::Automation::ShuttersControl::shutters
@@ -395,11 +407,17 @@ sub EventProcessingWindowRec {
                           ->setDriveCmd(
                             (
                                 $FHEM::Automation::ShuttersControl::shutters
-                                  ->getVentilatePosAfterDayClosed eq 'open'
+                                    ->getDelayCmd ne 'none'
+                                  && $FHEM::Automation::ShuttersControl::shutters
+                                    ->getShuttersPlace eq 'terrace'
                                 ? $FHEM::Automation::ShuttersControl::shutters
-                                  ->getOpenPos
+                                    ->getDelayCmd
+                                : ( $FHEM::Automation::ShuttersControl::shutters
+                                      ->getVentilatePosAfterDayClosed eq 'open'
+                                ? $FHEM::Automation::ShuttersControl::shutters
+                                    ->getOpenPos
                                 : $FHEM::Automation::ShuttersControl::shutters
-                                  ->getLastManPos
+                                    ->getLastManPos )
                             )
                           );
                     }
@@ -977,8 +995,10 @@ sub EventProcessingResidents {
                         || ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                             && $FHEM::Automation::ShuttersControl::shutters
                             ->getSelfDefenseMode eq 'gone'
-                            && $FHEM::Automation::ShuttersControl::shutters
-                            ->getShuttersPlace eq 'terrace'
+                            && ( $FHEM::Automation::ShuttersControl::shutters
+                                ->getShuttersPlace eq 'terrace'
+                              || $FHEM::Automation::ShuttersControl::shutters
+                                ->getShuttersPlace eq 'EG_window' )
                             && $FHEM::Automation::ShuttersControl::shutters
                             ->getSelfDefenseMode ne 'off' )
                     )
@@ -2440,7 +2460,7 @@ sub EventProcessingExternalTriggerDevice {
             'external trigger device inactive');
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerStatus(
-            1);
+            0);
         FHEM::Automation::ShuttersControl::ShuttersCommandSet(
             $hash,
             $shuttersDev,

@@ -107,6 +107,18 @@ sub RainProcessing {
             $FHEM::Automation::ShuttersControl::shutters
                 ->setRainProtectionStatus('unprotected');
         }
+        else {
+            if (  $FHEM::Automation::ShuttersControl::shutters->getStatus != $rainClosedPos
+              && ($val == 0 || $val < $triggerMin) )
+            {
+                $FHEM::Automation::ShuttersControl::shutters
+                  ->setRainProtectionStatus('unprotected');
+            }
+            elsif ($val > $triggerMax) {
+                $FHEM::Automation::ShuttersControl::shutters
+                  ->setRainProtectionStatus('protected');
+            }     
+        }
     }
 
     return;
@@ -121,11 +133,13 @@ sub _RainProtected {
 
     $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
             'rain protected');
-        $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
-            $FHEM::Automation::ShuttersControl::ascDev
-          ->getRainSensorShuttersClosedPos);
-        $FHEM::Automation::ShuttersControl::shutters
-            ->setRainProtectionStatus('protected');
+
+    $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
+        $FHEM::Automation::ShuttersControl::ascDev
+    ->getRainSensorShuttersClosedPos);
+
+    $FHEM::Automation::ShuttersControl::shutters
+        ->setRainProtectionStatus('protected');
 }
 
 sub _RainUnprotected {
@@ -156,10 +170,11 @@ sub _RainUnprotected {
                     ->getClosedPos
             )
         )
-    );
+    )
+    if (IsAfterShuttersTimeBlocking($shuttersDev));
 
-        $FHEM::Automation::ShuttersControl::shutters
-            ->setRainProtectionStatus('unprotected');
+    $FHEM::Automation::ShuttersControl::shutters
+        ->setRainProtectionStatus('unprotected');
 }
 
 
