@@ -161,13 +161,18 @@ sub _RainUnprotected {
         (
                 $FHEM::Automation::ShuttersControl::shutters->getIsDay
             ? $FHEM::Automation::ShuttersControl::shutters->getLastPos
-            : (
-                $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownStatus == 2
+            : ( $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
+                eq 'awning'
                 ? $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownPos
-                : $FHEM::Automation::ShuttersControl::shutters
-                    ->getClosedPos
+                    ->getOpenPos
+                : (
+                    $FHEM::Automation::ShuttersControl::shutters
+                        ->getPrivacyDownStatus == 2
+                    ? $FHEM::Automation::ShuttersControl::shutters
+                        ->getPrivacyDownPos
+                    : $FHEM::Automation::ShuttersControl::shutters
+                        ->getClosedPos
+                )
             )
         )
     )
