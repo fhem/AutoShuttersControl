@@ -528,7 +528,7 @@ sub EventProcessingWindowRec {
             if (
                 $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlComfort eq 'on'
-                and $FHEM::Automation::ShuttersControl::shutters
+                && $FHEM::Automation::ShuttersControl::shutters
                 ->getQueryShuttersPos(
                     $FHEM::Automation::ShuttersControl::shutters
                       ->getComfortOpenPos
@@ -608,8 +608,9 @@ sub EventProcessingRoommate {
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlMorning eq 'on'
                 || ( $getUp eq 'roommate'
-                  &&  $getRoommatesLastStatus ne 'absent'
-                  &&  $getRoommatesLastStatus ne 'gone' )
+                  &&  ( $getRoommatesLastStatus eq 'asleep'
+                    ||  $getRoommatesLastStatus ne 'awoken' )
+                   )
                )
             && IsAfterShuttersManualBlocking($shuttersDev)
           )
@@ -623,14 +624,14 @@ sub EventProcessingRoommate {
                         $getRoommatesLastStatus eq 'asleep'
                         && ( $FHEM::Automation::ShuttersControl::shutters
                             ->getModeUp eq 'always'
-                            or $FHEM::Automation::ShuttersControl::shutters
+                            || $FHEM::Automation::ShuttersControl::shutters
                             ->getModeUp eq $event )
                     )
                     || (
                         $getRoommatesLastStatus eq 'awoken'
                         && ( $FHEM::Automation::ShuttersControl::shutters
                             ->getModeUp eq 'always'
-                            or $FHEM::Automation::ShuttersControl::shutters
+                            || $FHEM::Automation::ShuttersControl::shutters
                             ->getModeUp eq $event )
                     )
                 )
