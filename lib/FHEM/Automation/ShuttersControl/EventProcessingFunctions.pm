@@ -588,15 +588,18 @@ sub EventProcessingRoommate {
 "AutoShuttersControl ($name) - EventProcessingRoommate: $shuttersDev und Events $events"
         );
 
-        my $getModeUp = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
-        my $getModeDown =
-          $FHEM::Automation::ShuttersControl::shutters->getModeDown;
-        my $getRoommatesStatus =
-          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
-        my $getRoommatesLastStatus =
-          $FHEM::Automation::ShuttersControl::shutters->getRoommatesLastStatus;
-        my $event    = $1;
-        my $posValue = $FHEM::Automation::ShuttersControl::shutters->getStatus;
+        
+        my $event                   = $1;
+        my $getModeUp               = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
+        my $getModeDown             = $FHEM::Automation::ShuttersControl::shutters->getModeDown;
+        my $getRoommatesStatus      = $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
+        my $getRoommatesLastStatus  = $FHEM::Automation::ShuttersControl::shutters->getRoommatesLastStatus;
+        my $getUp                   = $FHEM::Automation::ShuttersControl::shutters->getUp;
+        my $getDown                 = $FHEM::Automation::ShuttersControl::shutters->getDown;
+        my $getIsDay                = $FHEM::Automation::ShuttersControl::shutters->getIsDay;
+        
+        my $posValue                = $FHEM::Automation::ShuttersControl::shutters->getStatus;          # !!! ACHTUNG!!!
+        
 
         if (
             ( $event eq 'home' || $event eq 'awoken' )
@@ -604,8 +607,10 @@ sub EventProcessingRoommate {
                 || $getRoommatesStatus eq 'awoken' )
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlMorning eq 'on'
-                || $FHEM::Automation::ShuttersControl::shutters->getUp eq
-                'roommate' )
+                || ( $getUp eq 'roommate'
+                  &&  $getRoommatesLastStatus ne 'absent'
+                  &&  $getRoommatesLastStatus ne 'gone' )
+               )
             && IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
@@ -629,12 +634,10 @@ sub EventProcessingRoommate {
                             ->getModeUp eq $event )
                     )
                 )
-                && (   $FHEM::Automation::ShuttersControl::shutters->getIsDay
-                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq
-                    'roommate' )
+                && (   $getIsDay
+                    || $getUp eq 'roommate' )
                 && ( IsAfterShuttersTimeBlocking($shuttersDev)
-                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq
-                    'roommate' )
+                    || $getUp eq 'roommate' )
               )
             {
                 Log3( $name, 4,
@@ -675,7 +678,7 @@ sub EventProcessingRoommate {
               )
             {
                 if (
-                       $FHEM::Automation::ShuttersControl::shutters->getIsDay
+                       $getIsDay
                     && $FHEM::Automation::ShuttersControl::shutters
                     ->getIfInShading
                     && $FHEM::Automation::ShuttersControl::shutters->getStatus
@@ -695,11 +698,11 @@ sub EventProcessingRoommate {
                     ShadingProcessingDriveCommand( $hash, $shuttersDev, 1 );
                 }
                 elsif (
-                       !$FHEM::Automation::ShuttersControl::shutters->getIsDay
+                       !$getIsDay
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeDown eq 'home'
                         || $getModeDown eq 'always' )
-                    && $FHEM::Automation::ShuttersControl::shutters->getDown ne
+                    && $getDown ne
                     'roommate'
                   )
                 {
@@ -739,9 +742,8 @@ sub EventProcessingRoommate {
                 }
                 elsif (
                     (
-                        $FHEM::Automation::ShuttersControl::shutters->getIsDay
-                        || $FHEM::Automation::ShuttersControl::shutters->getUp
-                        eq 'roommate'
+                        $getIsDay
+                        || $getUp eq 'roommate'
                     )
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeUp eq 'home'
@@ -824,10 +826,10 @@ sub EventProcessingRoommate {
                 'absent'
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlEvening eq 'on'
-                || $FHEM::Automation::ShuttersControl::shutters->getDown eq
+                || $getDown eq
                 'roommate' )
             && ( IsAfterShuttersManualBlocking($shuttersDev)
-                || $FHEM::Automation::ShuttersControl::shutters->getDown eq
+                || $getDown eq
                 'roommate' )
           )
         {
@@ -858,8 +860,8 @@ sub EventProcessingRoommate {
         }
         elsif (
             $event eq 'absent'
-            && (  !$FHEM::Automation::ShuttersControl::shutters->getIsDay
-                || $FHEM::Automation::ShuttersControl::shutters->getDown eq
+            && (  !$getIsDay
+                || $getDown eq
                 'roommate'
                 || $FHEM::Automation::ShuttersControl::shutters->getShadingMode
                 eq 'absent'
@@ -874,16 +876,12 @@ sub EventProcessingRoommate {
             );
 
             if (
-                (
-                       $FHEM::Automation::ShuttersControl::shutters->getIsDay
-                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq
-                    'roommate'
-                )
+                   $getIsDay
                 && $FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && !$FHEM::Automation::ShuttersControl::shutters
-                ->getQueryShuttersPos(
-                    $FHEM::Automation::ShuttersControl::shutters->getShadingPos
-                )
+                  ->getQueryShuttersPos(
+                      $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+                  )
                 && $FHEM::Automation::ShuttersControl::shutters->getShadingMode
                 eq 'absent'
               )
@@ -902,8 +900,8 @@ sub EventProcessingRoommate {
             }
             elsif (
                 (
-                      !$FHEM::Automation::ShuttersControl::shutters->getIsDay
-                    || $FHEM::Automation::ShuttersControl::shutters->getDown eq
+                      !$getIsDay
+                    || $getDown eq
                     'roommate'
                 )
                 && $getModeDown eq 'absent'
@@ -922,7 +920,7 @@ sub EventProcessingRoommate {
                     $FHEM::Automation::ShuttersControl::shutters->getClosedPos
                 );
             }
-            elsif ($FHEM::Automation::ShuttersControl::shutters->getIsDay
+            elsif ($getIsDay
                 && $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
                 'absent'
                 && $getRoommatesStatus eq 'absent' )
