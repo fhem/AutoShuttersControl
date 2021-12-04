@@ -245,11 +245,11 @@ sub EventProcessingWindowRec {
     if ( $events =~
         m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms )
     {
-    
         return
-          if ( IsAfterShuttersManualBlocking($shuttersDev)
-            && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
-              ne 'terrace' );
+          if ( !IsAfterShuttersManualBlocking($shuttersDev)
+            && $FHEM::Automation::ShuttersControl::shutters->getLockOut
+              eq 'off' );
+
 
         my $match = $1;
 
