@@ -243,9 +243,14 @@ sub EventProcessingWindowRec {
       $FHEM::Automation::ShuttersControl::shutters->getWinDevReading;
 
     if ( $events =~
-        m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms
-        && IsAfterShuttersManualBlocking($shuttersDev) )
+        m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms )
     {
+    
+        return
+          if ( IsAfterShuttersManualBlocking($shuttersDev)
+            && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
+              ne 'terrace' );
+
         my $match = $1;
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
