@@ -1120,6 +1120,7 @@ sub EventProcessingResidents {
                 ->getRoommatesStatus eq 'none'
                 && (   $getModeDown eq 'home'
                     || $getModeDown eq 'always' )
+                && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlEvening eq 'on'
                 && $getResidentsLastStatus ne 'asleep'
                 && $getResidentsLastStatus ne 'awoken'
                 && IsAfterShuttersTimeBlocking($shuttersDev)
@@ -1267,6 +1268,7 @@ sub EventProcessingResidents {
                 ->getRoommatesStatus eq 'none'
                 && (   $getModeUp eq 'home'
                     || $getModeUp eq 'always' )
+                && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlMorning eq 'on'
                 && IsAfterShuttersTimeBlocking($shuttersDev)
                 && !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && !$FHEM::Automation::ShuttersControl::shutters
