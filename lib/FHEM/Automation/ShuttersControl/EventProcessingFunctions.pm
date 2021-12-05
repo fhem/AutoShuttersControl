@@ -289,13 +289,16 @@ sub EventProcessingWindowRec {
             && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
             eq 'terrace' );
         $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('on')
-          if ( $match =~ m{[Oo]pen|false}xms
+          if (
+               $match =~ m{[Oo]pen|false}xms
             && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
             eq 'terrace'
-            && $FHEM::Automation::ShuttersControl::shutters->getStatus ==
-            $FHEM::Automation::ShuttersControl::shutters->getOpenPos
-            && $FHEM::Automation::ShuttersControl::shutters->getStatus ==
-            $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos );
+            && ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                   $FHEM::Automation::ShuttersControl::shutters->getOpenPos
+                || $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
+            )
+          );
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'EventProcessingWindowRec: '
