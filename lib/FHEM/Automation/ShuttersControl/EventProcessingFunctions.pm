@@ -535,9 +535,11 @@ sub EventProcessingWindowRec {
             )
             && $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
             eq 'on'
-            && $FHEM::Automation::ShuttersControl::shutters
+            && ( $FHEM::Automation::ShuttersControl::shutters
             ->getQueryShuttersPos(
-                $FHEM::Automation::ShuttersControl::shutters->getVentilatePos
+                $FHEM::Automation::ShuttersControl::shutters->getVentilatePos)
+              || ( $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace eq 'terrace'
+                && $FHEM::Automation::ShuttersControl::shutters->getSubTyp eq 'twostate' )
             )
           )
         {
