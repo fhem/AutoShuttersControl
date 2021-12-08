@@ -301,7 +301,7 @@ sub EventProcessingWindowRec {
 
 
         return
-          if ( !IsAfterShuttersManualBlocking($shuttersDev);
+          if ( !IsAfterShuttersManualBlocking($shuttersDev) );
 
 
 
