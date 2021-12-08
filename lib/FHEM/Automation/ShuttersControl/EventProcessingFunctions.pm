@@ -260,8 +260,11 @@ sub EventProcessingWindowRec {
     {
         return
           if ( !IsAfterShuttersManualBlocking($shuttersDev)
-            && $FHEM::Automation::ShuttersControl::shutters->getLockOut eq
-            'off' );
+            && ( $FHEM::Automation::ShuttersControl::shutters->getLockOut eq
+            'off'
+              || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
+            ne 'terrace' )
+          );
 
         my $match = $1;
 
@@ -277,11 +280,7 @@ sub EventProcessingWindowRec {
 
         $FHEM::Automation::ShuttersControl::shutters->setShuttersDev(
             $shuttersDev);
-        my $homemode =
-          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
-        $homemode =
-          $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
-          if ( $homemode eq 'none' );
+        
 
         #### Hardware Lock der Rollläden
         $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('off')
@@ -299,6 +298,19 @@ sub EventProcessingWindowRec {
                 $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
             )
           );
+
+
+        return
+          if ( !IsAfterShuttersManualBlocking($shuttersDev);
+
+
+
+          
+        my $homemode =
+          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
+        $homemode =
+          $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
+          if ( $homemode eq 'none' );  
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'EventProcessingWindowRec: '
