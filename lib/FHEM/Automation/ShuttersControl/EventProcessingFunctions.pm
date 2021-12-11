@@ -54,18 +54,18 @@ use FHEM::Automation::ShuttersControl::Rainprotection qw (:ALL);
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
-                    EventProcessingPartyMode
-                    EventProcessingGeneral
-                    EventProcessingShutters
-                    EventProcessingAdvShuttersClose
+  EventProcessingPartyMode
+  EventProcessingGeneral
+  EventProcessingShutters
+  EventProcessingAdvShuttersClose
 );
 our %EXPORT_TAGS = (
     ALL => [
         qw(
-           EventProcessingPartyMode
-           EventProcessingGeneral
-           EventProcessingShutters
-           EventProcessingAdvShuttersClose
+          EventProcessingPartyMode
+          EventProcessingGeneral
+          EventProcessingShutters
+          EventProcessingAdvShuttersClose
           )
     ],
 );
@@ -75,12 +75,12 @@ use GPUtils qw(GP_Import);
 BEGIN {
     GP_Import(
         qw(
-           Log3
-           gettimeofday
-           computeAlignTime
-           CommandSet
-           ReadingsVal
-           RemoveInternalTimer
+          Log3
+          gettimeofday
+          computeAlignTime
+          CommandSet
+          ReadingsVal
+          RemoveInternalTimer
           )
     );
 }
@@ -94,8 +94,12 @@ sub EventProcessingGeneral {
 
     if ( defined($devname) && ($devname) )
     { # es wird lediglich der Devicename der Funktion mitgegeben wenn es sich nicht um global handelt daher hier die Unterscheidung
-        my $windReading = $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading // 'none';
-        my $rainReading = $FHEM::Automation::ShuttersControl::ascDev->getRainSensorReading // 'none';
+        my $windReading =
+          $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading
+          // 'none';
+        my $rainReading =
+          $FHEM::Automation::ShuttersControl::ascDev->getRainSensorReading
+          // 'none';
 
         while ( my ( $device, $deviceAttr ) =
             each %{ $hash->{monitoredDevs}{$devname} } )
@@ -122,13 +126,16 @@ sub EventProcessingGeneral {
             EventProcessingExternalTriggerDevice( $hash, $device, $events )
               if ( $deviceAttr eq 'ASC_ExternalTrigger' );
 
-            $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($device)
+            $FHEM::Automation::ShuttersControl::shutters->setShuttersDev(
+                $device)
               if ( $deviceAttr eq 'ASC_BrightnessSensor' );
 
             if (
                 $deviceAttr eq 'ASC_BrightnessSensor'
-                && (   $FHEM::Automation::ShuttersControl::shutters->getDown eq 'brightness'
-                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq 'brightness' )
+                && ( $FHEM::Automation::ShuttersControl::shutters->getDown eq
+                    'brightness'
+                    || $FHEM::Automation::ShuttersControl::shutters->getUp eq
+                    'brightness' )
               )
             {
                 EventProcessingBrightness( $hash, $device, $events );
@@ -147,7 +154,8 @@ sub EventProcessingGeneral {
              \s(.*)$}xms
           )
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
-            FHEM::Automation::ShuttersControl::AddNotifyDev( $hash, $3, $1, $2 ) if ( $3 ne 'none' );
+            FHEM::Automation::ShuttersControl::AddNotifyDev( $hash, $3, $1, $2 )
+              if ( $3 ne 'none' );
             Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
@@ -175,11 +183,13 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
-            FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer( $hash, $2 )
+            FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer(
+                $hash, $2 )
               if (
                 $3 ne 'ASC_Time_Up_WE_Holiday'
                 || (   $3 eq 'ASC_Time_Up_WE_Holiday'
-                    && $FHEM::Automation::ShuttersControl::ascDev->getSunriseTimeWeHoliday eq 'on' )
+                    && $FHEM::Automation::ShuttersControl::ascDev
+                    ->getSunriseTimeWeHoliday eq 'on' )
               );
         }
         elsif (
@@ -189,7 +199,8 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
-            FHEM::Automation::ShuttersControl::RenewSunRiseSetShuttersTimer($hash);
+            FHEM::Automation::ShuttersControl::RenewSunRiseSetShuttersTimer(
+                $hash);
         }
         elsif (
             $events =~ m{^(DELETEATTR|ATTR)
@@ -197,7 +208,8 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
-            $FHEM::Automation::ShuttersControl::shutters->deleteShadingStateChangeSunny;
+            $FHEM::Automation::ShuttersControl::shutters
+              ->deleteShadingStateChangeSunny;
         }
 
         if (
@@ -210,20 +222,21 @@ m{^(DELETEATTR|ATTR)         #global ATTR myASC ASC_tempSensor Cellar
                 (.*)?}xms
           )
         {
-#             ATTR RolloKinZimSteven_F1 ASC_Shading_Mode off
+            #             ATTR RolloKinZimSteven_F1 ASC_Shading_Mode off
             if ( $events =~ m{^ATTR\s(.*)\sASC_Shading_Mode\s(off)}xms ) {
                 my %funcHash = (
-                    hash            => $hash,
-                    shuttersdevice  => $1,
-                    value           => $2,
-                    attrEvent       => 1,
+                    hash           => $hash,
+                    shuttersdevice => $1,
+                    value          => $2,
+                    attrEvent      => 1,
                 );
 
-                FHEM::Automation::ShuttersControl::Shading::_CheckShuttersConditionsForShadingFn(\%funcHash);
+                FHEM::Automation::ShuttersControl::Shading::_CheckShuttersConditionsForShadingFn(
+                    \%funcHash );
             }
             else {
                 CommandSet( undef, $name . ' controlShading on' )
-                if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
+                  if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
             }
         }
     }
@@ -243,9 +256,16 @@ sub EventProcessingWindowRec {
       $FHEM::Automation::ShuttersControl::shutters->getWinDevReading;
 
     if ( $events =~
-        m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms
-        && IsAfterShuttersManualBlocking($shuttersDev) )
+        m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms )
     {
+        return
+          if ( !IsAfterShuttersManualBlocking($shuttersDev)
+            && ( $FHEM::Automation::ShuttersControl::shutters->getLockOut eq
+            'off'
+              || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
+            ne 'terrace' )
+          );
+
         my $match = $1;
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
@@ -260,11 +280,7 @@ sub EventProcessingWindowRec {
 
         $FHEM::Automation::ShuttersControl::shutters->setShuttersDev(
             $shuttersDev);
-        my $homemode =
-          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
-        $homemode =
-          $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
-          if ( $homemode eq 'none' );
+        
 
         #### Hardware Lock der Rollläden
         $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('off')
@@ -272,9 +288,29 @@ sub EventProcessingWindowRec {
             && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
             eq 'terrace' );
         $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('on')
-          if ( $match =~ m{[Oo]pen|false}xms
+          if (
+               $match =~ m{[Oo]pen|false}xms
             && $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
-            eq 'terrace' );
+            eq 'terrace'
+            && ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                   $FHEM::Automation::ShuttersControl::shutters->getOpenPos
+                || $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
+            )
+          );
+
+
+        return
+          if ( !IsAfterShuttersManualBlocking($shuttersDev) );
+
+
+
+          
+        my $homemode =
+          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
+        $homemode =
+          $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
+          if ( $homemode eq 'none' );  
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'EventProcessingWindowRec: '
@@ -283,12 +319,12 @@ sub EventProcessingWindowRec {
               . $homemode
               . ' QueryShuttersPosWinRecTilted:'
               . $FHEM::Automation::ShuttersControl::shutters
-                  ->getQueryShuttersPos(
+              ->getQueryShuttersPos(
                 $FHEM::Automation::ShuttersControl::shutters->getVentilatePos
               )
               . ' QueryShuttersPosWinRecComfort: '
               . $FHEM::Automation::ShuttersControl::shutters
-                  ->getQueryShuttersPos(
+              ->getQueryShuttersPos(
                 $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
               )
         );
@@ -301,41 +337,40 @@ sub EventProcessingWindowRec {
                 $FHEM::Automation::ShuttersControl::shutters->getVentilatePos
                 || $FHEM::Automation::ShuttersControl::shutters->getStatus ==
                 $FHEM::Automation::ShuttersControl::shutters->getComfortOpenPos
-                || (   $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
                        $FHEM::Automation::ShuttersControl::shutters->getOpenPos
-                    && $FHEM::Automation::ShuttersControl::shutters->getLastDrive
-                      eq 'ventilate - window open'
+                    && $FHEM::Automation::ShuttersControl::shutters
+                    ->getLastDrive eq 'ventilate - window open'
                     && $FHEM::Automation::ShuttersControl::shutters->getSubTyp
-                      eq 'twostate'
-                    && $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
-                      eq 'on' )
+                    eq 'twostate'
+                    && $FHEM::Automation::ShuttersControl::shutters
+                    ->getVentilateOpen eq 'on' )
                 || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
                     $FHEM::Automation::ShuttersControl::shutters
-                      ->getPrivacyDownPos
+                    ->getPrivacyDownPos
                     && $FHEM::Automation::ShuttersControl::shutters
-                         ->getPrivacyDownStatus != 2
+                    ->getPrivacyDownStatus != 2
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
-                || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
-                      $FHEM::Automation::ShuttersControl::shutters
-                         ->getOpenPos
-                    && (   $FHEM::Automation::ShuttersControl::shutters
-                             ->getLockOut ne 'off'
+                || (
+                    $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                    $FHEM::Automation::ShuttersControl::shutters->getOpenPos
+                    && ( $FHEM::Automation::ShuttersControl::shutters
+                        ->getLockOut ne 'off'
                         || $FHEM::Automation::ShuttersControl::shutters
-                             ->getShuttersPlace eq 'terrace'
-                       )
-                    && !$FHEM::Automation::ShuttersControl::shutters->getIsDay )
+                        ->getShuttersPlace eq 'terrace' )
+                    && !$FHEM::Automation::ShuttersControl::shutters->getIsDay
+                )
                 || ( $FHEM::Automation::ShuttersControl::shutters->getStatus ==
-                      $FHEM::Automation::ShuttersControl::shutters
-                         ->getOpenPos
+                       $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                     && $FHEM::Automation::ShuttersControl::shutters
-                         ->getDelayCmd ne 'none'
+                    ->getDelayCmd ne 'none'
                     && $FHEM::Automation::ShuttersControl::shutters
-                         ->getShuttersPlace eq 'terrace' )
+                    ->getShuttersPlace eq 'terrace' )
             )
             && ( $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
                 eq 'on'
                 || $FHEM::Automation::ShuttersControl::ascDev
-                     ->getAutoShuttersControlComfort eq 'on' )
+                ->getAutoShuttersControlComfort eq 'on' )
           )
         {
             FHEM::Automation::ShuttersControl::ASC_Debug(
@@ -371,18 +406,19 @@ sub EventProcessingWindowRec {
                 elsif (
                     !$FHEM::Automation::ShuttersControl::shutters
                     ->getIfInShading
-                    && ( $FHEM::Automation::ShuttersControl::shutters->getStatus
+                    && (
+                        $FHEM::Automation::ShuttersControl::shutters->getStatus
                         != $FHEM::Automation::ShuttersControl::shutters
                         ->getOpenPos
                         || $FHEM::Automation::ShuttersControl::shutters
                         ->getStatus !=
                         $FHEM::Automation::ShuttersControl::shutters
                         ->getLastManPos
-                        || (   $FHEM::Automation::ShuttersControl::shutters
-                                 ->getDelayCmd ne 'none'
+                        || ( $FHEM::Automation::ShuttersControl::shutters
+                            ->getDelayCmd ne 'none'
                             && $FHEM::Automation::ShuttersControl::shutters
-                                 ->getShuttersPlace eq 'terrace' )
-                        )
+                            ->getShuttersPlace eq 'terrace' )
+                    )
                   )
                 {
                     if ( $FHEM::Automation::ShuttersControl::shutters
@@ -407,40 +443,44 @@ sub EventProcessingWindowRec {
                           ->setDriveCmd(
                             (
                                 $FHEM::Automation::ShuttersControl::shutters
-                                    ->getDelayCmd ne 'none'
+                                  ->getDelayCmd ne 'none'
                                   && $FHEM::Automation::ShuttersControl::shutters
-                                    ->getShuttersPlace eq 'terrace'
+                                  ->getShuttersPlace eq 'terrace'
                                 ? $FHEM::Automation::ShuttersControl::shutters
-                                    ->getDelayCmd
-                                : ( $FHEM::Automation::ShuttersControl::shutters
+                                  ->getDelayCmd
+                                : (
+                                    $FHEM::Automation::ShuttersControl::shutters
                                       ->getVentilatePosAfterDayClosed eq 'open'
-                                ? $FHEM::Automation::ShuttersControl::shutters
-                                    ->getOpenPos
-                                : $FHEM::Automation::ShuttersControl::shutters
-                                    ->getLastManPos )
+                                    ? $FHEM::Automation::ShuttersControl::shutters
+                                      ->getOpenPos
+                                    : $FHEM::Automation::ShuttersControl::shutters
+                                      ->getLastManPos
+                                )
                             )
                           );
                     }
                 }
             }
             elsif (
-                   !$FHEM::Automation::ShuttersControl::shutters->getIsDay
-                && $FHEM::Automation::ShuttersControl::shutters->getModeDown eq 'roommate'
-                && ( $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus eq 'home'
-                  || $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus eq 'awoken' )
+                  !$FHEM::Automation::ShuttersControl::shutters->getIsDay
+                && $FHEM::Automation::ShuttersControl::shutters->getModeDown eq
+                'roommate'
+                && ( $FHEM::Automation::ShuttersControl::shutters
+                    ->getRoommatesStatus eq 'home'
+                    || $FHEM::Automation::ShuttersControl::shutters
+                    ->getRoommatesStatus eq 'awoken' )
               )
             {
-                $FHEM::Automation::ShuttersControl::shutters
-                          ->setDriveCmd(
-                            (
-                                $FHEM::Automation::ShuttersControl::shutters
-                                  ->getVentilatePosAfterDayClosed eq 'open'
-                                ? $FHEM::Automation::ShuttersControl::shutters
-                                  ->getOpenPos
-                                : $FHEM::Automation::ShuttersControl::shutters
-                                  ->getLastManPos
-                            )
-                          );
+                $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
+                    (
+                        $FHEM::Automation::ShuttersControl::shutters
+                          ->getVentilatePosAfterDayClosed eq 'open'
+                        ? $FHEM::Automation::ShuttersControl::shutters
+                          ->getOpenPos
+                        : $FHEM::Automation::ShuttersControl::shutters
+                          ->getLastManPos
+                    )
+                );
             }
             elsif (
                 $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
@@ -495,9 +535,11 @@ sub EventProcessingWindowRec {
             )
             && $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
             eq 'on'
-            && $FHEM::Automation::ShuttersControl::shutters
+            && ( $FHEM::Automation::ShuttersControl::shutters
             ->getQueryShuttersPos(
-                $FHEM::Automation::ShuttersControl::shutters->getVentilatePos
+                $FHEM::Automation::ShuttersControl::shutters->getVentilatePos)
+              || ( $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace eq 'terrace'
+                && $FHEM::Automation::ShuttersControl::shutters->getSubTyp eq 'twostate' )
             )
           )
         {
@@ -824,7 +866,7 @@ sub EventProcessingRoommate {
         elsif (
             ( $event eq 'gotosleep' || $event eq 'asleep' )
             && $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
-                'absent'
+            'absent'
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlEvening eq 'on'
                 || $getDown eq
@@ -974,6 +1016,7 @@ sub EventProcessingResidents {
                 && $FHEM::Automation::ShuttersControl::shutters
                 ->getSelfDefenseMode ne 'off'
                 || $getModeDown eq 'absent'
+
 #                     || $getModeDown eq 'always' )       Wird zu Testzwecken auskommentiert, siehe #90 Github
                 || ( $FHEM::Automation::ShuttersControl::shutters
                     ->getShadingMode eq 'absent'
@@ -991,15 +1034,17 @@ sub EventProcessingResidents {
                     && (
                         $FHEM::Automation::ShuttersControl::shutters
                         ->getSelfDefenseMode eq 'absent'
-                        || ( CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+                        || (
+                            CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                             && $FHEM::Automation::ShuttersControl::shutters
                             ->getSelfDefenseMode eq 'gone'
                             && ( $FHEM::Automation::ShuttersControl::shutters
                                 ->getShuttersPlace eq 'terrace'
-                              || $FHEM::Automation::ShuttersControl::shutters
+                                || $FHEM::Automation::ShuttersControl::shutters
                                 ->getShuttersPlace eq 'EG_window' )
                             && $FHEM::Automation::ShuttersControl::shutters
-                            ->getSelfDefenseMode ne 'off' )
+                            ->getSelfDefenseMode ne 'off'
+                        )
                     )
                   )
                 {
@@ -1050,11 +1095,14 @@ sub EventProcessingResidents {
                         $FHEM::Automation::ShuttersControl::shutters
                           ->getLastPos );
                 }
-                elsif ( $getModeDown eq 'absent'        # || $getModeDown eq 'always' )   Wird zu Testzwecken auskommentiert, siehe #90 Github
+                elsif (
+                    $getModeDown eq
+                    'absent' # || $getModeDown eq 'always' )   Wird zu Testzwecken auskommentiert, siehe #90 Github
                     && !$FHEM::Automation::ShuttersControl::shutters->getIsDay
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && $FHEM::Automation::ShuttersControl::shutters
-                    ->getRoommatesStatus eq 'none' )
+                    ->getRoommatesStatus eq 'none'
+                  )
                 {
                     $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                         'residents absent');
@@ -1114,7 +1162,8 @@ sub EventProcessingResidents {
                 ->getRoommatesStatus eq 'none'
                 && (   $getModeDown eq 'home'
                     || $getModeDown eq 'always' )
-                && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlEvening eq 'on'
+                && $FHEM::Automation::ShuttersControl::ascDev
+                ->getAutoShuttersControlEvening eq 'on'
                 && $getResidentsLastStatus ne 'asleep'
                 && $getResidentsLastStatus ne 'awoken'
                 && IsAfterShuttersTimeBlocking($shuttersDev)
@@ -1262,7 +1311,8 @@ sub EventProcessingResidents {
                 ->getRoommatesStatus eq 'none'
                 && (   $getModeUp eq 'home'
                     || $getModeUp eq 'always' )
-                && $FHEM::Automation::ShuttersControl::ascDev->getAutoShuttersControlMorning eq 'on'
+                && $FHEM::Automation::ShuttersControl::ascDev
+                ->getAutoShuttersControlMorning eq 'on'
                 && IsAfterShuttersTimeBlocking($shuttersDev)
                 && !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && !$FHEM::Automation::ShuttersControl::shutters
@@ -1381,8 +1431,9 @@ sub EventProcessingWind {
                           $FHEM::Automation::ShuttersControl::shutters->getIsDay
                         ? $FHEM::Automation::ShuttersControl::shutters
                           ->getLastPos
-                        : ( $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
-                            eq 'awning'
+                        : (
+                            $FHEM::Automation::ShuttersControl::shutters
+                              ->getShuttersPlace eq 'awning'
                             ? $FHEM::Automation::ShuttersControl::shutters
                               ->getOpenPos
                             : (
@@ -1793,7 +1844,8 @@ sub EventProcessingBrightness {
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
 
-                        FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer( $hash, $shuttersDev );
+                        FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer(
+                            $hash, $shuttersDev );
                     }
                     else {
                         $FHEM::Automation::ShuttersControl::shutters
@@ -1970,10 +2022,8 @@ sub EventProcessingBrightness {
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     $lastDrive);
 
-                if (
-                    $FHEM::Automation::ShuttersControl::shutters
-                    ->getPrivacyDownStatus != 2
-                  )
+                if ( $FHEM::Automation::ShuttersControl::shutters
+                    ->getPrivacyDownStatus != 2 )
                 {
                     $FHEM::Automation::ShuttersControl::shutters->setSunrise(0);
                     $FHEM::Automation::ShuttersControl::shutters->setSunset(1);
@@ -2163,17 +2213,17 @@ sub EventProcessingTwilightDevice {
                   . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
                   . ' RainProtection: '
                   . $FHEM::Automation::ShuttersControl::shutters
-                    ->getRainProtectionStatus
+                  ->getRainProtectionStatus
                   . ' WindProtection: '
                   . $FHEM::Automation::ShuttersControl::shutters
-                    ->getWindProtectionStatus );
+                  ->getWindProtectionStatus );
 
-            if (   $FHEM::Automation::ShuttersControl::ascDev
-                   ->getAutoShuttersControlShading eq 'on'
+            if ( $FHEM::Automation::ShuttersControl::ascDev
+                ->getAutoShuttersControlShading eq 'on'
                 && $FHEM::Automation::ShuttersControl::shutters
-                   ->getRainProtectionStatus eq 'unprotected'
+                ->getRainProtectionStatus eq 'unprotected'
                 && $FHEM::Automation::ShuttersControl::shutters
-                   ->getWindProtectionStatus eq 'unprotected' )
+                ->getWindProtectionStatus eq 'unprotected' )
             {
                 ShadingProcessing(
                     $hash,
@@ -2242,12 +2292,14 @@ sub EventProcessingPartyMode {
                     $shuttersDev,
                     (
                         CheckIfShuttersWindowRecOpen($shuttersDev) == 0
-                        ? ($FHEM::Automation::ShuttersControl::shutters
+                        ? (
+                            $FHEM::Automation::ShuttersControl::shutters
                               ->getSleepPos > 0
                             ? $FHEM::Automation::ShuttersControl::shutters
-                                ->getSleepPos
+                              ->getSleepPos
                             : $FHEM::Automation::ShuttersControl::shutters
-                                ->getClosedPos)
+                              ->getClosedPos
+                          )
                         : $FHEM::Automation::ShuttersControl::shutters
                           ->getVentilatePos
                     )
@@ -2255,7 +2307,7 @@ sub EventProcessingPartyMode {
             }
         }
         elsif (
-               $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne 'none'
+            $FHEM::Automation::ShuttersControl::shutters->getDelayCmd ne 'none'
             && $FHEM::Automation::ShuttersControl::shutters->getIsDay
             && IsAfterShuttersManualBlocking($shuttersDev) )
         {
@@ -2366,6 +2418,22 @@ sub EventProcessingShutters {
         else {
             $FHEM::Automation::ShuttersControl::shutters->setLastDriveReading;
             $FHEM::Automation::ShuttersControl::ascDev->setStateReading;
+
+            $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('on')
+              if (
+                (
+                    $FHEM::Automation::ShuttersControl::shutters->getStatus ==
+                    $FHEM::Automation::ShuttersControl::shutters
+                    ->getComfortOpenPos
+                    || ( $FHEM::Automation::ShuttersControl::shutters->getStatus
+                        == $FHEM::Automation::ShuttersControl::shutters
+                        ->getOpenPos
+                        && $FHEM::Automation::ShuttersControl::shutters
+                        ->getLastDrive eq 'ventilate - window open' )
+                )
+                && $FHEM::Automation::ShuttersControl::shutters
+                ->getShuttersPlace eq 'terrace'
+              );
 
             FHEM::Automation::ShuttersControl::ASC_Debug(
 'EventProcessingShutters: eine automatisierte Fahrt durch ASC wurde erkannt! Es werden nun die LastDriveReading und StateReading Werte gesetzt!'
@@ -2478,8 +2546,5 @@ sub EventProcessingExternalTriggerDevice {
 
     return;
 }
-
-
-
 
 1;

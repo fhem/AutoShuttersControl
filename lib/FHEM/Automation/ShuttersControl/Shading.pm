@@ -64,23 +64,6 @@ our %EXPORT_TAGS = (
     ],
 );
 
-use GPUtils qw(GP_Import);
-## Import der FHEM Funktionen
-BEGIN {
-    GP_Import(
-        qw(
-          Log3
-          gettimeofday
-          InternalTimer
-          ReadingsVal
-          readingsBeginUpdate
-          readingsBulkUpdate
-          readingsBulkUpdateIfChanged
-          readingsEndUpdate
-          defs
-          )
-    );
-}
 
 sub CheckASC_ConditionsForShadingFn {
     my $hash    = shift;
@@ -104,8 +87,8 @@ sub CheckASC_ConditionsForShadingFn {
             attrEvent       => 0,
         );
 
-        InternalTimer(
-            gettimeofday() + $count,
+        ::InternalTimer(
+            ::gettimeofday() + $count,
 'FHEM::Automation::ShuttersControl::Shading::_CheckShuttersConditionsForShadingFn',
             \%funcHash
         );
@@ -128,7 +111,7 @@ sub _CheckShuttersConditionsForShadingFn {
     my $value       = $funcHash->{value};
 
     $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
-    my $shuttersDevHash = $defs{$shuttersDev};
+    my $shuttersDevHash = $::defs{$shuttersDev};
     my $message         = '';
     my $errorMessage;
     my $warnMessage;
@@ -167,9 +150,9 @@ sub _CheckShuttersConditionsForShadingFn {
             ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device '
             . '<a href="'
             . '/fhem?detail='
-            . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+            . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
             . $::FW_CSRF . '">'
-            . ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+            . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
             . '</a>'
             : ''
         );
@@ -197,10 +180,10 @@ sub _CheckShuttersConditionsForShadingFn {
         && $infoMessage ne ''
         && $errorMessage eq '' );
 
-    readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdateIfChanged( $shuttersDevHash, 'ASC_ShadingMessage',
+    ::readingsBeginUpdate($shuttersDevHash);
+    ::readingsBulkUpdateIfChanged( $shuttersDevHash, 'ASC_ShadingMessage',
         '<html>' . $message . ' </html>' );
-    readingsEndUpdate( $shuttersDevHash, 1 );
+    ::readingsEndUpdate( $shuttersDevHash, 1 );
 }
 
 sub ShadingProcessing {
@@ -250,7 +233,7 @@ sub ShadingProcessing {
           . ', Ist es nach der Hälfte der Beschattungswartezeit: '
           . (
             (
-                int( gettimeofday() ) -
+                int( ::gettimeofday() ) -
                   $FHEM::Automation::ShuttersControl::shutters
                   ->getShadingStatusTimestamp
             ) < (
@@ -260,7 +243,7 @@ sub ShadingProcessing {
           )
     );
 
-    Log3( $name, 4,
+    ::Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Azimuth: "
@@ -279,18 +262,19 @@ sub ShadingProcessing {
         || $brightness == -1
         || $outTemp == -100
         || (
-            int( gettimeofday() ) -
+            int( ::gettimeofday() ) -
             $FHEM::Automation::ShuttersControl::shutters
             ->getShadingStatusTimestamp ) < (
             $FHEM::Automation::ShuttersControl::shutters
               ->getShadingWaitingPeriod / 2
             )
+        || $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerStatus
         || $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq 'off'
         || $FHEM::Automation::ShuttersControl::ascDev
               ->getAutoShuttersControlShading eq 'off'
       );
 
-    Log3( $name, 4,
+    ::Log3( $name, 4,
             "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
           . $shuttersDev
           . " Nach dem return" );
@@ -300,7 +284,7 @@ sub ShadingProcessing {
     my $getStatus = $FHEM::Automation::ShuttersControl::shutters->getStatus;
     my $oldShadingStatus =
       $FHEM::Automation::ShuttersControl::shutters->getShadingStatus;
-    my $shuttersDevHash = $defs{$shuttersDev};
+    my $shuttersDevHash = $::defs{$shuttersDev};
 
     my $getModeUp = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
     my $homemode  = $FHEM::Automation::ShuttersControl::shutters->getHomemode;
@@ -318,7 +302,7 @@ sub ShadingProcessing {
             || $azimuth > $azimuthRight
             || (   !$FHEM::Automation::ShuttersControl::shutters->getIsDay
                 && $FHEM::Automation::ShuttersControl::shutters->getSunriseUnixTime
-                  - ( int( gettimeofday() ) ) > 7200 )
+                  - ( int( ::gettimeofday() ) ) > 7200 )
         )
         && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus ne
         'out'
@@ -331,7 +315,7 @@ sub ShadingProcessing {
               . ' - Es ist Nacht oder die Aussentemperatur unterhalb der Shading Temperatur. Die Beschattung wird Zwangsbeendet'
         );
 
-        Log3( $name, 4,
+        ::Log3( $name, 4,
 "AutoShuttersControl ($name) - Shading Processing - Der Sonnenstand ist ausserhalb der Winkelangaben oder die Aussentemperatur unterhalb der Shading Temperatur "
         );
     }
@@ -358,7 +342,7 @@ sub ShadingProcessing {
                 $FHEM::Automation::ShuttersControl::shutters->getShadingStatus
                 eq 'out reserved'
                 and (
-                    int( gettimeofday() ) -
+                    int( ::gettimeofday() ) -
                     $FHEM::Automation::ShuttersControl::shutters
                     ->getShadingStatusTimestamp )
             ) > $FHEM::Automation::ShuttersControl::shutters
@@ -369,7 +353,7 @@ sub ShadingProcessing {
                 'out');
         }
 
-        Log3( $name, 4,
+        ::Log3( $name, 4,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
               . $shuttersDev
               . " In der Out Abfrage, Shadingwert: "
@@ -411,7 +395,7 @@ sub ShadingProcessing {
             $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq
             'in reserved'
             and (
-                int( gettimeofday() ) -
+                int( ::gettimeofday() ) -
                 $FHEM::Automation::ShuttersControl::shutters
                 ->getShadingStatusTimestamp ) > (
                 $FHEM::Automation::ShuttersControl::shutters
@@ -423,7 +407,7 @@ sub ShadingProcessing {
                 'in');
         }
 
-        Log3( $name, 4,
+        ::Log3( $name, 4,
                 "AutoShuttersControl ($name) - Shading Processing, Rollladen: "
               . $shuttersDev
               . " In der In Abfrage, Shadingwert: "
@@ -483,7 +467,7 @@ sub ShadingProcessing {
         && (
             (
                 (
-                    int( gettimeofday() ) -
+                    int( ::gettimeofday() ) -
                     $FHEM::Automation::ShuttersControl::shutters
                     ->getShadingStatusTimestamp
                 ) < 2
@@ -507,8 +491,8 @@ sub ShadingProcessing {
         )
       );
 
-    readingsBeginUpdate($shuttersDevHash);
-    readingsBulkUpdate(
+    ::readingsBeginUpdate($shuttersDevHash);
+    ::readingsBulkUpdate(
         $shuttersDevHash,
         'ASC_ShadingMessage',
         'INFO: current shading status is \''
@@ -531,7 +515,7 @@ sub ShadingProcessing {
           ) / 60
           . 'm'
     );
-    readingsEndUpdate( $shuttersDevHash, 1 );
+    ::readingsEndUpdate( $shuttersDevHash, 1 );
 
     return;
 }
@@ -639,7 +623,7 @@ sub ShadingProcessingDriveCommand {
               . ' zum beenden der Beschattung gefahren' );
     }
 
-    Log3( $name, 4,
+    ::Log3( $name, 4,
 "AutoShuttersControl ($name) - Shading Processing - In der Routine zum fahren der Rollläden, Shading Wert: "
           . $FHEM::Automation::ShuttersControl::shutters->getShadingStatus );
 
