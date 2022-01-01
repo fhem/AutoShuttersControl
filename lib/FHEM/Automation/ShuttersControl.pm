@@ -1,8 +1,8 @@
 ###############################################################################
 #
-# Developed with Kate
+# Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2021 Copyright: Marko Oldenburg (fhemsupport@cooltux.net)
+#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -76,7 +76,8 @@ use Date::Parse;
 use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
 
-use FHEM::Automation::ShuttersControl::Shading qw (CheckASC_ConditionsForShadingFn);
+use FHEM::Automation::ShuttersControl::Shading
+  qw (CheckASC_ConditionsForShadingFn);
 use FHEM::Automation::ShuttersControl::EventProcessingFunctions qw (:ALL);
 use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
 
@@ -86,27 +87,20 @@ eval {
     require JSON::MaybeXS;
     import JSON::MaybeXS qw( decode_json encode_json );
     1;
-};
-
-if ($@) {
-    $@ = undef;
+} or do {
 
     # try to use JSON wrapper
     #   for chance of better performance
     eval {
-
         # JSON preference order
         local $ENV{PERL_JSON_BACKEND} =
           'Cpanel::JSON::XS,JSON::XS,JSON::PP,JSON::backportPP'
-          if ( !defined( $ENV{PERL_JSON_BACKEND} ) );
+          unless ( defined( $ENV{PERL_JSON_BACKEND} ) );
 
         require JSON;
         import JSON qw( decode_json encode_json );
         1;
-    };
-
-    if ($@) {
-        $@ = undef;
+    } or do {
 
         # In rare cases, Cpanel::JSON::XS may
         #   be installed but JSON|JSON::MaybeXS not ...
@@ -114,10 +108,7 @@ if ($@) {
             require Cpanel::JSON::XS;
             import Cpanel::JSON::XS qw(decode_json encode_json);
             1;
-        };
-
-        if ($@) {
-            $@ = undef;
+        } or do {
 
             # In rare cases, JSON::XS may
             #   be installed but JSON not ...
@@ -125,10 +116,7 @@ if ($@) {
                 require JSON::XS;
                 import JSON::XS qw(decode_json encode_json);
                 1;
-            };
-
-            if ($@) {
-                $@ = undef;
+            } or do {
 
                 # Fallback to built-in JSON which SHOULD
                 #   be available since 5.014 ...
@@ -136,20 +124,17 @@ if ($@) {
                     require JSON::PP;
                     import JSON::PP qw(decode_json encode_json);
                     1;
-                };
-
-                if ($@) {
-                    $@ = undef;
+                } or do {
 
                     # Fallback to JSON::backportPP in really rare cases
                     require JSON::backportPP;
                     import JSON::backportPP qw(decode_json encode_json);
                     1;
-                }
-            }
-        }
-    }
-}
+                };
+            };
+        };
+    };
+};
 
 ## Import der FHEM Funktionen
 #-- Run before package compilation
@@ -227,8 +212,8 @@ our %userAttrList = (
     'ASC_LockOut:soft,hard,off'                  => '-',
     'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
     'ASC_BlockingTime_afterManual'               => '-',
-    'ASC_BlockingTime_beforeNightClose'           => '-',
-    'ASC_BlockingTime_beforeDayOpen'              => '-',
+    'ASC_BlockingTime_beforeNightClose'          => '-',
+    'ASC_BlockingTime_beforeDayOpen'             => '-',
     'ASC_BrightnessSensor'                       => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
@@ -366,7 +351,7 @@ sub Define {
         $name . ' devStateIcon { ShuttersControl_DevStateIcon($name) }' )
       if ( AttrVal( $name, 'devStateIcon', 'none' ) eq 'none' );
 
-    addToAttrList('ASC:0,1,2','AutoShuttersControl');
+    addToAttrList( 'ASC:0,1,2', 'AutoShuttersControl' );
 
     Log3( $name, 3, "AutoShuttersControl ($name) - defined" );
 
@@ -516,7 +501,7 @@ m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAs
     }
     elsif ( grep m{^($posReading):\s\d{1,3}(\.\d{1,3})?$}xms, @{$events} ) {
         ASC_Debug( 'Notify: '
-              . ' ASC_Pos_Reading Event vom Rollo ' 
+              . ' ASC_Pos_Reading Event vom Rollo '
               . $devname
               . ' wurde erkannt '
               . ' - RECEIVED EVENT: '
@@ -572,7 +557,7 @@ sub Set {
     elsif ( lc $cmd eq 'controlshading' ) {
         return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
 
-        my $response = CheckASC_ConditionsForShadingFn($hash,$aArg->[0]);
+        my $response = CheckASC_ConditionsForShadingFn( $hash, $aArg->[0] );
         readingsSingleUpdate(
             $hash, $cmd,
             (
@@ -703,6 +688,7 @@ sub ShuttersDeviceScan {
             $shutters->setAttrUpdateChanges( 'ASC_ShuttersPlace',
                 AttrVal( $shuttersDev, 'ASC_ShuttersPlace', 'none' ) );
             delFromDevAttrList( $shuttersDev, 'ASC_ShuttersPlace' );
+
 #             $shutters->setAttrUpdateChanges( 'ASC_Down',
 #                 AttrVal( $shuttersDev, 'ASC_Down', 'none' ) );
 #             delFromDevAttrList( $shuttersDev, 'ASC_Down' );
@@ -775,7 +761,8 @@ sub WriteReadingsShuttersList {
         readingsBulkUpdate(
             $hash,
             'room_'
-              . ::makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+              . ::makeReadingName(
+                AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             ReadingsVal(
                 $name,
                 'room_'
@@ -801,7 +788,8 @@ sub WriteReadingsShuttersList {
         readingsBulkUpdate(
             $hash,
             'room_'
-              . ::makeReadingName( AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
+              . ::makeReadingName(
+                AttrVal( $shuttersDev, 'room', 'unsorted' ) ),
             $shuttersDev
           )
           if (
@@ -1014,11 +1002,13 @@ sub ShuttersCommandSet {
                     || $shutters->getLockOut eq 'hard' )
                 && !$shutters->getQueryShuttersPos($posValue)
             )
-            || (   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
+            || (
+                   CheckIfShuttersWindowRecOpen($shuttersDev) == 2
                 && $shutters->getShuttersPlace eq 'terrace'
                 && !$shutters->getQueryShuttersPos($posValue)
                 && (   $shutters->getLockOut eq 'soft'
-                    || $shutters->getLockOut eq 'hard' ) )
+                    || $shutters->getLockOut eq 'hard' )
+            )
             || (   $shutters->getRainProtectionStatus eq 'protected'
                 || $shutters->getWindProtectionStatus eq 'protected' )
         )
@@ -1068,7 +1058,7 @@ sub CreateSunRiseSetShuttersTimer {
     return if ( IsDisabled($name) );
 
     my $shuttersSunriseUnixtime = ShuttersSunrise( $shuttersDev, 'unix' ) + 1;
-    my $shuttersSunsetUnixtime = ShuttersSunset( $shuttersDev, 'unix' ) + 1;
+    my $shuttersSunsetUnixtime  = ShuttersSunset( $shuttersDev, 'unix' ) + 1;
 
     $shutters->setSunriseUnixTime($shuttersSunriseUnixtime);
     $shutters->setSunsetUnixTime($shuttersSunsetUnixtime);
@@ -1200,8 +1190,11 @@ sub RenewSunRiseSetShuttersTimer {
             ) == 0
           )
         {
-            $attr{$shuttersDev}{'ASC_ShuttersPlace'} = $shutters->getAttrUpdateChanges('ASC_ShuttersPlace')
-              if ( $shutters->getAttrUpdateChanges('ASC_ShuttersPlace') ne 'none' );
+            $attr{$shuttersDev}{'ASC_ShuttersPlace'} =
+              $shutters->getAttrUpdateChanges('ASC_ShuttersPlace')
+              if ( $shutters->getAttrUpdateChanges('ASC_ShuttersPlace') ne
+                'none' );
+
 #             $attr{$shuttersDev}{'ASC_Down'} =
 #               $shutters->getAttrUpdateChanges('ASC_Down')
 #               if ( $shutters->getAttrUpdateChanges('ASC_Down') ne 'none' );
@@ -1228,12 +1221,16 @@ sub RenewSunRiseSetShuttersTimer {
 
         $attr{$shuttersDev}{ASC_BlockingTime_beforeNightClose} =
           AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' )
-          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' ) ne 'none' );
+          if (
+            AttrVal( $shuttersDev, 'ASC_BlockingTime_beforNightClose', 'none' )
+            ne 'none' );
         delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforNightClose' );
 
         $attr{$shuttersDev}{ASC_BlockingTime_beforeDayOpen} =
           AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' )
-          if ( AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' ) ne 'none' );
+          if (
+            AttrVal( $shuttersDev, 'ASC_BlockingTime_beforDayOpen', 'none' ) ne
+            'none' );
         delFromDevAttrList( $shuttersDev, 'ASC_BlockingTime_beforDayOpen' );
 #
 #         $attr{$shuttersDev}{ASC_Shading_StateChange_SunnyCloudy} =
@@ -1708,23 +1705,31 @@ sub _DetermineSlatCmd {
     my $value    = shift;
     my $posValue = shift;
 
-    return $posValue    == $shutters->getShadingPos
-            && $shutters->getShadingPositionAssignment      ne 'none'   ? $shutters->getShadingPositionAssignment
-        : $posValue     == $shutters->getVentilatePos
-            && $shutters->getVentilatePositionAssignment    ne 'none'   ? $shutters->getVentilatePositionAssignment
-        : $posValue     == $shutters->getOpenPos
-            && $shutters->getOpenPositionAssignment         ne 'none'   ? $shutters->getOpenPositionAssignment
-        : $posValue     == $shutters->getClosedPos
-            && $shutters->getClosedPositionAssignment       ne 'none'   ? $shutters->getClosedPositionAssignment
-        : $posValue     == $shutters->getSleepPos
-            && $shutters->getSleepPositionAssignment        ne 'none'   ? $shutters->getSleepPositionAssignment
-        : $posValue     == $shutters->getComfortOpenPos
-            && $shutters->getComfortOpenPositionAssignment  ne 'none'   ? $shutters->getComfortOpenPositionAssignment
-        : $posValue     == $shutters->getPrivacyUpPos
-            && $shutters->getPrivacyUpPositionAssignment    ne 'none'   ? $shutters->getPrivacyUpPositionAssignment
-        : $posValue     == $shutters->getPrivacyDownPos
-            && $shutters->getPrivacyDownPositionAssignment  ne 'none'   ? $shutters->getPrivacyDownPositionAssignment
-        : $value;
+    return $posValue == $shutters->getShadingPos
+      && $shutters->getShadingPositionAssignment ne 'none'
+      ? $shutters->getShadingPositionAssignment
+      : $posValue == $shutters->getVentilatePos
+      && $shutters->getVentilatePositionAssignment ne 'none'
+      ? $shutters->getVentilatePositionAssignment
+      : $posValue == $shutters->getOpenPos
+      && $shutters->getOpenPositionAssignment ne 'none'
+      ? $shutters->getOpenPositionAssignment
+      : $posValue == $shutters->getClosedPos
+      && $shutters->getClosedPositionAssignment ne 'none'
+      ? $shutters->getClosedPositionAssignment
+      : $posValue == $shutters->getSleepPos
+      && $shutters->getSleepPositionAssignment ne 'none'
+      ? $shutters->getSleepPositionAssignment
+      : $posValue == $shutters->getComfortOpenPos
+      && $shutters->getComfortOpenPositionAssignment ne 'none'
+      ? $shutters->getComfortOpenPositionAssignment
+      : $posValue == $shutters->getPrivacyUpPos
+      && $shutters->getPrivacyUpPositionAssignment ne 'none'
+      ? $shutters->getPrivacyUpPositionAssignment
+      : $posValue == $shutters->getPrivacyDownPos
+      && $shutters->getPrivacyDownPositionAssignment ne 'none'
+      ? $shutters->getPrivacyDownPositionAssignment
+      : $value;
 }
 
 sub _SetCmdFn {
@@ -1809,12 +1814,12 @@ sub _SetCmdFn {
             $driveCommand = _DetermineSlatCmd( $driveCommand, $posValue );
         }
         elsif ($shutters->getShadingPositionAssignment =~ m{\A\d{1,3}\z}xms
-            || $shutters->getOpenPositionAssignment =~ m{\A\d{1,3}\z}xms
-            || $shutters->getClosedPositionAssignment =~ m{\A\d{1,3}\z}xms
-            || $shutters->getPrivacyUpPositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getOpenPositionAssignment        =~ m{\A\d{1,3}\z}xms
+            || $shutters->getClosedPositionAssignment      =~ m{\A\d{1,3}\z}xms
+            || $shutters->getPrivacyUpPositionAssignment   =~ m{\A\d{1,3}\z}xms
             || $shutters->getPrivacyDownPositionAssignment =~ m{\A\d{1,3}\z}xms
-            || $shutters->getSleepPositionAssignment =~ m{\A\d{1,3}\z}xms
-            || $shutters->getVentilatePositionAssignment =~ m{\A\d{1,3}\z}xms
+            || $shutters->getSleepPositionAssignment       =~ m{\A\d{1,3}\z}xms
+            || $shutters->getVentilatePositionAssignment   =~ m{\A\d{1,3}\z}xms
             || $shutters->getComfortOpenPositionAssignment =~
             m{\A\d{1,3}\z}xms )
         {
@@ -1822,26 +1827,28 @@ sub _SetCmdFn {
         }
     }
 
-    if ( $commandTemplate ne 'none' ) {     # Patch von Beta-User Forum https://forum.fhem.de/index.php/topic,123659.0.html
-        # Nutzervariablen setzen
+    if ( $commandTemplate ne 'none' )
+    { # Patch von Beta-User Forum https://forum.fhem.de/index.php/topic,123659.0.html
+            # Nutzervariablen setzen
         my %specials = (
-             '$name'        => $shuttersDev,
-             '$pos'       => $posValue,
-             '$slatPos'   => $slatPos,
-             '$cause'      => $shutters->getLastDrive
+            '$name'    => $shuttersDev,
+            '$pos'     => $posValue,
+            '$slatPos' => $slatPos,
+            '$cause'   => $shutters->getLastDrive
         );
-        
-        $commandTemplate  = ::EvalSpecials($commandTemplate, %specials);
+
+        $commandTemplate = ::EvalSpecials( $commandTemplate, %specials );
+
         # CMD ausführen
         ::AnalyzeCommandChain( $h, $commandTemplate );
     }
     else {
         CommandSet( undef,
                 $shuttersDev
-            . ':FILTER='
-            . $shutters->getPosCmd . '!='
-            . $posValue . ' '
-            . $driveCommand );
+              . ':FILTER='
+              . $shutters->getPosCmd . '!='
+              . $posValue . ' '
+              . $driveCommand );
 
         InternalTimer(
             gettimeofday() + 3,
@@ -1849,20 +1856,20 @@ sub _SetCmdFn {
                 CommandSet(
                     undef,
                     (
-                        $shutters->getSlatDevice ne 'none'
+                          $shutters->getSlatDevice ne 'none'
                         ? $shutters->getSlatDevice
                         : $shuttersDev
-                    )
-                    . ' '
-                    . $shutters->getSlatPosCmd . ' '
-                    . $slatPos
+                      )
+                      . ' '
+                      . $shutters->getSlatPosCmd . ' '
+                      . $slatPos
                 );
             },
             $shuttersDev
-        )
-        if ( $slatPos > -1
+          )
+          if ( $slatPos > -1
             && $shutters->getSlatPosCmd ne 'none' );
-    
+
     }
 
     $shutters->setSelfDefenseAbsent( 0, 0 )
@@ -1888,7 +1895,7 @@ sub ASC_Debug {
     return
       if ( !AttrVal( $ascDev->getName, 'ASC_debug', 0 ) );
 
-    my $debugMsg = shift;
+    my $debugMsg       = shift;
     my $debugTimestamp = strftime( "%Y.%m.%d %T", localtime(time) );
 
     print(
