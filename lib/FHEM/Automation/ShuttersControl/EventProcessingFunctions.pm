@@ -700,7 +700,7 @@ sub EventProcessingRoommate {
                       $FHEM::Automation::ShuttersControl::shutters->getOpenPos;
                 }
 
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                     $shuttersDev, $posValue );
             }
             elsif (
@@ -770,7 +770,7 @@ sub EventProcessingRoommate {
                               ->getLastDrive . ' - ventilate mode' );
                     }
 
-                    FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                    FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                         $hash, $shuttersDev, $posValue );
                 }
                 elsif (
@@ -794,7 +794,7 @@ sub EventProcessingRoommate {
                     {
                         $FHEM::Automation::ShuttersControl::shutters
                           ->setLastDrive('shading in');
-                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -840,7 +840,7 @@ sub EventProcessingRoommate {
                             )
                           );
 
-                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -883,7 +883,7 @@ sub EventProcessingRoommate {
                       . ' - ventilate mode' );
             }
 
-            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                 $shuttersDev, $posValue );
         }
         elsif (
@@ -919,7 +919,7 @@ sub EventProcessingRoommate {
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'shading in');
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                     $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getShadingPos
@@ -935,7 +935,7 @@ sub EventProcessingRoommate {
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'roommate absent');
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                     $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getClosedPos
@@ -952,7 +952,7 @@ sub EventProcessingRoommate {
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'roommate absent');
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getOpenPos );
             }
@@ -1800,7 +1800,7 @@ sub EventProcessingBrightness {
                           ->setPrivacyUpStatus(2);
                         $FHEM::Automation::ShuttersControl::shutters
                           ->setLastDrive('brightness privacy day open');
-                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -1818,7 +1818,7 @@ sub EventProcessingBrightness {
                             'EventProcessingBrightness: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getShuttersDev
-                              . ' - Verarbeitung für Sunrise Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
+                              . ' - Verarbeitung für Sunrise Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
 
@@ -1837,7 +1837,7 @@ sub EventProcessingBrightness {
                           ->setPrivacyUpStatus(0)
                           if ( $FHEM::Automation::ShuttersControl::shutters
                             ->getPrivacyUpStatus == 2 );
-                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -1848,7 +1848,7 @@ sub EventProcessingBrightness {
                             'EventProcessingBrightness: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getShuttersDev
-                              . ' - Verarbeitung für Sunrise. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
+                              . ' - Verarbeitung für Sunrise. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
                     }
@@ -1953,7 +1953,7 @@ sub EventProcessingBrightness {
                         'EventProcessingBrightness: '
                           . $FHEM::Automation::ShuttersControl::shutters
                           ->getShuttersDev
-                          . ' - Verarbeitung für Sunset Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
+                          . ' - Verarbeitung für Sunset Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
                           . $FHEM::Automation::ShuttersControl::shutters
                           ->getLastDrive );
                 }
@@ -2009,14 +2009,14 @@ sub EventProcessingBrightness {
                     $FHEM::Automation::ShuttersControl::shutters->setSunset(1);
                 }
 
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                     $shuttersDev, $posValue );
 
                 FHEM::Automation::ShuttersControl::ASC_Debug(
                     'EventProcessingBrightness: '
                       . $FHEM::Automation::ShuttersControl::shutters
                       ->getShuttersDev
-                      . ' - Verarbeitung für Sunset. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Zielposition: '
+                      . ' - Verarbeitung für Sunset. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Zielposition: '
                       . $posValue
                       . ' Grund des fahrens: '
                       . $FHEM::Automation::ShuttersControl::shutters
@@ -2267,7 +2267,7 @@ sub EventProcessingPartyMode {
                 );
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'drive after party mode');
-                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
                     $hash,
                     $shuttersDev,
                     (
@@ -2293,7 +2293,7 @@ sub EventProcessingPartyMode {
         {
             $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                 'drive after party mode');
-            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                 $shuttersDev,
                 $FHEM::Automation::ShuttersControl::shutters->getDelayCmd );
         }
@@ -2317,7 +2317,7 @@ sub EventProcessingAdvShuttersClose {
         $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
             'adv delay close');
         $FHEM::Automation::ShuttersControl::shutters->setAdvDelay(1);
-        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
             $hash,
             $shuttersDev,
             (
@@ -2477,7 +2477,7 @@ sub EventProcessingExternalTriggerDevice {
             $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
             $FHEM::Automation::ShuttersControl::shutters
               ->setExternalTriggerStatus(1);
-            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                 $shuttersDev, $triggerPosActive2 );
         }
         else {
@@ -2486,7 +2486,7 @@ sub EventProcessingExternalTriggerDevice {
             $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
             $FHEM::Automation::ShuttersControl::shutters
               ->setExternalTriggerStatus(1);
-            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
+            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
                 $shuttersDev, $triggerPosActive );
         }
     }
@@ -2510,7 +2510,7 @@ sub EventProcessingExternalTriggerDevice {
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerStatus(
             0);
-        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
+        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
             $hash,
             $shuttersDev,
             (
