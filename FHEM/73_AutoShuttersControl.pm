@@ -49,25 +49,16 @@ use utf8;
 use FHEM::Meta;
 
 use FHEM::Automation::ShuttersControl;
-use GPUtils qw(GP_Import GP_Export);
+use GPUtils qw(GP_Import);
 
 ## Import der FHEM Funktionen
 #-- Run before package compilation
 BEGIN {
     # Import from main context
-    GP_Import(
-        qw(
-          readingFnAttributes
-          )
-    );
-
-    #-- Export to main context with different name
-    GP_Export(
-        qw(
-          Initialize
-          )
-    );
+    GP_Import(qw(readingFnAttributes));
 }
+
+sub ::AutoShuttersControl_Initialize { goto &Initialize }
 
 sub Initialize {
     my $hash = shift;
@@ -1465,7 +1456,7 @@ __END__
   ],
   "release_status": "stable",
   "license": "GPL_2",
-  "version": "v0.10.19",
+  "version": "v0.10.20",
   "author": [
     "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
@@ -1479,7 +1470,7 @@ __END__
     "runtime": {
       "requires": {
         "FHEM": 5.00918799,
-        "perl": 5.016, 
+        "perl": 5.023, 
         "Meta": 0,
         "JSON": 0,
         "Date::Parse": 0
