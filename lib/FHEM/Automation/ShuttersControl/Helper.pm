@@ -874,8 +874,8 @@ sub ShuttersSunset {
             if ( defined($oldFuncHash) && ref($oldFuncHash) eq 'HASH' ) {
                 $shuttersSunsetUnixtime += 86400
                   if ( $shuttersSunsetUnixtime <
-                    ( $oldFuncHash->{::sunsettime} + 180 )
-                    && $oldFuncHash->{::sunsettime} < ::gettimeofday() );
+                    ( $oldFuncHash->{sunsettime} + 180 )
+                    && $oldFuncHash->{sunsettime} < ::gettimeofday() );
             }
         }
         elsif (
