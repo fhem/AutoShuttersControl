@@ -685,17 +685,16 @@ sub ShuttersSunrise {
                         $shuttersSunriseUnixtime =
                           ( $shuttersSunriseUnixtime + 86400 )
                           if ( $shuttersSunriseUnixtime <
-                            ( $oldFuncHash->{::sunrisetime} + 180 )
-                            && $oldFuncHash->{::sunrisetime} <
-                            ::gettimeofday() );
+                            ( $oldFuncHash->{sunrisetime} + 180 )
+                            && $oldFuncHash->{sunrisetime} < ::gettimeofday() );
                     }
                 }
             }
             elsif ( defined($oldFuncHash) && ref($oldFuncHash) eq 'HASH' ) {
                 $shuttersSunriseUnixtime = ( $shuttersSunriseUnixtime + 86400 )
                   if ( $shuttersSunriseUnixtime <
-                    ( $oldFuncHash->{::sunrisetime} + 180 )
-                    && $oldFuncHash->{::sunrisetime} < ::gettimeofday() );
+                    ( $oldFuncHash->{sunrisetime} + 180 )
+                    && $oldFuncHash->{sunrisetime} < ::gettimeofday() );
             }
         }
         elsif ( $FHEM::Automation::ShuttersControl::shutters->getUp eq 'time' )
