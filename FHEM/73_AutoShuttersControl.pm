@@ -1,8 +1,8 @@
 ###############################################################################
 #
-# Developed with Kate
+# Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2021 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
+#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -81,7 +81,7 @@ sub Initialize {
     $hash->{UndefFn}    = \&FHEM::Automation::ShuttersControl::Undef;
     $hash->{DeleteFn}   = \&FHEM::Automation::ShuttersControl::Delete;
     $hash->{ShutdownFn} = \&FHEM::Automation::ShuttersControl::Shutdown;
-    $hash->{AttrList}   =
+    $hash->{AttrList} =
         'ASC_tempSensor '
       . 'ASC_brightnessDriveUpDown '
       . 'ASC_autoShuttersControlMorning:on,off '

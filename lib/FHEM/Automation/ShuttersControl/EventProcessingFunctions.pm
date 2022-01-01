@@ -1,8 +1,8 @@
 ###############################################################################
 #
-# Developed with Kate
+# Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net)
+#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -69,21 +69,6 @@ our %EXPORT_TAGS = (
           )
     ],
 );
-
-use GPUtils qw(GP_Import);
-## Import der FHEM Funktionen
-BEGIN {
-    GP_Import(
-        qw(
-          Log3
-          gettimeofday
-          computeAlignTime
-          CommandSet
-          ReadingsVal
-          RemoveInternalTimer
-          )
-    );
-}
 
 sub EventProcessingGeneral {
     my $hash    = shift;
@@ -156,7 +141,7 @@ sub EventProcessingGeneral {
         {     # wurde den Attributen unserer Rolläden ein Wert zugewiesen ?
             FHEM::Automation::ShuttersControl::AddNotifyDev( $hash, $3, $1, $2 )
               if ( $3 ne 'none' );
-            Log3( $name, 4,
+            ::Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: ATTR" );
         }
         elsif (
@@ -168,7 +153,7 @@ sub EventProcessingGeneral {
                 $}xms
           )
         {    # wurde das Attribut unserer Rolläden gelöscht ?
-            Log3( $name, 4,
+            ::Log3( $name, 4,
                 "AutoShuttersControl ($name) - EventProcessing: DELETEATTR" );
             FHEM::Automation::ShuttersControl::DeleteNotifyDev( $hash, $1, $2 );
         }
@@ -235,8 +220,9 @@ m{^(DELETEATTR|ATTR)         #global ATTR myASC ASC_tempSensor Cellar
                     \%funcHash );
             }
             else {
-                CommandSet( undef, $name . ' controlShading on' )
-                  if ( ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
+                ::CommandSet( undef, $name . ' controlShading on' )
+                  if (
+                    ::ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
             }
         }
     }
@@ -259,11 +245,12 @@ sub EventProcessingWindowRec {
         m{.*$reading:.*?([Oo]pen(?>ed)?|[Cc]losed?|tilt(?>ed)?|true|false)}xms )
     {
         return
-          if ( !IsAfterShuttersManualBlocking($shuttersDev)
+          if (
+            !IsAfterShuttersManualBlocking($shuttersDev)
             && ( $FHEM::Automation::ShuttersControl::shutters->getLockOut eq
-            'off'
-              || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
-            ne 'terrace' )
+                'off'
+                || $FHEM::Automation::ShuttersControl::shutters
+                ->getShuttersPlace ne 'terrace' )
           );
 
         my $match = $1;
@@ -280,7 +267,6 @@ sub EventProcessingWindowRec {
 
         $FHEM::Automation::ShuttersControl::shutters->setShuttersDev(
             $shuttersDev);
-        
 
         #### Hardware Lock der Rollläden
         $FHEM::Automation::ShuttersControl::shutters->setHardLockOut('off')
@@ -299,18 +285,14 @@ sub EventProcessingWindowRec {
             )
           );
 
-
         return
           if ( !IsAfterShuttersManualBlocking($shuttersDev) );
 
-
-
-          
         my $homemode =
           $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
         $homemode =
           $FHEM::Automation::ShuttersControl::ascDev->getResidentsStatus
-          if ( $homemode eq 'none' );  
+          if ( $homemode eq 'none' );
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'EventProcessingWindowRec: '
@@ -535,11 +517,16 @@ sub EventProcessingWindowRec {
             )
             && $FHEM::Automation::ShuttersControl::shutters->getVentilateOpen
             eq 'on'
-            && ( $FHEM::Automation::ShuttersControl::shutters
-            ->getQueryShuttersPos(
-                $FHEM::Automation::ShuttersControl::shutters->getVentilatePos)
-              || ( $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace eq 'terrace'
-                && $FHEM::Automation::ShuttersControl::shutters->getSubTyp eq 'twostate' )
+            && (
+                $FHEM::Automation::ShuttersControl::shutters
+                ->getQueryShuttersPos(
+                    $FHEM::Automation::ShuttersControl::shutters
+                      ->getVentilatePos
+                )
+                || ( $FHEM::Automation::ShuttersControl::shutters
+                    ->getShuttersPlace eq 'terrace'
+                    && $FHEM::Automation::ShuttersControl::shutters->getSubTyp
+                    eq 'twostate' )
             )
           )
         {
@@ -622,42 +609,46 @@ sub EventProcessingRoommate {
       $FHEM::Automation::ShuttersControl::shutters->getRoommatesReading;
 
     if ( $events =~ m{$reading:\s(absent|gotosleep|asleep|awoken|home)}xms ) {
-        Log3( $name, 4,
+        ::Log3( $name, 4,
             "AutoShuttersControl ($name) - EventProcessingRoommate: "
               . $FHEM::Automation::ShuttersControl::shutters
               ->getRoommatesReading );
-        Log3( $name, 4,
+        ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate: $shuttersDev und Events $events"
         );
 
-        
-        my $event                   = $1;
-        my $getModeUp               = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
-        my $getModeDown             = $FHEM::Automation::ShuttersControl::shutters->getModeDown;
-        my $getRoommatesStatus      = $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
-        my $getRoommatesLastStatus  = $FHEM::Automation::ShuttersControl::shutters->getRoommatesLastStatus;
-        my $getUp                   = $FHEM::Automation::ShuttersControl::shutters->getUp;
-        my $getDown                 = $FHEM::Automation::ShuttersControl::shutters->getDown;
-        my $getIsDay                = $FHEM::Automation::ShuttersControl::shutters->getIsDay;
-        
-        my $posValue                = $FHEM::Automation::ShuttersControl::shutters->getStatus;          # !!! ACHTUNG!!!
-        
+        my $event     = $1;
+        my $getModeUp = $FHEM::Automation::ShuttersControl::shutters->getModeUp;
+        my $getModeDown =
+          $FHEM::Automation::ShuttersControl::shutters->getModeDown;
+        my $getRoommatesStatus =
+          $FHEM::Automation::ShuttersControl::shutters->getRoommatesStatus;
+        my $getRoommatesLastStatus =
+          $FHEM::Automation::ShuttersControl::shutters->getRoommatesLastStatus;
+        my $getUp    = $FHEM::Automation::ShuttersControl::shutters->getUp;
+        my $getDown  = $FHEM::Automation::ShuttersControl::shutters->getDown;
+        my $getIsDay = $FHEM::Automation::ShuttersControl::shutters->getIsDay;
+
+        my $posValue = $FHEM::Automation::ShuttersControl::shutters
+          ->getStatus;    # !!! ACHTUNG!!!
 
         if (
             ( $event eq 'home' || $event eq 'awoken' )
             && (   $getRoommatesStatus eq 'home'
                 || $getRoommatesStatus eq 'awoken' )
-            && ( $FHEM::Automation::ShuttersControl::ascDev
+            && (
+                $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlMorning eq 'on'
-                || ( $getUp eq 'roommate'
-                  &&  ( $getRoommatesLastStatus eq 'asleep'
-                    ||  $getRoommatesLastStatus ne 'awoken' )
-                   )
-               )
+                || (
+                    $getUp eq 'roommate'
+                    && (   $getRoommatesLastStatus eq 'asleep'
+                        || $getRoommatesLastStatus ne 'awoken' )
+                )
+            )
             && IsAfterShuttersManualBlocking($shuttersDev)
           )
         {
-            Log3( $name, 4,
+            ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_1: $shuttersDev und Events $events"
             );
             if (
@@ -683,7 +674,7 @@ sub EventProcessingRoommate {
                     || $getUp eq 'roommate' )
               )
             {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate_2: $shuttersDev und Events $events"
                 );
 
@@ -709,7 +700,7 @@ sub EventProcessingRoommate {
                       $FHEM::Automation::ShuttersControl::shutters->getOpenPos;
                 }
 
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                     $shuttersDev, $posValue );
             }
             elsif (
@@ -745,8 +736,7 @@ sub EventProcessingRoommate {
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeDown eq 'home'
                         || $getModeDown eq 'always' )
-                    && $getDown ne
-                    'roommate'
+                    && $getDown ne 'roommate'
                   )
                 {
                     $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
@@ -780,14 +770,11 @@ sub EventProcessingRoommate {
                               ->getLastDrive . ' - ventilate mode' );
                     }
 
-                    FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                    FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                         $hash, $shuttersDev, $posValue );
                 }
                 elsif (
-                    (
-                        $getIsDay
-                        || $getUp eq 'roommate'
-                    )
+                       ( $getIsDay || $getUp eq 'roommate' )
                     && IsAfterShuttersTimeBlocking($shuttersDev)
                     && (   $getModeUp eq 'home'
                         || $getModeUp eq 'always' )
@@ -807,7 +794,7 @@ sub EventProcessingRoommate {
                     {
                         $FHEM::Automation::ShuttersControl::shutters
                           ->setLastDrive('shading in');
-                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -853,7 +840,7 @@ sub EventProcessingRoommate {
                             )
                           );
 
-                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -869,11 +856,9 @@ sub EventProcessingRoommate {
             'absent'
             && ( $FHEM::Automation::ShuttersControl::ascDev
                 ->getAutoShuttersControlEvening eq 'on'
-                || $getDown eq
-                'roommate' )
+                || $getDown eq 'roommate' )
             && ( IsAfterShuttersManualBlocking($shuttersDev)
-                || $getDown eq
-                'roommate' )
+                || $getDown eq 'roommate' )
           )
         {
             $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
@@ -898,14 +883,13 @@ sub EventProcessingRoommate {
                       . ' - ventilate mode' );
             }
 
-            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                 $shuttersDev, $posValue );
         }
         elsif (
             $event eq 'absent'
             && (  !$getIsDay
-                || $getDown eq
-                'roommate'
+                || $getDown eq 'roommate'
                 || $FHEM::Automation::ShuttersControl::shutters->getShadingMode
                 eq 'absent'
                 || $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
@@ -914,7 +898,7 @@ sub EventProcessingRoommate {
                 'absent' )
           )
         {
-            Log3( $name, 4,
+            ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate absent: $shuttersDev"
             );
 
@@ -922,42 +906,36 @@ sub EventProcessingRoommate {
                    $getIsDay
                 && $FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && !$FHEM::Automation::ShuttersControl::shutters
-                  ->getQueryShuttersPos(
-                      $FHEM::Automation::ShuttersControl::shutters->getShadingPos
-                  )
+                ->getQueryShuttersPos(
+                    $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+                )
                 && $FHEM::Automation::ShuttersControl::shutters->getShadingMode
                 eq 'absent'
               )
             {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate Shading: $shuttersDev"
                 );
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'shading in');
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                     $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getShadingPos
                 );
             }
-            elsif (
-                (
-                      !$getIsDay
-                    || $getDown eq
-                    'roommate'
-                )
+            elsif (( !$getIsDay || $getDown eq 'roommate' )
                 && $getModeDown eq 'absent'
-                && $getRoommatesStatus eq 'absent'
-              )
+                && $getRoommatesStatus eq 'absent' )
             {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate Down: $shuttersDev"
                 );
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'roommate absent');
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                     $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getClosedPos
@@ -968,18 +946,18 @@ sub EventProcessingRoommate {
                 'absent'
                 && $getRoommatesStatus eq 'absent' )
             {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate Up: $shuttersDev"
                 );
 
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'roommate absent');
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                     $shuttersDev,
                     $FHEM::Automation::ShuttersControl::shutters->getOpenPos );
             }
 
-            Log3( $name, 4,
+            ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingRoommate NICHTS: $shuttersDev"
             );
         }
@@ -1247,7 +1225,7 @@ sub EventProcessingResidents {
                 ->getSelfDefenseState
               )
             {
-                RemoveInternalTimer(
+                ::RemoveInternalTimer(
                     $FHEM::Automation::ShuttersControl::shutters
                       ->getSelfDefenseAbsentTimerhash )
                   if ( $getResidentsLastStatus eq 'absent'
@@ -1508,8 +1486,8 @@ sub EventProcessingBrightness {
                 (
                     (
                         (
-                            int( gettimeofday() / 86400 ) == int(
-                                computeAlignTime(
+                            int( ::gettimeofday() / 86400 ) == int(
+                                ::computeAlignTime(
                                     '24:00',
                                     $FHEM::Automation::ShuttersControl::shutters
                                       ->getTimeUpEarly
@@ -1530,8 +1508,8 @@ sub EventProcessingBrightness {
                             )
                         )
                         || (
-                            int( gettimeofday() / 86400 ) == int(
-                                computeAlignTime(
+                            int( ::gettimeofday() / 86400 ) == int(
+                                ::computeAlignTime(
                                     '24:00',
                                     $FHEM::Automation::ShuttersControl::shutters
                                       ->getTimeUpWeHoliday
@@ -1544,8 +1522,8 @@ sub EventProcessingBrightness {
                             ->getTimeUpWeHoliday ne '01:25'
                         )
                     )
-                    && int( gettimeofday() / 86400 ) == int(
-                        computeAlignTime(
+                    && int( ::gettimeofday() / 86400 ) == int(
+                        ::computeAlignTime(
                             '24:00',
                             $FHEM::Automation::ShuttersControl::shutters
                               ->getTimeUpLate
@@ -1554,8 +1532,8 @@ sub EventProcessingBrightness {
 
                     || (
                         (
-                            int( gettimeofday() / 86400 ) != int(
-                                computeAlignTime(
+                            int( ::gettimeofday() / 86400 ) != int(
+                                ::computeAlignTime(
                                     '24:00',
                                     $FHEM::Automation::ShuttersControl::shutters
                                       ->getTimeUpEarly
@@ -1576,8 +1554,8 @@ sub EventProcessingBrightness {
                             )
                         )
                         || (
-                            int( gettimeofday() / 86400 ) != int(
-                                computeAlignTime(
+                            int( ::gettimeofday() / 86400 ) != int(
+                                ::computeAlignTime(
                                     '24:00',
                                     $FHEM::Automation::ShuttersControl::shutters
                                       ->getTimeUpWeHoliday
@@ -1590,8 +1568,8 @@ sub EventProcessingBrightness {
                             ->getTimeUpWeHoliday ne '01:25'
                         )
                     )
-                    && int( gettimeofday() / 86400 ) != int(
-                        computeAlignTime(
+                    && int( ::gettimeofday() / 86400 ) != int(
+                        ::computeAlignTime(
                             '24:00',
                             $FHEM::Automation::ShuttersControl::shutters
                               ->getTimeUpLate
@@ -1600,15 +1578,15 @@ sub EventProcessingBrightness {
                 )
                 && (
                     (
-                        int( gettimeofday() / 86400 ) == int(
-                            computeAlignTime(
+                        int( ::gettimeofday() / 86400 ) == int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeDownEarly
                             ) / 86400
                         )
-                        && int( gettimeofday() / 86400 ) == int(
-                            computeAlignTime(
+                        && int( ::gettimeofday() / 86400 ) == int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeDownLate
@@ -1616,15 +1594,15 @@ sub EventProcessingBrightness {
                         )
                     )
                     || (
-                        int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime(
+                        int( ::gettimeofday() / 86400 ) != int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeDownEarly
                             ) / 86400
                         )
-                        && int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime(
+                        && int( ::gettimeofday() / 86400 ) != int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeDownLate
@@ -1697,8 +1675,8 @@ sub EventProcessingBrightness {
             (
                 (
                     (
-                        int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime(
+                        int( ::gettimeofday() / 86400 ) != int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeUpEarly
@@ -1718,8 +1696,8 @@ sub EventProcessingBrightness {
                         )
                     )
                     || (
-                        int( gettimeofday() / 86400 ) != int(
-                            computeAlignTime(
+                        int( ::gettimeofday() / 86400 ) != int(
+                            ::computeAlignTime(
                                 '24:00',
                                 $FHEM::Automation::ShuttersControl::shutters
                                   ->getTimeUpWeHoliday
@@ -1732,8 +1710,8 @@ sub EventProcessingBrightness {
                         ->getTimeUpWeHoliday ne '01:25'
                     )
                 )
-                && int( gettimeofday() / 86400 ) == int(
-                    computeAlignTime(
+                && int( ::gettimeofday() / 86400 ) == int(
+                    ::computeAlignTime(
                         '24:00',
                         $FHEM::Automation::ShuttersControl::shutters
                           ->getTimeUpLate
@@ -1763,7 +1741,7 @@ sub EventProcessingBrightness {
             )
           )
         {
-            Log3( $name, 4,
+            ::Log3( $name, 4,
 "AutoShuttersControl ($shuttersDev) - EventProcessingBrightness: Steuerung für Morgens"
             );
 
@@ -1822,7 +1800,7 @@ sub EventProcessingBrightness {
                           ->setPrivacyUpStatus(2);
                         $FHEM::Automation::ShuttersControl::shutters
                           ->setLastDrive('brightness privacy day open');
-                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -1840,7 +1818,7 @@ sub EventProcessingBrightness {
                             'EventProcessingBrightness: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getShuttersDev
-                              . ' - Verarbeitung für Sunrise Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
+                              . ' - Verarbeitung für Sunrise Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
 
@@ -1859,7 +1837,7 @@ sub EventProcessingBrightness {
                           ->setPrivacyUpStatus(0)
                           if ( $FHEM::Automation::ShuttersControl::shutters
                             ->getPrivacyUpStatus == 2 );
-                        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                             $hash,
                             $shuttersDev,
                             $FHEM::Automation::ShuttersControl::shutters
@@ -1870,7 +1848,7 @@ sub EventProcessingBrightness {
                             'EventProcessingBrightness: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getShuttersDev
-                              . ' - Verarbeitung für Sunrise. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
+                              . ' - Verarbeitung für Sunrise. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
                               . $FHEM::Automation::ShuttersControl::shutters
                               ->getLastDrive );
                     }
@@ -1888,13 +1866,15 @@ sub EventProcessingBrightness {
             }
         }
         elsif (
-            int( gettimeofday() / 86400 ) != int(
-                computeAlignTime( '24:00',
+            int( ::gettimeofday() / 86400 ) != int(
+                ::computeAlignTime(
+                    '24:00',
                     $FHEM::Automation::ShuttersControl::shutters
-                      ->getTimeDownEarly ) / 86400
+                      ->getTimeDownEarly
+                ) / 86400
             )
-            && int( gettimeofday() / 86400 ) == int(
-                computeAlignTime(
+            && int( ::gettimeofday() / 86400 ) == int(
+                ::computeAlignTime(
                     '24:00',
                     $FHEM::Automation::ShuttersControl::shutters
                       ->getTimeDownLate
@@ -1914,7 +1894,7 @@ sub EventProcessingBrightness {
             ->getAutoShuttersControlEvening eq 'on'
           )
         {
-            Log3( $name, 4,
+            ::Log3( $name, 4,
 "AutoShuttersControl ($shuttersDev) - EventProcessingBrightness: Steuerung für Abends"
             );
 
@@ -1973,7 +1953,7 @@ sub EventProcessingBrightness {
                         'EventProcessingBrightness: '
                           . $FHEM::Automation::ShuttersControl::shutters
                           ->getShuttersDev
-                          . ' - Verarbeitung für Sunset Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Grund des fahrens: '
+                          . ' - Verarbeitung für Sunset Privacy Down. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Grund des fahrens: '
                           . $FHEM::Automation::ShuttersControl::shutters
                           ->getLastDrive );
                 }
@@ -2029,14 +2009,14 @@ sub EventProcessingBrightness {
                     $FHEM::Automation::ShuttersControl::shutters->setSunset(1);
                 }
 
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                     $shuttersDev, $posValue );
 
                 FHEM::Automation::ShuttersControl::ASC_Debug(
                     'EventProcessingBrightness: '
                       . $FHEM::Automation::ShuttersControl::shutters
                       ->getShuttersDev
-                      . ' - Verarbeitung für Sunset. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::ShuttersCommandSet gesendet. Zielposition: '
+                      . ' - Verarbeitung für Sunset. Roommatestatus korrekt zum fahren. Fahrbefehl wird an die Funktion FnFHEM::Automation::ShuttersControl::Shutters::CommandSet gesendet. Zielposition: '
                       . $posValue
                       . ' Grund des fahrens: '
                       . $FHEM::Automation::ShuttersControl::shutters
@@ -2093,7 +2073,7 @@ sub EventProcessingShadingBrightness {
         : $FHEM::Automation::ShuttersControl::ascDev->getOutTemp
     );
 
-    Log3( $name, 4,
+    ::Log3( $name, 4,
         "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness"
     );
 
@@ -2104,7 +2084,7 @@ sub EventProcessingShadingBrightness {
     );
 
     if ( $events =~ m{$reading:\s(\d+(\.\d+)?)}xms ) {
-        Log3(
+        ::Log3(
             $name, 4,
 "AutoShuttersControl ($shuttersDev) - EventProcessingShadingBrightness
             Brightness: " . $1
@@ -2271,23 +2251,23 @@ sub EventProcessingPartyMode {
                 && $FHEM::Automation::ShuttersControl::shutters->getSubTyp eq
                 'threestate' )
             {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingPartyMode Fenster offen"
                 );
                 $FHEM::Automation::ShuttersControl::shutters->setDelayCmd(
                     $FHEM::Automation::ShuttersControl::shutters->getClosedPos
                 );
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingPartyMode - Spring in ShuttersCommandDelaySet"
                 );
             }
             else {
-                Log3( $name, 4,
+                ::Log3( $name, 4,
 "AutoShuttersControl ($name) - EventProcessingPartyMode Fenster nicht offen"
                 );
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'drive after party mode');
-                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                FHEM::Automation::ShuttersControl::Shutters::CommandSet(
                     $hash,
                     $shuttersDev,
                     (
@@ -2313,7 +2293,7 @@ sub EventProcessingPartyMode {
         {
             $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                 'drive after party mode');
-            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                 $shuttersDev,
                 $FHEM::Automation::ShuttersControl::shutters->getDelayCmd );
         }
@@ -2337,7 +2317,7 @@ sub EventProcessingAdvShuttersClose {
         $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
             'adv delay close');
         $FHEM::Automation::ShuttersControl::shutters->setAdvDelay(1);
-        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
             $hash,
             $shuttersDev,
             (
@@ -2373,8 +2353,8 @@ sub EventProcessingShutters {
                 'EventProcessingShutters: '
               . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
               . ' - Event vom Rollo erkannt. Es wird nun eine etwaige manuelle Fahrt ausgewertet.'
-              . ' Int von gettimeofday: '
-              . int( gettimeofday() )
+              . ' Int von ::gettimeofday: '
+              . int( ::gettimeofday() )
               . ' Last Position Timestamp: '
               . $FHEM::Automation::ShuttersControl::shutters
               ->getLastPosTimestamp
@@ -2388,13 +2368,13 @@ sub EventProcessingShutters {
 
         if (
             (
-                int( gettimeofday() ) -
+                int( ::gettimeofday() ) -
                 $FHEM::Automation::ShuttersControl::shutters
                 ->getLastPosTimestamp
             ) >
             $FHEM::Automation::ShuttersControl::shutters->getDriveUpMaxDuration
             && (
-                int( gettimeofday() ) -
+                int( ::gettimeofday() ) -
                 $FHEM::Automation::ShuttersControl::shutters
                 ->getLastManPosTimestamp ) >
             $FHEM::Automation::ShuttersControl::shutters->getDriveUpMaxDuration
@@ -2497,7 +2477,7 @@ sub EventProcessingExternalTriggerDevice {
             $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
             $FHEM::Automation::ShuttersControl::shutters
               ->setExternalTriggerStatus(1);
-            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                 $shuttersDev, $triggerPosActive2 );
         }
         else {
@@ -2506,7 +2486,7 @@ sub EventProcessingExternalTriggerDevice {
             $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
             $FHEM::Automation::ShuttersControl::shutters
               ->setExternalTriggerStatus(1);
-            FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+            FHEM::Automation::ShuttersControl::Shutters::CommandSet( $hash,
                 $shuttersDev, $triggerPosActive );
         }
     }
@@ -2530,7 +2510,7 @@ sub EventProcessingExternalTriggerDevice {
         $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
         $FHEM::Automation::ShuttersControl::shutters->setExternalTriggerStatus(
             0);
-        FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+        FHEM::Automation::ShuttersControl::Shutters::CommandSet(
             $hash,
             $shuttersDev,
             (

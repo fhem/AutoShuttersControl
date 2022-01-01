@@ -1,8 +1,8 @@
 ###############################################################################
 #
-# Developed with Kate
+# Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2021 Copyright: Marko Oldenburg (fhemdevelopment@cooltux.net)
+#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -64,10 +64,9 @@ our %EXPORT_TAGS = (
     ],
 );
 
-
 sub CheckASC_ConditionsForShadingFn {
-    my $hash    = shift;
-    my $value   = shift;
+    my $hash  = shift;
+    my $value = shift;
 
     my $error;
 
@@ -81,10 +80,10 @@ sub CheckASC_ConditionsForShadingFn {
     my $count = 1;
     for my $shuttersDev ( @{ $hash->{helper}{shuttersList} } ) {
         my %funcHash = (
-            hash            => $hash,
-            shuttersdevice  => $shuttersDev,
-            value           => $value,
-            attrEvent       => 0,
+            hash           => $hash,
+            shuttersdevice => $shuttersDev,
+            value          => $value,
+            attrEvent      => 0,
         );
 
         ::InternalTimer(
@@ -104,8 +103,8 @@ sub CheckASC_ConditionsForShadingFn {
 }
 
 sub _CheckShuttersConditionsForShadingFn {
-    my $funcHash    = shift;
-    
+    my $funcHash = shift;
+
     my $hash        = $funcHash->{hash};
     my $shuttersDev = $funcHash->{shuttersdevice};
     my $value       = $funcHash->{value};
@@ -116,67 +115,72 @@ sub _CheckShuttersConditionsForShadingFn {
     my $errorMessage;
     my $warnMessage;
     my $infoMessage;
-    
+
     if ( $value eq 'off' ) {
         $FHEM::Automation::ShuttersControl::shutters->setShadingStatus('out');
-        $infoMessage    .= ' shading was deactivated ' . ($funcHash->{attrEvent} ? 'in the device' : 'globally');
-        $errorMessage   .= '';
+        $infoMessage .= ' shading was deactivated '
+          . ( $funcHash->{attrEvent} ? 'in the device' : 'globally' );
+        $errorMessage .= '';
         ShadingProcessingDriveCommand( $hash, $shuttersDev );
     }
     else {
         $infoMessage .= (
-            $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
-            && $FHEM::Automation::ShuttersControl::ascDev
-            ->getAutoShuttersControlShading eq 'on'
-            && $FHEM::Automation::ShuttersControl::shutters->getOutTemp == -100
+            $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne
+              'off'
+              && $FHEM::Automation::ShuttersControl::ascDev
+              ->getAutoShuttersControlShading eq 'on'
+              && $FHEM::Automation::ShuttersControl::shutters->getOutTemp ==
+              -100
             ? ' shading active, global temp sensor is set, but shutters temperature sensor is not set'
             : ''
         );
 
         $warnMessage .= (
-            $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq 'off'
-            && $FHEM::Automation::ShuttersControl::ascDev
-            ->getAutoShuttersControlShading eq 'on'
+            $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq
+              'off'
+              && $FHEM::Automation::ShuttersControl::ascDev
+              ->getAutoShuttersControlShading eq 'on'
             ? ' global shading active but ASC_Shading_Mode attribut is not set or off'
             : ''
         );
 
         $errorMessage .= (
-            $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne 'off'
-            && $FHEM::Automation::ShuttersControl::ascDev
-            ->getAutoShuttersControlShading ne 'on'
-            && $FHEM::Automation::ShuttersControl::ascDev
-            ->getAutoShuttersControlShading ne 'off'
+            $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne
+              'off'
+              && $FHEM::Automation::ShuttersControl::ascDev
+              ->getAutoShuttersControlShading ne 'on'
+              && $FHEM::Automation::ShuttersControl::ascDev
+              ->getAutoShuttersControlShading ne 'off'
             ? ' ASC_Shading_Mode attribut is set but global shading has errors, look at ASC device '
-            . '<a href="'
-            . '/fhem?detail='
-            . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
-            . $::FW_CSRF . '">'
-            . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
-            . '</a>'
+              . '<a href="'
+              . '/fhem?detail='
+              . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+              . $::FW_CSRF . '">'
+              . ::ReadingsVal( $shuttersDev, 'associatedWith', 'ASC device' )
+              . '</a>'
             : ''
         );
 
         $errorMessage .= (
             $FHEM::Automation::ShuttersControl::shutters->getBrightness == -1
-            && $FHEM::Automation::ShuttersControl::shutters->getShadingMode ne
-            'off'
+              && $FHEM::Automation::ShuttersControl::shutters->getShadingMode
+              ne 'off'
             ? ' no brightness sensor found, please set ASC_BrightnessSensor attribut'
             : ''
         );
     }
 
     $message .= ' ERROR: ' . $errorMessage
-    if ( defined($errorMessage)
+      if ( defined($errorMessage)
         && $errorMessage ne '' );
 
     $message .= ' WARN: ' . $warnMessage
-    if ( defined($warnMessage)
+      if ( defined($warnMessage)
         && $warnMessage ne ''
         && $errorMessage eq '' );
 
     $message .= ' INFO: ' . $infoMessage
-    if ( defined($infoMessage)
+      if ( defined($infoMessage)
         && $infoMessage ne ''
         && $errorMessage eq '' );
 
@@ -184,6 +188,8 @@ sub _CheckShuttersConditionsForShadingFn {
     ::readingsBulkUpdateIfChanged( $shuttersDevHash, 'ASC_ShadingMessage',
         '<html>' . $message . ' </html>' );
     ::readingsEndUpdate( $shuttersDevHash, 1 );
+
+    return;
 }
 
 sub ShadingProcessing {
@@ -198,12 +204,18 @@ sub ShadingProcessing {
     $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
     my $brightness =
       $FHEM::Automation::ShuttersControl::shutters->getBrightnessAverage;
-      
-    $FHEM::Automation::ShuttersControl::shutters->setShadingBetweenTheTimeSuspend(
-          ( IsInTime($FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTime)
-        ? 0
-        : 1 )
-    );
+
+    $FHEM::Automation::ShuttersControl::shutters
+      ->setShadingBetweenTheTimeSuspend(
+        (
+            IsInTime(
+                $FHEM::Automation::ShuttersControl::shutters
+                  ->getShadingBetweenTheTime
+              )
+            ? 0
+            : 1
+        )
+      );
 
     FHEM::Automation::ShuttersControl::ASC_Debug(
             'ShadingProcessing: '
@@ -268,10 +280,11 @@ sub ShadingProcessing {
             $FHEM::Automation::ShuttersControl::shutters
               ->getShadingWaitingPeriod / 2
             )
-        || $FHEM::Automation::ShuttersControl::shutters->getExternalTriggerStatus
+        || $FHEM::Automation::ShuttersControl::shutters
+        ->getExternalTriggerStatus
         || $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq 'off'
         || $FHEM::Automation::ShuttersControl::ascDev
-              ->getAutoShuttersControlShading eq 'off'
+        ->getAutoShuttersControlShading eq 'off'
       );
 
     ::Log3( $name, 4,
@@ -300,9 +313,9 @@ sub ShadingProcessing {
             ->getShadingMinOutsideTemperature - 4
             || $azimuth < $azimuthLeft
             || $azimuth > $azimuthRight
-            || (   !$FHEM::Automation::ShuttersControl::shutters->getIsDay
-                && $FHEM::Automation::ShuttersControl::shutters->getSunriseUnixTime
-                  - ( int( ::gettimeofday() ) ) > 7200 )
+            || (  !$FHEM::Automation::ShuttersControl::shutters->getIsDay
+                && $FHEM::Automation::ShuttersControl::shutters
+                ->getSunriseUnixTime - ( int( ::gettimeofday() ) ) > 7200 )
         )
         && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus ne
         'out'
@@ -452,16 +465,12 @@ sub ShadingProcessing {
             || $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq
             $homemode )
         && (
-            $getModeUp eq 'always'
-            || $getModeUp eq
-            $homemode
+               $getModeUp eq 'always'
+            || $getModeUp eq $homemode
             || $getModeUp eq 'off'
-            || $getModeUp eq
-            'absent'
-            || $getModeUp eq
-            'gone'
-            || ( $getModeUp eq
-                'home'
+            || $getModeUp eq 'absent'
+            || $getModeUp eq 'gone'
+            || (   $getModeUp eq 'home'
                 && $homemode ne 'asleep' )
         )
         && (
@@ -481,11 +490,11 @@ sub ShadingProcessing {
                 )
                 && $FHEM::Automation::ShuttersControl::shutters->getIfInShading
             )
-            || (   !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
+            || (  !$FHEM::Automation::ShuttersControl::shutters->getIfInShading
                 && $FHEM::Automation::ShuttersControl::shutters->getStatus ==
-                $FHEM::Automation::ShuttersControl::shutters->getShadingPos
-            )
-            || (   !$FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTimeSuspend
+                $FHEM::Automation::ShuttersControl::shutters->getShadingPos )
+            || ( !$FHEM::Automation::ShuttersControl::shutters
+                ->getShadingBetweenTheTimeSuspend
                 && $FHEM::Automation::ShuttersControl::shutters->getStatus !=
                 $FHEM::Automation::ShuttersControl::shutters->getShadingPos )
         )
@@ -535,19 +544,28 @@ sub ShadingProcessingDriveCommand {
     $FHEM::Automation::ShuttersControl::shutters->setShadingStatus(
         $FHEM::Automation::ShuttersControl::shutters->getShadingStatus );
 
-    if (   IsInTime($FHEM::Automation::ShuttersControl::shutters->getShadingBetweenTheTime)
-        && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq 'in'
+    if (
+        IsInTime(
+            $FHEM::Automation::ShuttersControl::shutters
+              ->getShadingBetweenTheTime
+        )
+        && $FHEM::Automation::ShuttersControl::shutters->getShadingStatus eq
+        'in'
         && $getShadingPos != $getStatus
-        && ( $getStatus != $FHEM::Automation::ShuttersControl::shutters->getClosedPos
-          || ( $getStatus == $FHEM::Automation::ShuttersControl::shutters->getClosedPos
-            && $marker
-            )
-          )
-        && ( $getStatus != $FHEM::Automation::ShuttersControl::shutters->getSleepPos
-          || ( $getStatus == $FHEM::Automation::ShuttersControl::shutters->getSleepPos
-            && $marker
-            )
-          )
+        && (
+            $getStatus !=
+            $FHEM::Automation::ShuttersControl::shutters->getClosedPos
+            || ( $getStatus ==
+                   $FHEM::Automation::ShuttersControl::shutters->getClosedPos
+                && $marker )
+        )
+        && (
+            $getStatus !=
+            $FHEM::Automation::ShuttersControl::shutters->getSleepPos
+            || ( $getStatus ==
+                   $FHEM::Automation::ShuttersControl::shutters->getSleepPos
+                && $marker )
+        )
         && (
             FHEM::Automation::ShuttersControl::CheckIfShuttersWindowRecOpen(
                 $shuttersDev) != 2
@@ -586,10 +604,10 @@ sub ShadingProcessingDriveCommand {
             (
                 (
                     $getShadingPos ==
-                         $FHEM::Automation::ShuttersControl::shutters->getLastPos
+                      $FHEM::Automation::ShuttersControl::shutters->getLastPos
                       || $getShadingPos ==
-                         $FHEM::Automation::ShuttersControl::shutters
-                         ->getShadingLastPos
+                      $FHEM::Automation::ShuttersControl::shutters
+                      ->getShadingLastPos
                 )
                 ? $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 : (
@@ -610,8 +628,10 @@ sub ShadingProcessingDriveCommand {
                     : $FHEM::Automation::ShuttersControl::shutters->getOpenPos
                 )
             )
-        ) if (    $FHEM::Automation::ShuttersControl::shutters->getIsDay
-               || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace eq 'awning' );
+          )
+          if ( $FHEM::Automation::ShuttersControl::shutters->getIsDay
+            || $FHEM::Automation::ShuttersControl::shutters->getShuttersPlace
+            eq 'awning' );
 
         FHEM::Automation::ShuttersControl::ASC_Debug(
                 'ShadingProcessingDriveCommand: '
