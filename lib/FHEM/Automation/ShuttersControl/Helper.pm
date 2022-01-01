@@ -50,7 +50,7 @@ our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
   PositionValueWindowRec
   AutoSearchTwilightDev
-  Get::AttrValues
+  GetAttrValues
   CheckIfShuttersWindowRecOpen
   ExtractNotifyDevFromEvent
   ShuttersSunrise
@@ -69,7 +69,7 @@ our %EXPORT_TAGS = (
         qw(
           PositionValueWindowRec
           AutoSearchTwilightDev
-          Get::AttrValues
+          GetAttrValues
           CheckIfShuttersWindowRecOpen
           ExtractNotifyDevFromEvent
           ShuttersSunrise
@@ -153,7 +153,7 @@ sub AutoSearchTwilightDev {
     return;
 }
 
-sub Get::AttrValues {
+sub GetAttrValues {
     my $dev      = shift;
     my $attribut = shift;
     my $default  = shift;

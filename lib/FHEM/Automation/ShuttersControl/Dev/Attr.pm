@@ -76,7 +76,7 @@ sub getBrightnessMaxVal {
     $self->{ASC_brightness}->{LASTGETTIME} = int( ::gettimeofday() );
 
     my ( $triggermax, $triggermin ) =
-      FHEM::Automation::ShuttersControl::Helper::Get::AttrValues( $name,
+      FHEM::Automation::ShuttersControl::Helper::GetAttrValues( $name,
         'ASC_brightnessDriveUpDown', '800:500' );
 
     ## erwartetes Ergebnis
@@ -178,7 +178,7 @@ sub _getTempSensor {
         && ( ::gettimeofday() - $self->{ASC_tempSensor}->{LASTGETTIME} ) < 2 );
     $self->{ASC_tempSensor}->{LASTGETTIME} = int( ::gettimeofday() );
     my ( $device, $reading ) =
-      FHEM::Automation::ShuttersControl::Helper::Get::AttrValues( $name,
+      FHEM::Automation::ShuttersControl::Helper::GetAttrValues( $name,
         'ASC_tempSensor', 'none' );
 
     ## erwartetes Ergebnis
@@ -213,7 +213,7 @@ sub _getResidentsDev {
         2 );
     $self->{ASC_residentsDev}->{LASTGETTIME} = int( ::gettimeofday() );
     my ( $device, $reading ) =
-      FHEM::Automation::ShuttersControl::Helper::Get::AttrValues( $name,
+      FHEM::Automation::ShuttersControl::Helper::GetAttrValues( $name,
         'ASC_residentsDev', 'none' );
 
     $self->{ASC_residentsDev}->{device} = $device;
@@ -246,7 +246,7 @@ sub _getRainSensor {
         && ( ::gettimeofday() - $self->{ASC_rainSensor}->{LASTGETTIME} ) < 2 );
     $self->{ASC_rainSensor}->{LASTGETTIME} = int( ::gettimeofday() );
     my ( $device, $reading, $max, $hyst, $pos, $wait ) =
-      FHEM::Automation::ShuttersControl::Helper::Get::AttrValues( $name,
+      FHEM::Automation::ShuttersControl::Helper::GetAttrValues( $name,
         'ASC_rainSensor', 'none' );
 
     ## erwartetes Ergebnis
@@ -349,7 +349,7 @@ sub _getWindSensor {
         && ( ::gettimeofday() - $self->{ASC_windSensor}->{LASTGETTIME} ) < 2 );
     $self->{ASC_windSensor}->{LASTGETTIME} = int( ::gettimeofday() );
     my ( $device, $reading ) =
-      FHEM::Automation::ShuttersControl::Helper::Get::AttrValues( $name,
+      FHEM::Automation::ShuttersControl::Helper::GetAttrValues( $name,
         'ASC_windSensor', 'none' );
 
     return $device if ( $device eq 'none' );
