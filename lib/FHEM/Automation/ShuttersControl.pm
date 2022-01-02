@@ -402,15 +402,12 @@ sub Notify {
 
     if (
         (
-            grep { /^DEFINED.$name$/ },
+            grep { /^DEFINED.$name$/ }
             @{$events} && $devname eq 'global' && $::init_done
         )
-        || (
-            grep { /^INITIALIZED$/ },
-            @{$events} or grep { /^REREADCFG$/ },
-            @{$events} or grep { /^MODIFIED.$name$/ },
-            @{$events}
-        )
+        || (   grep { /^INITIALIZED$/ } @{$events}
+            or grep { /^REREADCFG$/ } @{$events}
+            or grep { /^MODIFIED.$name$/ } @{$events} )
         && $devname eq 'global'
       )
     {
@@ -452,7 +449,7 @@ sub Notify {
     my $posReading = $shutters->getPosCmd;
 
     if ( $devname eq $name ) {
-        if ( grep { /^userAttrList:.rolled.out$/ }, @{$events} ) {
+        if ( grep { /^userAttrList:.rolled.out$/ } @{$events} ) {
             if ( scalar( @{ $hash->{helper}{shuttersList} } ) > 0 ) {
                 WriteReadingsShuttersList($hash);
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
@@ -477,10 +474,10 @@ sub Notify {
                     ::ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
             }
         }
-        elsif ( grep { /^partyMode:.off$/ }, @{$events} ) {
+        elsif ( grep { /^partyMode:.off$/ } @{$events} ) {
             EventProcessingPartyMode($hash);
         }
-        elsif ( grep { /^sunriseTimeWeHoliday:.(on|off)$/ }, @{$events} ) {
+        elsif ( grep { /^sunriseTimeWeHoliday:.(on|off)$/ } @{$events} ) {
             RenewSunRiseSetShuttersTimer($hash);
         }
     }
@@ -496,7 +493,7 @@ sub Notify {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( grep { /^($posReading):\s\d{1,3}(\.\d{1,3})?$/ }, @{$events} ) {
+    elsif ( grep { /^($posReading):\s\d{1,3}(\.\d{1,3})?$/ } @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo '
               . $devname
