@@ -172,7 +172,8 @@ BEGIN {
 }
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
-my %userAttrList = (
+##no critic
+our %userAttrList = (
     'ASC_Mode_Up:absent,always,off,home'                            => '-',
     'ASC_Mode_Down:absent,always,off,home'                          => '-',
     'ASC_Up:time,astro,brightness,roommate'                         => '-',
@@ -242,8 +243,9 @@ my %userAttrList = (
 );
 
 ## 2 Objekte werden erstellt
-my $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
-my $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
+our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
+our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
+##use critic
 
 my %posSetCmds = (
     ZWave       => 'dim',
@@ -486,8 +488,7 @@ sub Notify {
         if (
             grep {
 /^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger|.*ASC_Shading_StateChange_SunnyCloudy|.*ASC_TempSensor|.*ASC_Shading_Mode)(\s.*|$) /
-            },
-            @{$events}
+            } @{$events}
           )
         {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
