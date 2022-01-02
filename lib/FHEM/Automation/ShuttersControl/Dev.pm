@@ -43,7 +43,7 @@ package FHEM::Automation::ShuttersControl::Dev;
 use FHEM::Automation::ShuttersControl::Dev::Readings;
 use FHEM::Automation::ShuttersControl::Dev::Attr;
 
-our @ISA =
+use base
   qw(FHEM::Automation::ShuttersControl::Dev::Readings FHEM::Automation::ShuttersControl::Dev::Attr);
 
 use strict;

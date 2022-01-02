@@ -51,10 +51,10 @@ use utf8;
 
 use FHEM::Automation::ShuttersControl::Shutters::Readings;
 use FHEM::Automation::ShuttersControl::Shutters::Attr;
-use FHEM::Automation::ShuttersControl::Roommate;
+use FHEM::Automation::ShuttersControl::Roommate qw (:ALL);
 use FHEM::Automation::ShuttersControl::Window;
 
-our @ISA =
+use base
   qw(FHEM::Automation::ShuttersControl::Shutters::Readings FHEM::Automation::ShuttersControl::Shutters::Attr FHEM::Automation::ShuttersControl::Roommate FHEM::Automation::ShuttersControl::Window);
 
 sub new {

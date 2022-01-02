@@ -48,7 +48,9 @@ use utf8;
 use FHEM::Automation::ShuttersControl::Helper qw (IsInTime);
 
 require Exporter;
-our @ISA       = qw(Exporter);
+use base qw(Exporter);
+
+# our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
   CheckASC_ConditionsForShadingFn
   ShadingProcessing
