@@ -44,6 +44,23 @@ use strict;
 use warnings;
 use utf8;
 
+require Exporter;
+use base qw(Exporter);
+
+# our @ISA       = qw(Exporter);
+our @EXPORT_OK = qw(
+  getRoommateStatus
+  getRoommateLastStatus
+);
+our %EXPORT_TAGS = (
+    ALL => [
+        qw(
+          getRoommateStatus
+          getRoommateLastStatus
+          )
+    ],
+);
+
 sub getRoommateStatus {
     my $self = shift;
 

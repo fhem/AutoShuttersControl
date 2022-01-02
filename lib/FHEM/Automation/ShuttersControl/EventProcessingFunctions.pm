@@ -52,7 +52,9 @@ use FHEM::Automation::ShuttersControl::Shading qw (:ALL);
 use FHEM::Automation::ShuttersControl::Rainprotection qw (:ALL);
 
 require Exporter;
-our @ISA       = qw(Exporter);
+use base qw(Exporter);
+
+# our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
   EventProcessingPartyMode
   EventProcessingGeneral
