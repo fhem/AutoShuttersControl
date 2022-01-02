@@ -235,7 +235,7 @@ sub setDriveCmd {
                 ::gettimeofday() +
                   $FHEM::Automation::ShuttersControl::shutters
                   ->getSelfDefenseAbsentDelay,
-                \&FHEM::Automation::ShuttersControl::_SetCmdFn, \%h
+                \&FHEM::Automation::ShuttersControl::SetCmdFn, \%h
             );
             $FHEM::Automation::ShuttersControl::shutters->setSelfDefenseAbsent(
                 1, 0, \%h );
@@ -249,7 +249,7 @@ sub setDriveCmd {
                       $FHEM::Automation::ShuttersControl::shutters
                       ->getDelayStart
                 ),
-                \&FHEM::Automation::ShuttersControl::_SetCmdFn,
+                \&FHEM::Automation::ShuttersControl::SetCmdFn,
                 \%h
             );
 
@@ -260,7 +260,7 @@ sub setDriveCmd {
         elsif ($offSetStart < 1
             || $FHEM::Automation::ShuttersControl::shutters->getNoDelay )
         {
-            FHEM::Automation::ShuttersControl::_SetCmdFn( \%h );
+            FHEM::Automation::ShuttersControl::SetCmdFn( \%h );
             FHEM::Automation::ShuttersControl::ASC_Debug( 'FnSetDriveCmd: '
                   . $FHEM::Automation::ShuttersControl::shutters->getShuttersDev
                   . ' - NICHT versetztes fahren' );
@@ -348,8 +348,7 @@ sub setLastDriveReading {
     );
 
     ::InternalTimer( ::gettimeofday() + 0.1,
-        \&FHEM::Automation::ShuttersControl::_setShuttersLastDriveDelayed,
-        \%h );
+        \&FHEM::Automation::ShuttersControl::setShuttersLastDriveDelayed, \%h );
     return;
 }
 

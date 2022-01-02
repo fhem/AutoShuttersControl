@@ -172,7 +172,7 @@ BEGIN {
 }
 
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
-our %userAttrList = (
+my %userAttrList = (
     'ASC_Mode_Up:absent,always,off,home'                            => '-',
     'ASC_Mode_Down:absent,always,off,home'                          => '-',
     'ASC_Up:time,astro,brightness,roommate'                         => '-',
@@ -242,8 +242,8 @@ our %userAttrList = (
 );
 
 ## 2 Objekte werden erstellt
-our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
-our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
+my $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
+my $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
 
 my %posSetCmds = (
     ZWave       => 'dim',
@@ -305,9 +305,11 @@ sub ascAPIset {
 sub Define {
     my $hash = shift // return;
     my $aArg = shift // return;
+    my $version;
 
-    return $@ if ( !FHEM::Meta::SetInternals($hash) );
-    use version 0.60; our $VERSION = FHEM::Meta::Get( $hash, 'version' );
+    return $@ unless ( FHEM::Meta::SetInternals($hash) );
+    $version = FHEM::Meta::Get( $hash, 'version' );
+    our $VERSION = $version;
 
     return 'only one AutoShuttersControl instance allowed'
       if ( ::devspec2array('TYPE=AutoShuttersControl') > 1 )
@@ -400,13 +402,13 @@ sub Notify {
 
     if (
         (
-            grep m{^DEFINED.$name$}xms,
+            grep { /^DEFINED.$name$/ },
             @{$events} && $devname eq 'global' && $::init_done
         )
         || (
-            grep m{^INITIALIZED$}xms,
-            @{$events} or grep m{^REREADCFG$}xms,
-            @{$events} or grep m{^MODIFIED.$name$}xms,
+            grep { /^INITIALIZED$/ },
+            @{$events} or grep { /^REREADCFG$/ },
+            @{$events} or grep { /^MODIFIED.$name$/ },
             @{$events}
         )
         && $devname eq 'global'
@@ -450,7 +452,7 @@ sub Notify {
     my $posReading = $shutters->getPosCmd;
 
     if ( $devname eq $name ) {
-        if ( grep m{^userAttrList:.rolled.out$}xms, @{$events} ) {
+        if ( grep { /^userAttrList:.rolled.out$/ }, @{$events} ) {
             if ( scalar( @{ $hash->{helper}{shuttersList} } ) > 0 ) {
                 WriteReadingsShuttersList($hash);
                 UserAttributs_Readings_ForShutters( $hash, 'add' );
@@ -475,25 +477,26 @@ sub Notify {
                     ::ReadingsVal( $name, 'controlShading', 'off' ) ne 'off' );
             }
         }
-        elsif ( grep m{^partyMode:.off$}xms, @{$events} ) {
+        elsif ( grep { /^partyMode:.off$/ }, @{$events} ) {
             EventProcessingPartyMode($hash);
         }
-        elsif ( grep m{^sunriseTimeWeHoliday:.(on|off)$}xms, @{$events} ) {
+        elsif ( grep { /^sunriseTimeWeHoliday:.(on|off)$/ }, @{$events} ) {
             RenewSunRiseSetShuttersTimer($hash);
         }
     }
     elsif ( $devname eq "global" )
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
         if (
-            grep
-m{^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger|.*ASC_Shading_StateChange_SunnyCloudy|.*ASC_TempSensor|.*ASC_Shading_Mode)(\s.*|$)}xms,
+            grep {
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger|.*ASC_Shading_StateChange_SunnyCloudy|.*ASC_TempSensor|.*ASC_Shading_Mode)(\s.*|$) /
+            },
             @{$events}
           )
         {
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( grep m{^($posReading):\s\d{1,3}(\.\d{1,3})?$}xms, @{$events} ) {
+    elsif ( grep { /^($posReading):\s\d{1,3}(\.\d{1,3})?$/ }, @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo '
               . $devname
@@ -1337,7 +1340,7 @@ sub wiggle {
         }
     }
 
-    ::InternalTimer( ::gettimeofday() + 60, \&_SetCmdFn, \%h );
+    ::InternalTimer( ::gettimeofday() + 60, \&SetCmdFn, \%h );
 
     return;
 }
@@ -1741,7 +1744,7 @@ sub _DetermineSlatCmd {
       : $value;
 }
 
-sub _SetCmdFn {
+sub SetCmdFn {
     my $h = shift;
 
     my $shuttersDev = $h->{shuttersDev};
@@ -1888,7 +1891,7 @@ sub _SetCmdFn {
     return;
 }
 
-sub _setShuttersLastDriveDelayed {
+sub setShuttersLastDriveDelayed {
     my $h = shift;
 
     my $shuttersDevHash = $h->{devHash};
