@@ -51,7 +51,7 @@ use utf8;
 
 use FHEM::Automation::ShuttersControl::Shutters::Readings;
 use FHEM::Automation::ShuttersControl::Shutters::Attr;
-use FHEM::Automation::ShuttersControl::Roommate;
+use FHEM::Automation::ShuttersControl::Roommate qw (:ALL);
 use FHEM::Automation::ShuttersControl::Window;
 
 use base

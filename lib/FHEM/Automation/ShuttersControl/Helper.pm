@@ -88,6 +88,8 @@ our %EXPORT_TAGS = (
     ],
 );
 
+use FHEM::Automation::ShuttersControl '$shutters $ascDev';
+
 use GPUtils qw(GP_Import);
 ## Import der FHEM Funktionen
 BEGIN {

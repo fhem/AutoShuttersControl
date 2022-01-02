@@ -139,6 +139,12 @@ eval {
 ## Import der FHEM Funktionen
 #-- Run before package compilation
 BEGIN {
+    ## 2 Objekte werden erstellt
+    our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
+    our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
+
+    use Exporter qw(import);
+    our @EXPORT_OK = qw / $shutters $ascDev /;
 
     # Import from main context
     GP_Import(
@@ -268,10 +274,6 @@ my %posSetCmds = (
     SELVE       => 'position',
     EnOcean     => 'position',
 );
-
-## 2 Objekte werden erstellt
-our $shutters = FHEM::Automation::ShuttersControl::Shutters->new();
-our $ascDev   = FHEM::Automation::ShuttersControl::Dev->new();
 
 sub ascAPIget {
     my $getCommand = shift;
