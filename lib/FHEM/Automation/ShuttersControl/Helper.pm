@@ -46,7 +46,9 @@ use POSIX qw(strftime);
 use utf8;
 
 require Exporter;
-our @ISA       = qw(Exporter);
+use base qw(Exporter);
+
+# our @ISA       = qw(Exporter);
 our @EXPORT_OK = qw(
   PositionValueWindowRec
   AutoSearchTwilightDev
