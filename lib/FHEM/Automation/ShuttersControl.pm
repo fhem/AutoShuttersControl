@@ -518,6 +518,8 @@ sub Set {
     my $cmd  = shift @$aArg
       // return qq{"set $name" needs at least one argument};
 
+    $cmd = lc($cmd);
+
     given ($cmd) {
         when ('renewalltimer') {
             return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
