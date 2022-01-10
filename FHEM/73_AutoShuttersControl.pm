@@ -91,7 +91,8 @@ sub Initialize {
       . 'ASC_expert:1 '
       . 'ASC_blockAscDrivesAfterManual:0,1 '
       . 'ASC_debug:1 '
-      . 'ASC_advDate:DeadSunday,FirstAdvent '
+      . 'ASC_advStartDate:DeadSunday,FirstAdvent '
+      . 'ASC_advEndDate:CandlemasDay,EpiphanyDay '
       . $readingFnAttributes;
     $hash->{NotifyOrderPrefix} = '51-';    # Order Nummer für NotifyFn
     $hash->{FW_detailFn} =
@@ -319,8 +320,11 @@ __END__
             <li><strong>ASC_freezeTemp</strong> - Temperature threshold for the freeze protection. The freeze protection
                 prevents the shutter to be operated by <abbr>ASC</abbr>. Last operating order will be kept.
             </li>
-            <a id="AutoShuttersControl-attr-ASC_advDate"></a>
-            <li><strong>ASC_advDate</strong> - Advent Season, selected FirstAdvent or DeadSunday.
+            <a id="AutoShuttersControl-attr-ASC_advStartDate"></a>
+            <li><strong>ASC_advStartDate</strong> - Begin of Advent Season, selected FirstAdvent or DeadSunday.
+            </li>
+            <a id="AutoShuttersControl-attr-ASC_advEndDate"></a>
+            <li><strong>ASC_advEndDate</strong> - End of Advent Season, selected CandlemasDay 6. January or EpiphanyDay 2. February.
             </li>
             <a id="AutoShuttersControl-attr-ASC_rainSensor"></a>
             <li><strong>ASC_rainSensor DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS]</strong> - Contains
@@ -997,8 +1001,10 @@ __END__
             <li><strong>ASC_expert</strong> - ist der Wert 1, so werden erweiterte Informationen bez&uuml;glich des NotifyDevs unter set und get angezeigt</li>
             <a id="AutoShuttersControl-attr-ASC_freezeTemp"></a>
             <li><strong>ASC_freezeTemp</strong> - Temperatur, ab welcher der Frostschutz greifen soll und der Rollladen nicht mehr f&auml;hrt. Der letzte Fahrbefehl wird gespeichert.</li>
-            <a id="AutoShuttersControl-attr-ASC_advDate"></a>
-            <li><strong>ASC_advDate</strong> - Adventszeit, Auswahl ab wann die Adventszeit beginnen soll.</li>
+            <a id="AutoShuttersControl-attr-ASC_advStartDate"></a>
+            <li><strong>ASC_advStartDate</strong> - Start der Adventszeit, Auswahl ab wann die Adventszeit beginnen soll. 1. Advent oder Totensonntag</li>
+            <a id="AutoShuttersControl-attr-ASC_advEndDate"></a>
+            <li><strong>ASC_advEndDate</strong> - Ende der Adventszeit, Auswahl ab wann die Adventszeit Enden soll. EpiphanyDay 6. Januar oder CandlemasDay 2. Februar</li>
             <a id="AutoShuttersControl-attr-ASC_rainSensor"></a>
             <li><strong>ASC_rainSensor - DEVICENAME[:READINGNAME] MAXTRIGGER[:HYSTERESE] [CLOSEDPOS:[WAITINGTIME]]</strong> - der Inhalt ist eine Kombination aus Devicename, Readingname, Wert ab dem getriggert werden soll, Hysterese Wert ab dem der Status Regenschutz aufgehoben werden soll und der "wegen Regen geschlossen Position", sowie der Wartezeit bis dann tats&auml;chlich die aktion ausgeführt wird.</li>
             <a id="AutoShuttersControl-attr-ASC_residentsDev"></a>

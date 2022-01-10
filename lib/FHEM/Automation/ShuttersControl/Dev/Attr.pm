@@ -384,12 +384,20 @@ sub getBlockAscDrivesAfterManual {
     return ::AttrVal( $name, 'ASC_blockAscDrivesAfterManual', 0 );
 }
 
-sub getAdvDate {
+sub getAdvStartDate {
     my $self = shift;
 
     my $name = $self->{name};
 
-    return ::AttrVal( $name, 'ASC_advDate', 'FirstAdvent' );
+    return ::AttrVal( $name, 'ASC_advStartDate', 'FirstAdvent' );
+}
+
+sub getAdvEndDate {
+    my $self = shift;
+
+    my $name = $self->{name};
+
+    return ::AttrVal( $name, 'ASC_advEndDate', 'EpiphanyDay' );
 }
 
 1;
