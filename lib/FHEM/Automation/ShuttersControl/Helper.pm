@@ -1020,8 +1020,20 @@ sub IsAdv {
     my $adv = 0;
     $year += 1900;
 
-    if ( $month < 1 ) {
-        if ( $monthday < 7 ) {
+    if ( $month < 2 ) {
+        if (
+            (
+                   $month < 1
+                && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
+                'EpiphanyDay'
+                && $monthday < 7
+            )
+            || (   $month < 2
+                && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
+                'CandlemasDay'
+                && $monthday < 3 )
+          )
+        {
             $adv = 1;
         }
     }
@@ -1030,7 +1042,7 @@ sub IsAdv {
         my $wday = ( localtime($time) )[6];
         $wday = $wday ? $wday : 7;
         $time -= (
-            $FHEM::Automation::ShuttersControl::ascDev->getAdvDate eq
+            $FHEM::Automation::ShuttersControl::ascDev->getAdvStartDate eq
               'DeadSunday'
             ? ( $wday + 27 ) * 86400
             : ( $wday + 21 ) * 86400
