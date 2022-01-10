@@ -1020,22 +1020,17 @@ sub IsAdv {
     my $adv = 0;
     $year += 1900;
 
-    if ( $month < 2 ) {
-        if (
-            (
-                   $month < 1
-                && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
-                'EpiphanyDay'
-                && $monthday < 7
-            )
-            || (   $month < 2
-                && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
-                'CandlemasDay'
-                && $monthday < 3 )
-          )
-        {
-            $adv = 1;
-        }
+    if (   $month < 1
+        && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
+        'EpiphanyDay' )
+    {
+        $adv = $monthday < 7 ? 1 : 0;
+    }
+    elsif ($month < 2
+        && $FHEM::Automation::ShuttersControl::ascDev->getAdvEndDate eq
+        'CandlemasDay' )
+    {
+        $adv = $monthday < 3 ? 1 : 0;
     }
     else {
         my $time = str2time( $year . '-12-25' );
