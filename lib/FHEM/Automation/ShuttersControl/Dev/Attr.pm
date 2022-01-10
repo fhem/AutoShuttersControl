@@ -397,7 +397,7 @@ sub getAdvEndDate {
 
     my $name = $self->{name};
 
-    return ::AttrVal( $name, 'ASC_advEndDate', 'CandlemasDay' );
+    return ::AttrVal( $name, 'ASC_advEndDate', 'EpiphanyDay' );
 }
 
 1;
