@@ -1445,11 +1445,11 @@ sub EventProcessingWind {
                     );
                 }
 
-                $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
-                    $targetPos);
-
                 $FHEM::Automation::ShuttersControl::shutters
                   ->setWindProtectionStatus('unprotected');
+
+                $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
+                    $targetPos);
             }
 
             FHEM::Automation::ShuttersControl::ASC_Debug(

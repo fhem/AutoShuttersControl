@@ -194,11 +194,11 @@ sub _RainUnprotected {
         );
     }
 
-    $FHEM::Automation::ShuttersControl::shutters->setDriveCmd($targetPos)
-      if ( IsAfterShuttersTimeBlocking($shuttersDev) );
-
     $FHEM::Automation::ShuttersControl::shutters->setRainProtectionStatus(
         'unprotected');
+
+    $FHEM::Automation::ShuttersControl::shutters->setDriveCmd($targetPos)
+      if ( IsAfterShuttersTimeBlocking($shuttersDev) );
 
     return;
 }
