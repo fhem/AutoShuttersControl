@@ -1431,10 +1431,7 @@ sub EventProcessingWind {
                       $FHEM::Automation::ShuttersControl::shutters->getLastPos;
                 }
 
-                if (  !$FHEM::Automation::ShuttersControl::shutters->getIsDay
-                    && $FHEM::Automation::ShuttersControl::shutters
-                    ->getShuttersPlace ne 'awning' )
-                {
+                if ( !$FHEM::Automation::ShuttersControl::shutters->getIsDay ) {
                     $targetPos = (
                         $FHEM::Automation::ShuttersControl::shutters
                           ->getPrivacyDownStatus == 2
