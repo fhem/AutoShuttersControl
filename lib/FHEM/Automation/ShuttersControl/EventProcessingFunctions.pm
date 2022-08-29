@@ -133,6 +133,10 @@ sub EventProcessingGeneral {
         }
     }
     else {    # alles was kein Devicenamen mit übergeben hat landet hier
+        ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessing: All without device name in the Event"
+        );
+
         if (
             $events =~ m{^ATTR\s(.*)
              \s(ASC_Roommate_Device|ASC_WindowRec|ASC_residentsDev|ASC_rainSensor
@@ -170,6 +174,10 @@ sub EventProcessingGeneral {
                 (.*)?}xms
           )
         {
+            ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessing: Morning and Evening Time Shedules"
+            );
+
             FHEM::Automation::ShuttersControl::CreateSunRiseSetShuttersTimer(
                 $hash, $2 )
               if (
@@ -585,7 +593,7 @@ sub EventProcessingWindowRec {
                 $setLastDrive = 'ventilate - window open';
             }
 
-            if ( defined($posValue) && $posValue ) {
+            if ( defined($posValue) ) {
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     $setLastDrive);
                 $FHEM::Automation::ShuttersControl::shutters->setNoDelay(1);
@@ -1355,6 +1363,7 @@ sub EventProcessingWind {
 
     my $name = $hash->{NAME};
     $FHEM::Automation::ShuttersControl::shutters->setShuttersDev($shuttersDev);
+    my $targetPos = $FHEM::Automation::ShuttersControl::shutters->getLastPos;
 
     my $reading =
       $FHEM::Automation::ShuttersControl::ascDev->getWindSensorReading
@@ -1406,35 +1415,38 @@ sub EventProcessingWind {
             {
                 $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
                     'wind un-protected');
-                $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
-                    (
-                          $FHEM::Automation::ShuttersControl::shutters->getIsDay
+
+                if ( $FHEM::Automation::ShuttersControl::shutters->getIsDay
+                    && !$FHEM::Automation::ShuttersControl::shutters
+                    ->getIfInShading
+                    && $FHEM::Automation::ShuttersControl::shutters->getLastPos
+                    == $FHEM::Automation::ShuttersControl::shutters
+                    ->getShadingPos )
+                {
+                    $targetPos =
+                      $FHEM::Automation::ShuttersControl::shutters->getOpenPos;
+                }
+                else {
+                    $targetPos =
+                      $FHEM::Automation::ShuttersControl::shutters->getLastPos;
+                }
+
+                if ( !$FHEM::Automation::ShuttersControl::shutters->getIsDay ) {
+                    $targetPos = (
+                        $FHEM::Automation::ShuttersControl::shutters
+                          ->getPrivacyDownStatus == 2
                         ? $FHEM::Automation::ShuttersControl::shutters
-                          ->getLastPos
-                        : (
-                            $FHEM::Automation::ShuttersControl::shutters
-                              ->getShuttersPlace eq 'awning'
-                            ? $FHEM::Automation::ShuttersControl::shutters
-                              ->getOpenPos
-                            : (
-                                $FHEM::Automation::ShuttersControl::shutters
-                                  ->getPrivacyDownStatus == 2
-                                ? $FHEM::Automation::ShuttersControl::shutters
-                                  ->getPrivacyDownPos
-                                : (
-                                    $FHEM::Automation::ShuttersControl::shutters
-                                      ->getSleepPos > 0
-                                    ? $FHEM::Automation::ShuttersControl::shutters
-                                      ->getSleepPos
-                                    : $FHEM::Automation::ShuttersControl::shutters
-                                      ->getClosedPos
-                                )
-                            )
-                        )
-                    )
-                );
+                          ->getPrivacyDownPos
+                        : $FHEM::Automation::ShuttersControl::shutters
+                          ->getClosedPos
+                    );
+                }
+
                 $FHEM::Automation::ShuttersControl::shutters
                   ->setWindProtectionStatus('unprotected');
+
+                $FHEM::Automation::ShuttersControl::shutters->setDriveCmd(
+                    $targetPos);
             }
 
             FHEM::Automation::ShuttersControl::ASC_Debug(

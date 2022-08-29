@@ -485,16 +485,23 @@ sub Notify {
     }
     elsif ( $devname eq "global" )
     { # Kommt ein globales Event und beinhaltet folgende Syntax wird die Funktion zur Verarbeitung aufgerufen
+        ::Log3( $name, 4,
+"AutoShuttersControl ($name) - ShuttersControl: Devicename eq global"
+        );
+
         if (
             grep {
-/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger|.*ASC_Shading_StateChange_SunnyCloudy|.*ASC_TempSensor|.*ASC_Shading_Mode)(\s.*|$) /
+/^(ATTR|DELETEATTR)\s(.*ASC_Time_Up_WE_Holiday|.*ASC_Up|.*ASC_Down|.*ASC_AutoAstroModeMorning|.*ASC_AutoAstroModeMorningHorizon|.*ASC_AutoAstroModeEvening|.*ASC_AutoAstroModeEveningHorizon|.*ASC_Time_Up_Early|.*ASC_Time_Up_Late|.*ASC_Time_Down_Early|.*ASC_Time_Down_Late|.*ASC_autoAstroModeMorning|.*ASC_autoAstroModeMorningHorizon|.*ASC_PrivacyDownValue_beforeNightClose|.*ASC_PrivacyUpValue_beforeDayOpen|.*ASC_autoAstroModeEvening|.*ASC_autoAstroModeEveningHorizon|.*ASC_Roommate_Device|.*ASC_WindowRec|.*ASC_residentsDev|.*ASC_rainSensor|.*ASC_windSensor|.*ASC_tempSensor|.*ASC_BrightnessSensor|.*ASC_twilightDevice|.*ASC_ExternalTrigger|.*ASC_Shading_StateChange_SunnyCloudy|.*ASC_TempSensor|.*ASC_Shading_Mode)(\s.*|$) /x
             } @{$events}
           )
         {
+            ::Log3( $name, 4,
+"AutoShuttersControl ($name) - ShuttersControl: Event Attr or Deleteattr Time and Astro"
+            );
             EventProcessingGeneral( $hash, undef, join( ' ', @{$events} ) );
         }
     }
-    elsif ( grep { /^($posReading):\s\d{1,3}(\.\d{1,3})?$/ } @{$events} ) {
+    elsif ( grep { /^($posReading):\s\d{1,3}(\.\d{1,3})?$/x } @{$events} ) {
         ASC_Debug( 'Notify: '
               . ' ASC_Pos_Reading Event vom Rollo '
               . $devname
@@ -1582,8 +1589,8 @@ sub ShuttersInformation {
         || !defined( $shutters->getSunsetUnixTime ) );
 
     my $ret =
-      '<html><table><tr><h3>ASC Configuration and Information Summary</h3><td>';
-    $ret .= '<table class="block wide">';
+'<html><table border rules=all border frame=box><tr><h3>ASC Configuration and Information Summary</h3><td>';
+    $ret .= '<table class="block wide" rules=all>';
     $ret .= '<tr class="even">';
     $ret .= "<td><b>Shutters</b></td>";
     $ret .= "<td> </td>";
@@ -1618,43 +1625,44 @@ sub ShuttersInformation {
 
         if   ( $linecount % 2 == 0 ) { $ret .= '<tr class="even">'; }
         else                         { $ret .= '<tr class="odd">'; }
-        $ret .= "<td>$shuttersDev</td>";
+        $ret .= "<td>&nbsp;$shuttersDev&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>"
+        $ret .= "<td>&nbsp;"
           . strftime( "%d.%m.%Y - %H:%M:%S",
             localtime( $shutters->getSunriseUnixTime ) )
-          . "</td>";
+          . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>"
+        $ret .= "<td>&nbsp;"
           . strftime( "%d.%m.%Y - %H:%M:%S",
             localtime( $shutters->getSunsetUnixTime ) )
-          . "</td>";
+          . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getUp . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getUp . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getDown . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getDown . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getModeUp . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getModeUp . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getModeDown . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getModeDown . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getPartyMode . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getPartyMode . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getLockOut . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getLockOut . "&nbsp;</td>";
         $ret .= "<td> </td>";
         $ret .= "<td>"
           . ::ReadingsVal( $shuttersDev, 'ASC_ShuttersLastDrive', 'none' )
           . "</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getStatus . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getStatus . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>" . $shutters->getLastPos . "</td>";
+        $ret .= "<td>&nbsp;" . $shutters->getLastPos . "&nbsp;</td>";
         $ret .= "<td> </td>";
-        $ret .= "<td>"
+        $ret .=
+            "<td>&nbsp;"
           . $shutters->getShadingStatus . ' - '
           . strftime( "%H:%M:%S",
             localtime( $shutters->getShadingStatusTimestamp ) )
-          . "</td>";
+          . "&nbsp;</td>";
         $ret .= '</tr>';
         $linecount++;
     }
@@ -1756,7 +1764,11 @@ sub SetCmdFn {
     return
       if ( $shutters->getASCenable eq 'off'
         || $ascDev->getASCenable eq 'off'
-        || $idleDetection !~ m{^$idleDetectionValue$}xms );
+        || $idleDetection !~ m{^$idleDetectionValue$}xms
+        || $FHEM::Automation::ShuttersControl::shutters
+        ->getWindProtectionStatus eq 'protected'
+        || $FHEM::Automation::ShuttersControl::shutters
+        ->getRaindProtectionStatus eq 'protected' );
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
