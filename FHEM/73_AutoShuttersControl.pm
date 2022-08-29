@@ -707,7 +707,7 @@ __END__
                         are used for shading. Defaults to 120.
                     </li>
                     <a id="AutoShuttersControl-attr-ASC_Shading_BetweenTheTime"></a>
-                    <li><strong>ASC_Shading_BetweenTheTime</strong> - Limit the time slots for shading functionality. Example: 9:00-13:00 11:25-15:30</li>
+                    <li><strong>ASC_Shading_BetweenTheTime</strong> - Limit the time slots for shading functionality. Example: 09:00-13:00 11:25-15:30</li>
                 </ul>
             </blockquote>
         </ul>
@@ -1137,7 +1137,7 @@ __END__
                 <a id="AutoShuttersControl-attr-ASC_Shading_WaitingPeriod"></a>
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
                 <a id="AutoShuttersControl-attr-ASC_Shading_BetweenTheTime"></a>
-                <li><strong>ASC_Shading_BetweenTheTime</strong> - das Fahren in die Beschattung erfolgt bei Angabe nur innerhalb des Zeitraumes, Bsp: 9:00-13:00 11:25-15:30</li>
+                <li><strong>ASC_Shading_BetweenTheTime</strong> - das Fahren in die Beschattung erfolgt bei Angabe nur innerhalb des Zeitraumes, Bsp: 09:00-13:00 11:25-15:30</li>
             </ul></p>
             <a id="AutoShuttersControl-attr-ASC_ShuttersPlace"></a>
             <li><strong>ASC_ShuttersPlace - window/terrace/awning</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen. awning steht für Markise und wirkt sich auf die Beschattungssteuerung aus. (default: window)</li>
