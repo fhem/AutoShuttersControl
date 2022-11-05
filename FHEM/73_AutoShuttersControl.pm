@@ -1029,11 +1029,11 @@ __END__
             <a id="AutoShuttersControl-attr-ASC_Antifreeze_Pos"></a>
             <li><strong>ASC_Antifreeze_Pos</strong> - Position die angefahren werden soll, wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist (Default: ist abh&auml;ngig vom Attribut<em>ASC</em> 85/15) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeEvening"></a>
-            <li><strong>ASC_AutoAstroModeEvening</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
+            <li><strong>ASC_AutoAstroModeEvening</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC oder HORIZON (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeEveningHorizon"></a>
             <li><strong>ASC_AutoAstroModeEveningHorizon</strong> - H&ouml;he &uuml;ber Horizont, wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeMorning"></a>
-            <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
+            <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC oder HORIZON (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeMorningHorizon"></a>
             <li><strong>ASC_AutoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber Horizont,a wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_afterManual"></a>
