@@ -2,7 +2,7 @@
 #
 # Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
+#  (c) 2018-2025 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -72,7 +72,8 @@ use FHEM::Meta;
 use GPUtils qw(GP_Import GP_Export);
 use Data::Dumper;    #only for Debugging
 use Date::Parse;
-use experimental qw( switch );
+
+# use experimental qw( switch );   deprecated
 
 use FHEM::Automation::ShuttersControl::Shutters;
 use FHEM::Automation::ShuttersControl::Dev;
@@ -80,7 +81,7 @@ use FHEM::Automation::ShuttersControl::Dev;
 use FHEM::Automation::ShuttersControl::Shading
   qw (CheckASC_ConditionsForShadingFn);
 use FHEM::Automation::ShuttersControl::EventProcessingFunctions qw (:ALL);
-use FHEM::Automation::ShuttersControl::Helper qw (:ALL);
+use FHEM::Automation::ShuttersControl::Helper                   qw (:ALL);
 
 # try to use JSON::MaybeXS wrapper
 #   for chance of better performance + open code
@@ -167,7 +168,7 @@ BEGIN {
           ascAPIget
           ascAPIset
           DevStateIcon
-          )
+        )
     );
 }
 
@@ -187,24 +188,24 @@ our %userAttrList = (
     'ASC_Open_Pos:0,10,20,30,40,50,60,70,80,90,100'   => [ '', 0,   100 ],
     'ASC_Closed_Pos:0,10,20,30,40,50,60,70,80,90,100' => [ '', 100, 0 ],
     'ASC_Sleep_Pos:0,10,20,30,40,50,60,70,80,90,100'  => [ '', -1,  -1 ],
-    'ASC_Pos_Reading'                            => [ '', 'position', 'pct' ],
-    'ASC_Time_Up_Early'                          => '-',
-    'ASC_Time_Up_Late'                           => '-',
-    'ASC_Time_Up_WE_Holiday'                     => '-',
-    'ASC_Time_Down_Early'                        => '-',
-    'ASC_Time_Down_Late'                         => '-',
-    'ASC_PrivacyUpValue_beforeDayOpen'           => '-',
-    'ASC_PrivacyDownValue_beforeNightClose'      => '-',
-    'ASC_PrivacyUp_Pos'                          => [ '', 50, 50 ],
-    'ASC_PrivacyDown_Pos'                        => [ '', 50, 50 ],
-    'ASC_TempSensor'                             => '-',
-    'ASC_Ventilate_Window_Open:on,off'           => '-',
-    'ASC_LockOut:soft,hard,off'                  => '-',
-    'ASC_LockOut_Cmd:inhibit,blocked,protection' => '-',
-    'ASC_BlockingTime_afterManual'               => '-',
-    'ASC_BlockingTime_beforeNightClose'          => '-',
-    'ASC_BlockingTime_beforeDayOpen'             => '-',
-    'ASC_BrightnessSensor'                       => '-',
+    'ASC_Pos_Reading'                       => [ '', 'position', 'pct' ],
+    'ASC_Time_Up_Early'                     => '-',
+    'ASC_Time_Up_Late'                      => '-',
+    'ASC_Time_Up_WE_Holiday'                => '-',
+    'ASC_Time_Down_Early'                   => '-',
+    'ASC_Time_Down_Late'                    => '-',
+    'ASC_PrivacyUpValue_beforeDayOpen'      => '-',
+    'ASC_PrivacyDownValue_beforeNightClose' => '-',
+    'ASC_PrivacyUp_Pos'                     => [ '', 50, 50 ],
+    'ASC_PrivacyDown_Pos'                   => [ '', 50, 50 ],
+    'ASC_TempSensor'                                       => '-',
+    'ASC_Ventilate_Window_Open:on,off'                     => '-',
+    'ASC_LockOut:soft,hard,off'                            => '-',
+    'ASC_LockOut_Cmd:inhibit,blocked,protection'           => '-',
+    'ASC_BlockingTime_afterManual'                         => '-',
+    'ASC_BlockingTime_beforeNightClose'                    => '-',
+    'ASC_BlockingTime_beforeDayOpen'                       => '-',
+    'ASC_BrightnessSensor'                                 => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
     'ASC_Shading_Mode:absent,always,off,home'              => '-',
     'ASC_Shading_InOutAzimuth'                             => '-',
@@ -526,107 +527,103 @@ sub Set {
     my $cmd  = shift @$aArg
       // return qq{"set $name" needs at least one argument};
 
-    given ($cmd) {
-        when ('renewAllTimer') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
-            RenewSunRiseSetShuttersTimer($hash);
-        }
-        when ('renewTimer') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            CreateSunRiseSetShuttersTimer( $hash, $aArg->[0] );
-        }
-        when ('scanForShutters') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
-            ShuttersDeviceScan($hash);
-        }
-        when ('createNewNotifyDev') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
-            CreateNewNotifyDev($hash);
-        }
-        when ('partyMode') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 )
-              if ( $aArg->[0] ne ::ReadingsVal( $name, 'partyMode', 0 ) );
-        }
-        when ('hardLockOut') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
-            HardewareBlockForShutters( $hash, $aArg->[0] );
-        }
-        when ('sunriseTimeWeHoliday') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
-        }
-        when ('controlShading') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+    if ( $cmd eq 'renewAllTimer' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        RenewSunRiseSetShuttersTimer($hash);
+    }
+    elsif ( $cmd eq 'renewTimer' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        CreateSunRiseSetShuttersTimer( $hash, $aArg->[0] );
+    }
+    elsif ( $cmd eq 'scanForShutters' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        ShuttersDeviceScan($hash);
+    }
+    elsif ( $cmd eq 'createNewNotifyDev' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        CreateNewNotifyDev($hash);
+    }
+    elsif ( $cmd eq 'partyMode' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 )
+          if ( $aArg->[0] ne ::ReadingsVal( $name, 'partyMode', 0 ) );
+    }
+    elsif ( $cmd eq 'hardLockOut' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
+        HardewareBlockForShutters( $hash, $aArg->[0] );
+    }
+    elsif ( $cmd eq 'sunriseTimeWeHoliday' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
+    }
+    elsif ( $cmd eq 'controlShading' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
 
-            my $response = CheckASC_ConditionsForShadingFn( $hash, $aArg->[0] );
-            ::readingsSingleUpdate(
-                $hash, $cmd,
-                (
-                    $aArg->[0] eq 'off' ? $aArg->[0]
-                    : (
-                          $response eq 'none' ? $aArg->[0]
-                        : $response
-                    )
-                ),
-                1
-            );
-        }
-        when ('selfDefense') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
-        }
-        when ('ascEnable') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
-        }
-        when ('advDriveDown') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
-            EventProcessingAdvShuttersClose($hash);
-        }
-        when ('shutterASCenableToggle') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-            ::readingsSingleUpdate(
-                $defs{ $aArg->[0] },
-                'ASC_Enable',
-                (
-                    ::ReadingsVal( $aArg->[0], 'ASC_Enable', 'off' ) eq 'on'
-                    ? 'off'
-                    : 'on'
-                ),
-                1
-            );
-        }
-        when ('wiggle') {
-            return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
-
+        my $response = CheckASC_ConditionsForShadingFn( $hash, $aArg->[0] );
+        ::readingsSingleUpdate(
+            $hash, $cmd,
             (
-                $aArg->[0] eq 'all'
-                ? wiggleAll($hash)
-                : wiggle( $hash, $aArg->[0] )
-            );
-        }
-        default {
-            my $list = 'scanForShutters:noArg';
-            $list .=
-' renewAllTimer:noArg advDriveDown:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
-              . join( ',', @{ $hash->{helper}{shuttersList} } )
-              . ' shutterASCenableToggle:'
-              . join( ',', @{ $hash->{helper}{shuttersList} } )
-              . ' renewTimer:'
-              . join( ',', @{ $hash->{helper}{shuttersList} } )
-              if (
-                ::ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-                && defined( $hash->{helper}{shuttersList} )
-                && scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
-            $list .= ' createNewNotifyDev:noArg'
-              if (
-                ::ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
-                && ::AttrVal( $name, 'ASC_expert', 0 ) == 1 );
+                $aArg->[0] eq 'off' ? $aArg->[0]
+                : (
+                      $response eq 'none' ? $aArg->[0]
+                    : $response
+                )
+            ),
+            1
+        );
+    }
+    elsif ( $cmd eq 'selfDefense' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
+    }
+    elsif ( $cmd eq 'ascEnable' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate( $hash, $cmd, $aArg->[0], 1 );
+    }
+    elsif ( $cmd eq 'advDriveDown' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) != 0 );
+        EventProcessingAdvShuttersClose($hash);
+    }
+    elsif ( $cmd eq 'shutterASCenableToggle' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
+        ::readingsSingleUpdate(
+            $defs{ $aArg->[0] },
+            'ASC_Enable',
+            (
+                ::ReadingsVal( $aArg->[0], 'ASC_Enable', 'off' ) eq 'on'
+                ? 'off'
+                : 'on'
+            ),
+            1
+        );
+    }
+    elsif ( $cmd eq 'wiggle' ) {
+        return "usage: $cmd" if ( scalar( @{$aArg} ) > 1 );
 
-            return "Unknown argument $cmd,choose one of $list";
-        }
+        (
+            $aArg->[0] eq 'all'
+            ? wiggleAll($hash)
+            : wiggle( $hash, $aArg->[0] )
+        );
+    }
+    else {
+        my $list = 'scanForShutters:noArg';
+        $list .=
+' renewAllTimer:noArg advDriveDown:noArg partyMode:on,off hardLockOut:on,off sunriseTimeWeHoliday:on,off controlShading:on,off selfDefense:on,off ascEnable:on,off wiggle:all,'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+          . ' shutterASCenableToggle:'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+          . ' renewTimer:'
+          . join( ',', @{ $hash->{helper}{shuttersList} } )
+          if ( ::ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
+            && defined( $hash->{helper}{shuttersList} )
+            && scalar( @{ $hash->{helper}{shuttersList} } ) > 0 );
+        $list .= ' createNewNotifyDev:noArg'
+          if ( ::ReadingsVal( $name, 'userAttrList', 'none' ) eq 'rolled out'
+            && ::AttrVal( $name, 'ASC_expert', 0 ) == 1 );
+
+        return "Unknown argument $cmd,choose one of $list";
     }
 
     return;
@@ -1447,10 +1444,14 @@ sub SunRiseShuttersAfterTimerFn {
             || $shutters->getSelfDefenseMode eq 'off'
             || (
                 $ascDev->getSelfDefense eq 'on'
-                && (   $shutters->getSelfDefenseMode eq 'gone'
-                    || $shutters->getSelfDefenseMode eq 'absent' )
-                && $ascDev->getResidentsStatus ne 'gone'
-                && $ascDev->getResidentsStatus ne 'absent'
+                && (
+                    (
+                           $shutters->getSelfDefenseMode eq 'gone'
+                        && $ascDev->getResidentsStatus ne 'gone'
+                    )
+                    || (   $shutters->getSelfDefenseMode eq 'absent'
+                        && $ascDev->getResidentsStatus ne 'absent' )
+                )
             )
         )
         && (
@@ -1768,7 +1769,7 @@ sub SetCmdFn {
         || $FHEM::Automation::ShuttersControl::shutters
         ->getWindProtectionStatus eq 'protected'
         || $FHEM::Automation::ShuttersControl::shutters
-        ->getRaindProtectionStatus eq 'protected' );
+        ->getRainProtectionStatus eq 'protected' );
 
     if ( $shutters->getStatus != $posValue ) {
         $shutters->setLastPos( $shutters->getStatus );
@@ -1849,7 +1850,7 @@ sub SetCmdFn {
 
     if ( $commandTemplate ne 'none' )
     { # Patch von Beta-User Forum https://forum.fhem.de/index.php/topic,123659.0.html
-            # Nutzervariablen setzen
+         # Nutzervariablen setzen
         my %specials = (
             '$name'    => $shuttersDev,
             '$pos'     => $posValue,

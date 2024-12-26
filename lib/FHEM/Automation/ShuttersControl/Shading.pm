@@ -2,7 +2,7 @@
 #
 # Developed with VSCodium and richterger perl plugin
 #
-#  (c) 2018-2022 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
+#  (c) 2018-2025 Copyright: Marko Oldenburg (fhemdevelopment at cooltux dot net)
 #  All rights reserved
 #
 #   Special thanks goes to:
@@ -62,7 +62,7 @@ our %EXPORT_TAGS = (
           CheckASC_ConditionsForShadingFn
           ShadingProcessing
           ShadingProcessingDriveCommand
-          )
+        )
     ],
 );
 
@@ -287,6 +287,8 @@ sub ShadingProcessing {
         || $FHEM::Automation::ShuttersControl::shutters->getShadingMode eq 'off'
         || $FHEM::Automation::ShuttersControl::ascDev
         ->getAutoShuttersControlShading eq 'off'
+        || $FHEM::Automation::ShuttersControl::shutters
+        ->getExternalTriggerStatus
       );
 
     ::Log3( $name, 4,
