@@ -1029,11 +1029,11 @@ __END__
             <a id="AutoShuttersControl-attr-ASC_Antifreeze_Pos"></a>
             <li><strong>ASC_Antifreeze_Pos</strong> - Position die angefahren werden soll, wenn der Fahrbefehl komplett schlie&szlig;en lautet, aber der Frostschutz aktiv ist (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 85/15) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeEvening"></a>
-            <li><strong>ASC_AutoAstroModeEvening</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
+            <li><strong>ASC_AutoAstroModeEvening</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC oder HORIZON (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeEveningHorizon"></a>
             <li><strong>ASC_AutoAstroModeEveningHorizon</strong> - H&ouml;he &uuml;ber Horizont, wenn beim Attribut ASC_autoAstroModeEvening HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeMorning"></a>
-            <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC (default: none)</li>
+            <li><strong>ASC_AutoAstroModeMorning</strong> - aktuell REAL,CIVIL,NAUTIC,ASTRONOMIC oder HORIZON (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_AutoAstroModeMorningHorizon"></a>
             <li><strong>ASC_AutoAstroModeMorningHorizon</strong> - H&ouml;he &uuml;ber Horizont,a wenn beim Attribut ASC_autoAstroModeMorning HORIZON ausgew&auml;hlt (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_BlockingTime_afterManual"></a>
@@ -1045,7 +1045,7 @@ __END__
             <a id="AutoShuttersControl-attr-ASC_BrightnessSensor"></a>
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_Down"></a>
-            <li><strong>ASC_Down - astro/time/brightness</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
+            <li><strong>ASC_Down - astro/time/brightness/roommate</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
             <ul></p>
                 <strong><u>Beschreibung der besonderen Positionsattribute</u></strong>
                 <a id="AutoShuttersControl-attr-ASC_Closed_Pos"></a>
