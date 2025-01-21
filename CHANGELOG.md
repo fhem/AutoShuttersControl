@@ -1,4 +1,44 @@
-### fix: remove experimental features change copyright (HEAD -> patch-remove-eperimental)
+### feat: change version (HEAD -> patch-marvin78)
+>Tue, 21 Jan 2025 17:18:12 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### feat: https://forum.fhem.de/index.php?topic=136510.0 (origin/patch-marvin78)
+>Sun, 12 Jan 2025 12:56:08 +0100
+
+>Author: Marko Oldenburg (oldenburg@b1-systems.de)
+
+>Commiter: Marko Oldenburg (oldenburg@b1-systems.de)
+
+
+
+
+### Corrected some typos and missing spaces
+>Thu, 26 Dec 2024 23:30:36 +0100
+
+>Author: riedel2 (riedel2@yahoo.de)
+
+>Commiter: riedel2 (riedel2@yahoo.de)
+
+
+
+
+### docs: Changelog
+>Sat, 12 Oct 2024 07:40:57 +0200
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### fix: remove experimental features change copyright
 >Sat, 12 Oct 2024 07:40:39 +0200
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
@@ -28,6 +68,16 @@ new year range
 
 change selfdefense condition in SunRiseShuttersAfterTimerFn
 
+
+
+### Update 73_AutoShuttersControl.pm
+>Wed, 9 Nov 2022 22:39:07 +0100
+
+>Author: riedel2 (56700949+riedel2@users.noreply.github.com)
+
+>Commiter: GitHub (noreply@github.com)
+
+added 'roommate' option at inline help for ASC_Down
 
 
 ### Update 73_AutoShuttersControl.pm
