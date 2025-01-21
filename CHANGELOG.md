@@ -1,4 +1,24 @@
-### feat: change version (HEAD -> patch-marvin78)
+### fix: commandref (HEAD -> patch-commandref)
+>Tue, 21 Jan 2025 18:19:42 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### docs: new changelog
+>Tue, 21 Jan 2025 17:19:04 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### feat: change version
 >Tue, 21 Jan 2025 17:18:12 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
@@ -8,7 +28,7 @@
 
 
 
-### feat: https://forum.fhem.de/index.php?topic=136510.0 (origin/patch-marvin78)
+### feat: https://forum.fhem.de/index.php?topic=136510.0
 >Sun, 12 Jan 2025 12:56:08 +0100
 
 >Author: Marko Oldenburg (oldenburg@b1-systems.de)
