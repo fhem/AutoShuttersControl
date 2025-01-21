@@ -822,7 +822,7 @@ __END__
             <td>Current temperature of a configured temperature device, return -100 is no device configured</td>
         </tr>
     </table>
-    </p>
+    <p></p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe</u>
     <ul>
         <code>{ ascAPIget('Getter','ROLLODEVICENAME',VALUE) }</code><br>
@@ -835,7 +835,7 @@ __END__
             <td>QueryShuttersPos</td><td>R&uuml;ckgabewert 1 bedeutet das die aktuelle Position des Rollos unterhalb der Valueposition ist. 0 oder nichts bedeutet oberhalb der Valueposition.</td>
         </tr>
     </table>
-    </p>
+    <p></p>
     <u>Data points of the <abbr>ASC</abbr> device</u>
         <p>
             <code>{ ascAPIget('Getter') }</code><br>
@@ -1046,7 +1046,7 @@ __END__
             <li><strong>ASC_BrightnessSensor - DEVICE[:READING] WERT-MORGENS:WERT-ABENDS</strong> / 'Sensorname[:brightness [400:800]]' Angaben zum Helligkeitssensor mit (Readingname, optional) f&uuml;r die Beschattung und dem Fahren der Rollladen nach brightness und den optionalen Brightnesswerten f&uuml;r Sonnenauf- und Sonnenuntergang. (default: none)</li>
             <a id="AutoShuttersControl-attr-ASC_Down"></a>
             <li><strong>ASC_Down - astro/time/brightness/roommate</strong> - bei astro wird Sonnenuntergang berechnet, bei time wird der Wert aus ASC_Time_Down_Early als Fahrzeit verwendet und bei brightness muss ASC_Time_Down_Early und ASC_Time_Down_Late korrekt gesetzt werden. Der Timer l&auml;uft dann nach ASC_Time_Down_Late Zeit, es wird aber in der Zeit zwischen ASC_Time_Down_Early und ASC_Time_Down_Late geschaut, ob die als Attribut im Moduldevice hinterlegte ASC_brightnessDriveUpDown der Down Wert erreicht wurde. Wenn ja, wird der Rollladen runter gefahren (default: astro)</li>
-            <ul></p>
+            <ul><p></p>
                 <strong><u>Beschreibung der besonderen Positionsattribute</u></strong>
                 <a id="AutoShuttersControl-attr-ASC_Closed_Pos"></a>
                 <li><strong>ASC_Closed_Pos</strong> - in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 0/100)</li>
@@ -1060,13 +1060,13 @@ __END__
                 <li><strong>ASC_Shading_Pos</strong> - Position des Rollladens f&uuml;r die Beschattung (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 80/20) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
                 <a id="AutoShuttersControl-attr-ASC_Ventilate_Pos"></a>
                 <li><strong>ASC_Ventilate_Pos</strong> - in 10 Schritten von 0 bis 100 (default: ist abh&auml;ngig vom Attribut <em>ASC</em> 70/30) !!!Verwendung von Perlcode ist m&ouml;glich, dieser muss in {} eingeschlossen sein. R&uuml;ckgabewert muss eine positive Zahl/Dezimalzahl sein!!!</li>
-                </p>
+                <p></p>
                 <strong>In Bezug auf die Verwendung mit Lamellen gibt es folgende erg&auml;nzende Parameter</strong>.
                 <ul>
                     <li>Wird die gesamte Position inklusive der Lamellen mit Hilfe einer "festen Zurdnung" angefahren, so z.B. <em>set ROLLONAME Beschattung</em> dann wird hinter dem Positionswert mittels : getrennt die "feste Zuordnung" geschrieben. Beispiel: <em>attr ROLLONAME ASC_Shading_Pos 30:Beschattung</em></li>
                     <li>Wird hingegen ein ander Command verwendet z.B. slatPct oder &auml;hnliches dann muss hinter der normalen Positionsangebe noch die Position f&uuml;r die Lamellen mit angegeben werden. Beispiel: <em>attr ROLLONAME ASC_Shading_Pos 30:75</em>. <strong>Bitte beachtet in diesem Zusammenhang auch das Attribut ASC_SlatPosCmd_SlatDevice wo mindestens die Angabe des SlatPosCMD Voraussetzung ist.</strong></li>
                 </ul>
-            </p></ul>
+            <p></p></ul>
             <a id="AutoShuttersControl-attr-ASC_Shutter_IdleDetection"></a>
             <li><strong>ASC_Shutter_IdleDetection</strong> - <strong>READING:VALUE</strong> gibt das Reading an welches Auskunft &uuml;ber den Fahrstatus des Rollos gibt, sowie als zweites den Wert im Reading welcher aus sagt das das Rollo <strong>nicht</strong> f&auml;hrt</li>
             <a id="AutoShuttersControl-attr-ASC_DriveUpMaxDuration"></a>
@@ -1115,7 +1115,7 @@ __END__
             <a id="AutoShuttersControl-attr-ASC_Self_Defense_AbsentDelay"></a>
             <li><strong>ASC_Self_Defense_AbsentDelay</strong> - um wie viele Sekunden soll das fahren in Selfdefense bei Residents absent verz&ouml;gert werden. (default: 300)</li>
             <a id="AutoShuttersControl-attr-ASC_Self_Defense_Exclude"></a>
-            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off), off bedeutet das es ausgeschlossen ist vom Self Defense</li></p>
+            <li><strong>ASC_Self_Defense_Exclude - on/off</strong> - bei on Wert wird dieser Rollladen bei aktiven Self Defense und offenen Fenster nicht runter gefahren, wenn Residents absent ist. (default: off), off bedeutet das es ausgeschlossen ist vom Self Defense</li><p></p>
             <ul>
                 <strong><u>Beschreibung der Beschattungsfunktion</u></strong>
                 </br>Damit die Beschattung Funktion hat, m&uuml;ssen folgende Anforderungen erf&uuml;llt sein.
@@ -1138,7 +1138,7 @@ __END__
                 <li><strong>ASC_Shading_WaitingPeriod</strong> - wie viele Sekunden soll gewartet werden bevor eine weitere Auswertung der Sensordaten f&uuml;r die Beschattung stattfinden soll (default: 1200)</li>
                 <a id="AutoShuttersControl-attr-ASC_Shading_BetweenTheTime"></a>
                 <li><strong>ASC_Shading_BetweenTheTime</strong> - das Fahren in die Beschattung erfolgt bei Angabe nur innerhalb des Zeitraumes, Bsp: 09:00-13:00 11:25-15:30</li>
-            </ul></p>
+            </ul><p></p>
             <a id="AutoShuttersControl-attr-ASC_ShuttersPlace"></a>
             <li><strong>ASC_ShuttersPlace - window/terrace/awning</strong> - Wenn dieses Attribut auf terrace gesetzt ist, das Residence Device in den Status "gone" geht und SelfDefense aktiv ist (ohne das das Reading selfDefense gesetzt sein muss), wird das Rollo geschlossen. awning steht f&uuml;r Markise und wirkt sich auf die Beschattungssteuerung aus. (default: window)</li>
             <a id="AutoShuttersControl-attr-ASC_Time_Down_Early"></a>
@@ -1185,11 +1185,11 @@ __END__
             </li>
         </ul>
     </ul>
-    </p>
+    <p></p>
     <a id="AutoShuttersControl-API"></a>
     <strong><u>Beschreibung der AutoShuttersControl API</u></strong>
     </br>Mit dem Aufruf der API Funktion und &Uuml;bergabe der entsprechenden Parameter ist es m&ouml;glich auf interne Daten zu zu greifen.
-    </p>
+    <p></p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device Getter</u>
     <ul>
         <code>{ ascAPIget('GETTER','ROLLODEVICENAME') }</code><br>
@@ -1334,7 +1334,7 @@ __END__
         <tr><td>OutTemp</td><td>aktuelle Au&szlig;entemperatur sofern ein Sensor definiert ist, wenn nicht kommt -100 als Wert zur&uuml;ck</td></tr>
         <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung</td></tr>
     </table>
-    </p>
+    <p></p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device mit Parameter&uuml;bergabe Getter</u>
     <ul>
         <code>{ ascAPIget('GETTER','ROLLODEVICENAME',VALUE) }</code><br>
@@ -1343,7 +1343,7 @@ __END__
         <tr><th>Getter</th><th>Erl&auml;uterung</th></tr>
         <tr><td>QueryShuttersPos</td><td>R&uuml;ckgabewert 1 bedeutet das die aktuelle Position des Rollos unterhalb der Valueposition ist. 0 oder nichts bedeutet oberhalb der Valueposition.</td></tr>
     </table>
-    </p>
+    <p></p>
     <u>&Uuml;bersicht f&uuml;r das Rollladen-Device Setter</u>
     <ul>
         <code>{ ascAPIset('SETTER','ROLLODEVICENAME','VALUE') }</code><br>
@@ -1404,7 +1404,7 @@ __END__
         <tr><td>WinDev</td><td>   </td></tr>
         <tr><td>ShadingBetweenTheTime</td><td>Konfiguration f&uuml;r die Zeit der Beschattung, Beispiel: 09:00-13:00 WICHTIG!!!! Immer bei einstelligen Stunden die 0 davor setzen</td></tr>
     </table>
-    </p>
+    <p></p>
     <u>&Uuml;bersicht f&uuml;r das ASC Device Getter</u>
     <ul>
         <code>{ ascAPIget('GETTER') }</code><br>
@@ -1462,7 +1462,7 @@ __END__
   ],
   "release_status": "stable",
   "license": "GPL_2",
-  "version": "v1.0.0",
+  "version": "v0.99.10",
   "author": [
     "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
