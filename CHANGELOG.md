@@ -1,4 +1,24 @@
-### fix: commandref (HEAD -> patch-commandref)
+### docs: new version (HEAD -> patch-newversion)
+>Sat, 25 Jan 2025 11:14:01 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### docs: Changelog
+>Tue, 21 Jan 2025 18:19:54 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### fix: commandref
 >Tue, 21 Jan 2025 18:19:42 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
