@@ -1,4 +1,37 @@
-### docs: new version (HEAD -> patch-newversion)
+### ``` Add important usage information for roller shutter control (HEAD -> patch-documentation)
+>Wed, 5 Feb 2025 07:57:46 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This update includes new sections in both English and German
+explaining the conditions necessary to prevent delayed operation
+of roller shutters when a window contact is opened. The changes
+clarify that for this functionality to work, the roller shutter
+must be open, the sensor should be set to open, and specific
+attributes (ASC_ShuttersPlace and ASC_Self_Defense_Mode) must
+be appropriately configured.
+
+These additions help users understand proper settings required
+for optimal functionality, improving the overall usability
+and effectiveness of the AutoShuttersControl module. The version
+has been updated to v1.0.1 to reflect these enhancements.
+```
+
+
+
+### docs: changelog
+>Sat, 25 Jan 2025 11:14:17 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+
+
+
+### docs: new version
 >Sat, 25 Jan 2025 11:14:01 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
