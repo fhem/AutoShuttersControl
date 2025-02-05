@@ -870,6 +870,19 @@ __END__
                 <td>Is <abbr>ASC</abbr> globally activated?</td>
             </tr>
         </table>
+        <p></p>
+        <u>Important Information for General Use</u>
+        <p>
+            A possibility has been created to prevent the delayed movement of a roller shutter by opening a window contact.  
+            The handle position is determined before the movement, not before the wait time!  
+            The following settings are required for this function:
+            <ul>
+                <li>the roller shutter must be in the open position</i>
+                <li>the sensor must be set to open</i>
+                <li>the attribute ASC_ShuttersPlace must be set to terrace</i>
+                <li>the attribute ASC_Self_Defense_Mode must be set to off</i>
+            </ul> 
+        </p>
 </ul>
 
 =end html
@@ -1439,6 +1452,19 @@ __END__
         <tr><td>RainWaitingTime</td><td>   </td></tr>
         <tr><td>BlockAscDrivesAfterManual</td><td>   </td></tr>
     </table>
+    <p></p>
+    <u>Wichtige Informationen zur allgemeinen Verwendung</u>
+    <p>
+        Es wurde eine M&ouml;glichkeit geschaffen um das verz&ouml;gerte fahren eines Rolles durch &ouml;ffnen eines Fensterkontaktes zu unterbinden.
+        Feststellung der Griffstellung vor Fahrt, nicht vor Wartezeit!
+        Voraussetzung f&uuml;r diese Funktion ist folgende Einstellung:
+        <ul>
+            <li>das Rollo muss in der Position Open stehen</i>
+            <li>der Sensor muss auf open stehen / gestellt werden</i>
+            <li>Attribut ASC_ShuttersPlace muss auf terrace gesetzt sein</i>
+            <li>Attribut ASC_Self_Defense_Mode muss auf off gesetzt sein</i>
+        </ul> 
+    </p>
 </ul>
 
 =end html_DE
@@ -1462,7 +1488,7 @@ __END__
   ],
   "release_status": "stable",
   "license": "GPL_2",
-  "version": "v1.0.0",
+  "version": "v1.0.1",
   "author": [
     "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
