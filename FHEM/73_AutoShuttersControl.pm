@@ -877,10 +877,10 @@ __END__
             The handle position is determined before the movement, not before the wait time!  
             The following settings are required for this function:
             <ul>
-                <li>the roller shutter must be in the open position</i>
-                <li>the sensor must be set to open</i>
-                <li>the attribute ASC_ShuttersPlace must be set to terrace</i>
-                <li>the attribute ASC_Self_Defense_Mode must be set to off</i>
+                <li>the roller shutter must be in the open position</li>
+                <li>the sensor must be set to open</li>
+                <li>the attribute ASC_ShuttersPlace must be set to terrace</li>
+                <li>the attribute ASC_Self_Defense_Mode must be set to off</li>
             </ul> 
         </p>
 </ul>
@@ -1459,10 +1459,10 @@ __END__
         Feststellung der Griffstellung vor Fahrt, nicht vor Wartezeit!
         Voraussetzung f&uuml;r diese Funktion ist folgende Einstellung:
         <ul>
-            <li>das Rollo muss in der Position Open stehen</i>
-            <li>der Sensor muss auf open stehen / gestellt werden</i>
-            <li>Attribut ASC_ShuttersPlace muss auf terrace gesetzt sein</i>
-            <li>Attribut ASC_Self_Defense_Mode muss auf off gesetzt sein</i>
+            <li>das Rollo muss in der Position Open stehen</li>
+            <li>der Sensor muss auf open stehen / gestellt werden</li>
+            <li>Attribut ASC_ShuttersPlace muss auf terrace gesetzt sein</li>
+            <li>Attribut ASC_Self_Defense_Mode muss auf off gesetzt sein</li>
         </ul> 
     </p>
 </ul>
