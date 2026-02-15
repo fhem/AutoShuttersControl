@@ -1,4 +1,54 @@
-### fixes #147 - Fix candlemas day condition in IsAdv function (HEAD -> patch-CandlemasDay)
+### Update copyright year to 2026 across all relevant files (HEAD -> patch-change-copyright)
+>Sun, 15 Feb 2026 08:26:46 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This commit updates the copyright year in multiple files of the FHEM
+project from 2025 to 2026. The changes were made to reflect the
+continuation of development and intellectual property rights held by
+Marko Oldenburg.
+
+Additionally, minor formatting adjustments were made in
+`ShuttersControl.pm` for better readability. These changes ensure that
+all files are up to date regarding copyright information and enhance
+the overall code quality with properly formatted code.
+
+No breaking changes or functional modifications were introduced with
+this commit.
+
+
+
+### Fix Candlemas Day condition in IsAdv function (origin/patch-CandlemasDay, origin/main, origin/dev, origin/HEAD, patch-CandlemasDay, main, dev)
+>Sun, 15 Feb 2026 08:00:06 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This commit corrects the conditional logic within the IsAdv function
+of the ShuttersControl Helper module to accurately evaluate Candlemas
+Day. The previous implementation miscalculated the date due to an
+incorrect evaluation of the month and day, which could lead to
+automation errors in shutters control based on holiday schedules.
+
+Additionally, crucial usage information for the roller shutter control
+module has been added to the documentation. New sections in both
+English and German clarify operational requirements to prevent
+delays when a window contact is opened. Specifically, it is emphasized
+that for the functionality to work correctly, the roller shutter must
+be open, the sensor should be set to open, and attributes like
+ASC_ShuttersPlace and ASC_Self_Defense_Mode need proper configuration.
+
+These enhancements do not introduce breaking changes but are essential
+for improving user understanding and functionality of the
+AutoShuttersControl module. The version was updated to v1.0.1 to
+reflect these additions.
+
+
+
+### fixes #147 - Fix candlemas day condition in IsAdv function
 >Sun, 15 Feb 2026 07:59:46 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
