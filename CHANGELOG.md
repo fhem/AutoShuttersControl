@@ -1,4 +1,49 @@
-### ``` Add important usage information for roller shutter control (HEAD -> patch-documentation)
+### fixes #147 - Fix candlemas day condition in IsAdv function (HEAD -> patch-CandlemasDay)
+>Sun, 15 Feb 2026 07:59:46 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This commit modifies the conditional logic in the IsAdv function
+within the ShuttersControl Helper module. The existing code incorrectly
+evaluated the month and day for determining if it is Candlemas Day.
+The change ensures that the correct evaluation is performed, setting
+the $adv and $month variables accordingly.
+
+This adjustment is necessary to ensure accurate automation behavior
+for shutters control based on holiday schedules. No breaking changes
+are introduced, but it is essential for the logical flow of
+the holiday-dependent functionality.
+
+
+
+### ``` Add usage information for roller shutter control
+>Wed, 5 Feb 2025 08:00:28 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This update enhances the documentation by adding crucial
+usage information for the roller shutter control module.
+New sections in both English and German were introduced
+to explain the necessary conditions for preventing delayed
+operation when a window contact is opened.
+
+It is clarified that for the functionality to operate
+as intended, the roller shutter must be open, the sensor
+needs to be set to open, and specific attributes
+(ASC_ShuttersPlace and ASC_Self_Defense_Mode) must
+be configured correctly. These additions aim to improve
+user understanding and usability of the AutoShuttersControl
+module. The version was updated to v1.0.1 to reflect
+these enhancements.
+```
+
+
+
+### ``` Add important usage information for roller shutter control
 >Wed, 5 Feb 2025 07:57:46 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
