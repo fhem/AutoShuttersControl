@@ -1,4 +1,49 @@
-### Update copyright year to 2026 across all relevant files (HEAD -> patch-change-copyright)
+### Fix HTML list formatting in documentation comments (HEAD -> patch-negative-tagcount_and_unbalanced-li)
+>Sun, 15 Feb 2026 08:44:23 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+Updated the HTML list formatting within the documentation
+comments in the FHEM/73_AutoShuttersControl.pm file.
+The previous use of improper closing tags for list items
+(<i>) has been corrected to proper list item tags (<li>).
+This change enhances the clarity and correctness of the
+documentation, ensuring that it displays properly in any
+HTML-rendering environment. No functional changes were made
+to the code itself, only improvements to the documentation.
+
+
+
+### ``` Update copyright year to 2026 and fix Candlemas Day issue (origin/dev, origin/HEAD, dev)
+>Sun, 15 Feb 2026 08:27:03 +0100
+
+>Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+>Commiter: Marko Oldenburg (fhemdevelopment@cooltux.net)
+
+This commit updates the copyright year in multiple files of the
+FHEM project from 2025 to 2026, ensuring that all files reflect
+the current ownership status of Marko Oldenburg. Minor formatting
+adjustments have also been made in `ShuttersControl.pm` for
+better readability.
+
+Additionally, the logic in the IsAdv function within the
+ShuttersControl Helper module has been corrected to accurately
+evaluate Candlemas Day, which prevents automation errors due to
+miscalculations. Important usage information for the roller shutter
+control module was added in both English and German, clarifying
+operational requirements.
+
+These changes do not introduce any breaking changes but are vital
+for user understanding and functionality improvements. The
+version has been updated to v1.0.1 to reflect these changes.
+```
+
+
+
+### Update copyright year to 2026 across all relevant files
 >Sun, 15 Feb 2026 08:26:46 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
@@ -20,7 +65,7 @@ this commit.
 
 
 
-### Fix Candlemas Day condition in IsAdv function (origin/patch-CandlemasDay, origin/main, origin/dev, origin/HEAD, patch-CandlemasDay, main, dev)
+### Fix Candlemas Day condition in IsAdv function (origin/main, main)
 >Sun, 15 Feb 2026 08:00:06 +0100
 
 >Author: Marko Oldenburg (fhemdevelopment@cooltux.net)
