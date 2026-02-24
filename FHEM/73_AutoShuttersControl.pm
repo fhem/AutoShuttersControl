@@ -1488,7 +1488,7 @@ __END__
   ],
   "release_status": "stable",
   "license": "GPL_2",
-  "version": "v1.0.1",
+  "version": "v1.1.1",
   "author": [
     "Marko Oldenburg <fhemdevelopment@cooltux.net>"
   ],
