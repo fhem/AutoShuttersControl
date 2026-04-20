@@ -175,8 +175,8 @@ BEGIN {
 ## Die Attributsliste welche an die Rolläden verteilt wird. Zusammen mit Default Werten
 ##no critic
 our %userAttrList = (
-    'ASC_Mode_Up:absent,always,off,home'                            => '-',
-    'ASC_Mode_Down:absent,always,off,home'                          => '-',
+    'ASC_Mode_Up:absent,always,off,home,gone'                       => '-',
+    'ASC_Mode_Down:absent,always,off,home,gone'                     => '-',
     'ASC_Up:time,astro,brightness,roommate'                         => '-',
     'ASC_Down:time,astro,brightness,roommate'                       => '-',
     'ASC_AutoAstroModeMorning:REAL,CIVIL,NAUTIC,ASTRONOMIC,HORIZON' => '-',
@@ -207,7 +207,7 @@ our %userAttrList = (
     'ASC_BlockingTime_beforeDayOpen'                       => '-',
     'ASC_BrightnessSensor'                                 => '-',
     'ASC_Shading_Pos:10,20,30,40,50,60,70,80,90,100'       => [ '', 80, 20 ],
-    'ASC_Shading_Mode:absent,always,off,home'              => '-',
+    'ASC_Shading_Mode:absent,always,off,home,gone'         => '-',
     'ASC_Shading_InOutAzimuth'                             => '-',
     'ASC_Shading_StateChange_SunnyCloudy'                  => '-',
     'ASC_Shading_MinMax_Elevation'                         => '-',
@@ -1925,9 +1925,15 @@ sub ASC_Debug {
     my $debugMsg       = shift;
     my $debugTimestamp = strftime( "%Y.%m.%d %T", localtime(time) );
 
+#    print(
+#        encode_utf8(
+#            "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"
+#        )
+#    );
+
     print(
         encode_utf8(
-            "\n" . 'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"
+            'ASC_DEBUG!!! ' . $debugTimestamp . ' - ' . $debugMsg . "\n"
         )
     );
 
