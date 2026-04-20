@@ -749,7 +749,9 @@ sub EventProcessingRoommate {
                     && !$FHEM::Automation::ShuttersControl::shutters
                     ->getSelfDefenseState
                    && (($FHEM::Automation::ShuttersControl::shutters
-                        ->getShadingMode eq 'home' ) ) # added by postfux for not Shading when change form absent or gone to home
+                        ->getShadingMode eq 'home' ) ) 
+                        # added by postfux only when ShadingMode is home 
+                        # and not when absent or gone.
                   )
                 {
                     ShadingProcessingDriveCommand( $hash, $shuttersDev, 1 );
