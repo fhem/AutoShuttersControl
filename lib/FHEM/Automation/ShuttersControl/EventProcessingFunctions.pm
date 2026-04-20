@@ -376,8 +376,12 @@ sub EventProcessingWindowRec {
                     || $homemode eq 'none' )
                 && $FHEM::Automation::ShuttersControl::shutters->getModeUp ne
                 'absent'
-                && $FHEM::Automation::ShuttersControl::shutters->getModeUp ne
-                'off'
+    #           disabled by postfux to also drive from Ventialte Position when 
+    #           WindowContact closes, even if ModeDown is off.
+    #           there is not such check when WindowContact ist opened 
+    #           so it always drives to Ventilate Position.
+    #            && $FHEM::Automation::ShuttersControl::shutters->getModeUp ne
+    #            'off'
               )
             {
                 if (
@@ -477,8 +481,12 @@ sub EventProcessingWindowRec {
             elsif (
                 $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
                 'absent'
-                && $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
-                'off'
+    #           disabled by postfux to also drive from Ventialte Position when 
+    #           WindowContact closes, even if ModeDown is off.
+    #           there is not such check when WindowContact ist opened 
+    #           so it always drives to Ventilate Position.
+    #            && $FHEM::Automation::ShuttersControl::shutters->getModeDown ne
+    #            'off'
                 && (
                     (
                         !$FHEM::Automation::ShuttersControl::shutters->getIsDay
@@ -618,7 +626,7 @@ sub EventProcessingRoommate {
     my $reading =
       $FHEM::Automation::ShuttersControl::shutters->getRoommatesReading;
 
-    if ( $events =~ m{$reading:\s(absent|gotosleep|asleep|awoken|home)}xms ) {
+    if ( $events =~ m{$reading:\s(absent|gotosleep|asleep|awoken|home|gone)}xms ) {
         ::Log3( $name, 4,
             "AutoShuttersControl ($name) - EventProcessingRoommate: "
               . $FHEM::Automation::ShuttersControl::shutters
@@ -721,6 +729,9 @@ sub EventProcessingRoommate {
                 && $getRoommatesStatus eq 'home'
               )
             {
+                ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate_3: $shuttersDev und Events $events"
+                );
                 if (
                        $getIsDay
                     && $FHEM::Automation::ShuttersControl::shutters
@@ -737,6 +748,8 @@ sub EventProcessingRoommate {
                     )
                     && !$FHEM::Automation::ShuttersControl::shutters
                     ->getSelfDefenseState
+                   && (($FHEM::Automation::ShuttersControl::shutters
+                        ->getShadingMode eq 'home' ) ) # added by postfux for not Shading when change form absent or gone to home
                   )
                 {
                     ShadingProcessingDriveCommand( $hash, $shuttersDev, 1 );
@@ -971,8 +984,83 @@ sub EventProcessingRoommate {
 "AutoShuttersControl ($name) - EventProcessingRoommate NICHTS: $shuttersDev"
             );
         }
-    }
+    elsif (  #postfux added rommate gone condition
+            $event eq 'gone'
+            && (  !$getIsDay
+                || $getDown eq 'roommate'
+                || $FHEM::Automation::ShuttersControl::shutters->getShadingMode
+                eq 'gone'
+                || $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
+                'gone'
+                || $FHEM::Automation::ShuttersControl::shutters->getModeDown eq
+                'gone' )
+          )
+        {
+            ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate gone: $shuttersDev"
+            );
 
+            if (
+                   $getIsDay
+                && $FHEM::Automation::ShuttersControl::shutters->getIfInShading
+                && !$FHEM::Automation::ShuttersControl::shutters
+                ->getQueryShuttersPos(
+                    $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+                )
+                && $FHEM::Automation::ShuttersControl::shutters->getShadingMode
+                eq 'gone'
+              )
+            {
+                ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate Shading: $shuttersDev"
+                );
+
+                $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
+                    'shading in');
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                    $hash,
+                    $shuttersDev,
+                    $FHEM::Automation::ShuttersControl::shutters->getShadingPos
+                );
+            }
+            elsif (( !$getIsDay || $getDown eq 'roommate' )
+                && $getModeDown eq 'gone'
+                && $getRoommatesStatus eq 'gone' )
+            {
+                ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate Down: $shuttersDev"
+                );
+
+                $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
+                    'roommate gone');
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet(
+                    $hash,
+                    $shuttersDev,
+                    $FHEM::Automation::ShuttersControl::shutters->getClosedPos
+                );
+            }
+            elsif ($getIsDay
+                && $FHEM::Automation::ShuttersControl::shutters->getModeUp eq
+                'gone'
+                && $getRoommatesStatus eq 'gone' )
+            {
+                ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate Up: $shuttersDev"
+                );
+
+                $FHEM::Automation::ShuttersControl::shutters->setLastDrive(
+                    'roommate gone');
+                FHEM::Automation::ShuttersControl::ShuttersCommandSet( $hash,
+                    $shuttersDev,
+                    $FHEM::Automation::ShuttersControl::shutters->getOpenPos );
+            }
+
+            ::Log3( $name, 4,
+"AutoShuttersControl ($name) - EventProcessingRoommate NICHTS: $shuttersDev"
+            );
+        } #end postfux added rommate gone condition
+    }
+    
     return;
 }
 
